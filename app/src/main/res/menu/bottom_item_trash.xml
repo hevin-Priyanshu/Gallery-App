@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/restore_trash"
+        android:enabled="true"
+        android:icon="@drawable/restore_icon_new"
+        android:title="@string/restore"
+        android:visible="true" />
+
+    <item
+        android:id="@+id/delete_trash"
+        android:enabled="true"
+        android:icon="@drawable/delete_icon_new"
+        android:title="@string/delete"
+        android:visible="true" />
+</menu>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <item
+        android:id="@+id/shareItem"
+        android:enabled="true"
+        android:icon="@drawable/share_icon_new"
+        tools:ignore="MenuTitle" />
+    <!--android:iconTintMode="screen"-->
+
+    <item
+        android:id="@+id/favoriteItemUnSelect"
+        android:enabled="true"
+        android:icon="@drawable/favorite_icon_new"
+        tools:ignore="MenuTitle" />
+    <!--        android:iconTintMode="add"-->
+
+    <item
+        android:id="@+id/editItem"
+        android:enabled="true"
+        android:icon="@drawable/edit_icon"
+        tools:ignore="MenuTitle" />
+    <!--        android:iconTintMode="screen"-->
+
+    <item
+        android:id="@+id/deleteItem"
+        android:enabled="true"
+        android:icon="@drawable/delete_icon_new"
+        tools:ignore="MenuTitle" />
+    <!--        android:iconTintMode="screen"-->
+
+    <item
+        android:id="@+id/moreItem"
+        android:enabled="true"
+        android:icon="@drawable/three_dot_blur_icon_new"
+        tools:ignore="MenuTitle" />
+    <!--        android:iconTintMode="screen"-->
+
+</menu>

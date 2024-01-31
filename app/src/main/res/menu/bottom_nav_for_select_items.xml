@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <item
+        android:id="@+id/shareItem"
+        android:icon="@drawable/share_icon_new"
+        android:iconTintMode="screen"
+        tools:ignore="MenuTitle" />
+
+    <item
+        android:id="@+id/favoriteItem"
+        android:icon="@drawable/favorite_icon_new"
+        android:iconTintMode="screen"
+        tools:ignore="MenuTitle" />
+
+    <item
+        android:id="@+id/deleteItem"
+        android:icon="@drawable/delete_icon_new"
+        android:iconTintMode="screen"
+        tools:ignore="MenuTitle" />
+
+    <item
+        android:id="@+id/moreItem"
+        android:icon="@drawable/three_dot_blur_icon_new"
+        android:iconTintMode="screen"
+        tools:ignore="MenuTitle" />
+
+</menu>
