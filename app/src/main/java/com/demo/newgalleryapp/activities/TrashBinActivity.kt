@@ -45,8 +45,6 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         lateinit var trashBinAdapter: TrashBinAdapter
     }
 
-    private var currentPosition: Int = 0
-
     private lateinit var noData: LinearLayout
     private lateinit var linearLayoutForMainText: LinearLayout
     private lateinit var linearLayoutForSelectText: LinearLayout

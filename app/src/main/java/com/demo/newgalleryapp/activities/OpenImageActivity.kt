@@ -33,6 +33,8 @@ import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.formatDate
+import com.demo.newgalleryapp.utilities.CommonFunctions.formatTime
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBinForOpenActivityOnlyOne
 import com.demo.newgalleryapp.utilities.CommonFunctions.showRenamePopup
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -475,8 +477,8 @@ class OpenImageActivity : AppCompatActivity() {
 
         val size = models[viewPager.currentItem].size
 
-        val date = CommonFunctions.formatDate(models[viewPager.currentItem].date)
-        val time = CommonFunctions.formatTime(models[viewPager.currentItem].date)
+        val date = formatDate(models[viewPager.currentItem].date)
+        val time = formatTime(models[viewPager.currentItem].date)
 
         val sizeInBytes = size ?: 0L  // Default to 0 if size is null
         val formattedSize = CommonFunctions.formatSize(sizeInBytes)

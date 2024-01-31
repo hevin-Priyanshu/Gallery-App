@@ -131,7 +131,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             supportFragmentManager.beginTransaction()
                 .add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
         }
-
         currentFragment = mediaFragment
     }
 

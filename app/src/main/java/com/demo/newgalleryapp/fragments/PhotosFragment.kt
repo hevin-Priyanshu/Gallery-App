@@ -10,12 +10,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.adapters.ImagesAd
-import com.demo.newgalleryapp.fragments.MediaFragment.Companion.textViewDeSelectAllMedia
-import com.demo.newgalleryapp.fragments.MediaFragment.Companion.textViewSelectAllMedia
 import com.demo.newgalleryapp.models.MediaModel
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -143,10 +146,30 @@ class PhotosFragment : Fragment() {
         }
     }
 
-    private fun getFormattedDate(date: Long): String {
-//        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        return formatter.format(Date(date * 1000))
+    private fun getFormattedDate(dateAdded: Long): String {
+////        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+//        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+//        return formatter.format(Date(date * 1000))
+//
+//        val dateAddedInSeconds = dateAdded ?: 0L
+//        val dateAddedInMillis = dateAddedInSeconds * 1000
+//        val date = Date(dateAddedInMillis)
+//        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+//        return dateFormat.format(date)
+
+//        val instant = Instant.ofEpochMilli(dateAddedInMillis)
+//        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.getDefault())
+//        return formatter.format(instant)
+
+
+        val dateAddedInSeconds = dateAdded ?: 0L
+        val dateAddedInMillis = dateAddedInSeconds * 1000
+
+        val localDate = Instant.ofEpochMilli(dateAddedInMillis)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
+        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
     }
 
 }

@@ -29,6 +29,7 @@ import com.demo.newgalleryapp.models.TrashBin
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -59,12 +60,19 @@ object CommonFunctions {
         Log.d(tag, message)
     }
 
+//    fun formatDate(dateAdded: Long): String {
+//        val dateAddedInSeconds = dateAdded ?: 0L
+//        val dateAddedInMillis = dateAddedInSeconds * 1000
+//        val date = Date(dateAddedInMillis)
+//        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+//        return dateFormat.format(date)
+//    }
+
     fun formatDate(dateAdded: Long): String {
-        val dateAddedInSeconds = dateAdded ?: 0L
-        val dateAddedInMillis = dateAddedInSeconds * 1000
-        val date = Date(dateAddedInMillis)
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = dateAdded * 1000 // Convert seconds to milliseconds
         val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-        return dateFormat.format(date)
+        return dateFormat.format(calendar.time)
     }
 
     fun formatTime(timeAdded: Long): String {
