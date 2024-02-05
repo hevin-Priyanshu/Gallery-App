@@ -133,8 +133,8 @@
                     android:fontFamily="@font/poppins_medium"
                     android:text="@string/deselect_all"
                     android:textColor="#007AFF"
-                    android:visibility="gone"
-                    android:textSize="@dimen/_12ssp" />
+                    android:textSize="@dimen/_12ssp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
@@ -155,8 +155,8 @@
         <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_10sdp"
             android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/_10sdp"
             android:src="@drawable/search_icon" />
 
         <EditText
@@ -180,14 +180,13 @@
             android:layout_width="@dimen/_20sdp"
             android:layout_height="@dimen/_20sdp"
             android:layout_alignParentEnd="true"
-            android:layout_marginEnd="@dimen/_10sdp"
             android:layout_centerVertical="true"
-            android:visibility="gone"
-            android:src="@drawable/close_icon_new" />
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:src="@drawable/close_icon_new"
+            android:visibility="gone" />
 
 
     </RelativeLayout>
-
 
     <LinearLayout
         android:id="@+id/topTextView"
@@ -230,10 +229,23 @@
 
     </LinearLayout>
 
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/view_pager_main"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/topTextView" />
+        android:layout_below="@+id/topTextView">
+
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/view_pager_main"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ProgressBar
+            android:id="@+id/media_progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone" />
+
+    </RelativeLayout>
 
 </RelativeLayout>

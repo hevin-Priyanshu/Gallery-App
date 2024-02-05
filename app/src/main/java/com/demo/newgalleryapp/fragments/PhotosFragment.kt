@@ -5,22 +5,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImagesAd
+import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
 import com.demo.newgalleryapp.models.MediaModel
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 class PhotosFragment : Fragment() {
 
@@ -54,7 +52,9 @@ class PhotosFragment : Fragment() {
             if (position == 0) {
                 count =
                     (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
-                observeAllData(count)
+                lifecycleScope.launch {
+                    observeAllData(count)
+                }
             }
         }
 
@@ -137,6 +137,8 @@ class PhotosFragment : Fragment() {
 
         recyclerView.layoutManager = gl
         recyclerView.adapter = imagesAdapter
+
+        mediaProgressBar.visibility = View.GONE
     }
 
 
@@ -165,9 +167,8 @@ class PhotosFragment : Fragment() {
         val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000
 
-        val localDate = Instant.ofEpochMilli(dateAddedInMillis)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
+        val localDate =
+            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
 
         return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
     }

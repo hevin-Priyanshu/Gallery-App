@@ -57,6 +57,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var trashBinTxt: TextView
     private lateinit var howManyItemInTrash: TextView
     private lateinit var itemSelectedTrashBinTxt: TextView
+    private lateinit var itemSelectedAllTrashBinTxt: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     private var count: Int = 0
@@ -128,6 +129,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         linearLayoutForSelectText = findViewById(R.id.linearLayoutForSelectText)
 
         itemSelectedTrashBinTxt = findViewById(R.id.item_selected_text_view_trash)
+        itemSelectedAllTrashBinTxt = findViewById(R.id.trash_bin_selectAll_text)
         bottomNavigationView = findViewById(R.id.bottomNavigation_trashBin)
         progressBar = findViewById(R.id.progressBar_trash)
 
@@ -136,6 +138,14 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         recyclerIsEmptyOrNot()
 
         progressBar.visibility = View.VISIBLE
+
+        itemSelectedAllTrashBinTxt.setOnClickListener {
+            trashBinAdapter.updateSelectionState(true)
+            trashBinAdapter.notifyDataSetChanged()
+//            bottomNavigationView.visibility = View.GONE
+//            linearLayoutForMainText.visibility = View.VISIBLE
+//            linearLayoutForSelectText.visibility = View.GONE
+        }
 
         // Get the URI from the intent
 //        val receivedUri: Uri = intent.data!!

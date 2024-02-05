@@ -14,6 +14,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
+import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
@@ -34,6 +35,7 @@ import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -60,6 +62,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         lateinit var textViewDeSelectAllMedia: TextView
         lateinit var linearLayoutForMainText: LinearLayout
         lateinit var linearLayoutForSelectText: LinearLayout
+        lateinit var mediaProgressBar: ProgressBar
 
         fun newInstance(): MediaFragment {
             val fragment = MediaFragment()
@@ -78,15 +81,18 @@ class MediaFragment : Fragment(), ImageClickListener {
         initializeViews(view)
         setupViewPager()
 
-
         closeBtnMedia.setOnClickListener {
             setAllVisibility()
         }
 
+        mediaProgressBar.visibility = View.VISIBLE
+
         searchCloseBtn.setOnClickListener {
             searchEvent.text.clear()
-            photosFragment.observeAllData(selectedColumns)
-            videosFragment.observeAllData(selectedColumns)
+            lifecycleScope.launch {
+                photosFragment.observeAllData(selectedColumns)
+                videosFragment.observeAllData(selectedColumns)
+            }
         }
 
         textViewSelectAllMedia.setOnClickListener {
@@ -155,6 +161,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewPager.visibility = View.GONE
                 searchCloseBtn.visibility = View.VISIBLE
                 filterData(s.toString())
             }
@@ -172,7 +179,6 @@ class MediaFragment : Fragment(), ImageClickListener {
         threeDotItem.setOnClickListener {
             showThreeDotPopup(toolbar)
         }
-
 
         viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(
@@ -225,6 +231,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         textVideo = view.findViewById(R.id.text_video)
         closeBtnMedia = view.findViewById(R.id.closeBtn_media)
         searchCloseBtn = view.findViewById(R.id.search_close_btn)
+        mediaProgressBar = view.findViewById(R.id.media_progress_bar)
 
         textViewSelectAllMedia = view.findViewById(R.id.textView_selectAll_media)
         textViewDeSelectAllMedia = view.findViewById(R.id.textView_removeAll_media)
@@ -242,6 +249,8 @@ class MediaFragment : Fragment(), ImageClickListener {
     }
 
     private fun filterData(query: String) {
+
+        mediaProgressBar.visibility = View.VISIBLE
 
         val commonList: ArrayList<Any> = ArrayList()
         lifecycleScope.launch(Dispatchers.IO) {
@@ -276,10 +285,14 @@ class MediaFragment : Fragment(), ImageClickListener {
                 commonList.add(date)
                 commonList.addAll(itemList)
             }
-        }
+            withContext(Dispatchers.Main) {
+                photosFragment.notifyAdapter(commonList)
+                videosFragment.notifyAdapter(commonList)
 
-        photosFragment.notifyAdapter(commonList)
-        videosFragment.notifyAdapter(commonList)
+                viewPager.visibility = View.VISIBLE
+                mediaProgressBar.visibility = View.GONE
+            }
+        }
     }
 
 

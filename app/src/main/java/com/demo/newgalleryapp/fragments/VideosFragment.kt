@@ -5,13 +5,16 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImagesAd
+import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
 import com.demo.newgalleryapp.models.MediaModel
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -52,7 +55,9 @@ class VideosFragment : Fragment() {
             if (position == 1) {
                 val count =
                     (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
-                observeAllData(count)
+                lifecycleScope.launch {
+                    observeAllData(count)
+                }
             }
         }
         return view
@@ -111,6 +116,8 @@ class VideosFragment : Fragment() {
 
         recyclerView.layoutManager = gl
         recyclerView.adapter = imagesAdapter
+
+        mediaProgressBar.visibility = View.GONE
     }
 
     fun notifyAdapter(filteredData: ArrayList<Any>) {

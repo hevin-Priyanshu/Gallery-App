@@ -50,4 +50,6 @@
             app:menu="@menu/bottom_nav_for_select_items" />
 
     </LinearLayout>
+
+
 </RelativeLayout>
