@@ -20,13 +20,13 @@
 
             <ImageView
                 android:id="@+id/back_btn_trash_open"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="@dimen/_22sdp"
+                android:layout_height="@dimen/_22sdp"
                 android:layout_gravity="center"
                 android:src="@drawable/back_icon" />
 
+<!--                android:id="@+id/trash_open_textView"-->
             <TextView
-                android:id="@+id/trash_open_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -34,6 +34,7 @@
                 android:fontFamily="@font/montserrat_semibold"
                 android:marqueeRepeatLimit="marquee_forever"
                 android:textColor="@color/black"
+                android:text="Restore or Delete"
                 android:textSize="12sp" />
 
         </LinearLayout>

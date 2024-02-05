@@ -31,6 +31,9 @@ interface ImageDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertDeleteImage(trashBin: TrashBin)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    fun insertDeleteMultipleImage(trashBin: ArrayList<TrashBin>)
+
     @Query("SELECT * FROM trashBin")
     fun getAllDeleteImages(): LiveData<List<TrashBin>>
 

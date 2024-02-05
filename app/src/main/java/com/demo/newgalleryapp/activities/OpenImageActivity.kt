@@ -41,7 +41,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import java.io.File
-import java.util.Timer
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 
 class OpenImageActivity : AppCompatActivity() {
@@ -51,21 +52,61 @@ class OpenImageActivity : AppCompatActivity() {
     private lateinit var backBtn: ImageView
     private lateinit var timeOfImage: TextView
     private lateinit var bottomNavigationView: BottomNavigationView
-    private lateinit var imagesSliderAdapter: ImageSliderAdapter
     private lateinit var toolbar: Toolbar
     private lateinit var originalFilePath: File
     private lateinit var newFile: File
     private var tempList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var fabCount = 0
-    private lateinit var timer: Timer
+    private var anyChanges: Boolean = false
 
     companion object {
         lateinit var models: List<MediaModel>
-
+        lateinit var imagesSliderAdapter: ImageSliderAdapter
     }
 
     private val handler = Handler()
+
+    private fun copyFiles(file: File, destinationDir: File) {
+//        val copiedFiles = mutableListOf<TrashBin>()
+
+//        files.forEach { trash ->
+
+//            val file = File(trash.destinationImagePath)
+        // Create a new File object for the destination file
+        try {
+            val destinationFile = File(destinationDir, file.name)
+
+            // Open an input stream for reading from the source file
+            val inputStream = FileInputStream(file)
+
+            // Open an output stream for writing to the destination file
+            val outputStream = FileOutputStream(destinationFile)
+            try {
+                // Define a buffer for reading from the input stream
+                val buffer = ByteArray(1024)
+                var length: Int
+
+
+                // Read from the input stream and write to the output stream
+                while (inputStream.read(buffer).also { length = it } > 0) {
+                    outputStream.write(buffer, 0, length)
+                }
+//                copiedFiles.add(destinationFile) // Add the copied file to the list
+//                copiedFiles.add(TrashBin(trash.id, destinationFile.path, trash.destinationImagePath, trash.deletionTimestamp)) // Add the copied file to the list
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                // Close the streams
+                inputStream.close()
+                outputStream.close()
+            }
+//        }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
@@ -73,7 +114,9 @@ class OpenImageActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             imagesSliderAdapter.remove(viewPager.currentItem)
+            imagesSliderAdapter.notifyDataSetChanged()
             Toast.makeText(this, "Delete Success.", Toast.LENGTH_SHORT).show()
         } else if (requestCode == 777 && resultCode == Activity.RESULT_OK) {
             try {
@@ -176,7 +219,6 @@ class OpenImageActivity : AppCompatActivity() {
             }
 
             override fun onPageSelected(position: Int) {
-
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -254,7 +296,11 @@ class OpenImageActivity : AppCompatActivity() {
             MediaScannerConnection.scanFile(this, arrayOf(filePath.path), null) { _, uri ->
                 arrayList.add(uri)
                 try {
-                    val pendingIntent: PendingIntent = MediaStore.createTrashRequest(contentResolver, arrayList, true)
+                    copyFiles(
+                        filePath, (application as AppClass).mainViewModel.createTrashDirectory()
+                    )
+                    val pendingIntent: PendingIntent =
+                        MediaStore.createTrashRequest(contentResolver, arrayList, true)
                     startIntentSenderForResult(
                         pendingIntent.intentSender,
                         REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY,
@@ -264,6 +310,7 @@ class OpenImageActivity : AppCompatActivity() {
                         0,
                         null
                     )
+//                    copyFiles(filePath, (application as AppClass).mainViewModel.createTrashDirectory())
                 } catch (e: Exception) {
                     Log.e("TAG", "000AAA: $e")
                 }
@@ -271,10 +318,8 @@ class OpenImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.flag = true
         } else {
             if (imageToDelete.isNotEmpty()) {
-                showPopupForMoveToTrashBinForOpenActivityOnlyOne(bottomNavigationView, imageToDelete)
-                imagesSliderAdapter.remove(
-                    currentPosition
-                )
+                showPopupForMoveToTrashBinForOpenActivityOnlyOne(bottomNavigationView, imageToDelete, currentPosition)
+                anyChanges = true
             } else {
                 CommonFunctions.showToast(this, "Error: Image not found")
             }
@@ -500,10 +545,26 @@ class OpenImageActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+
+        if (anyChanges) {
+            val intent = Intent()
+            setResult(Activity.RESULT_OK, intent)
+        }
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        anyChanges = false
+        super.onBackPressed()
+    }
+
     private fun backBtnHandle() {
         backBtn.setOnClickListener {
+            if (anyChanges) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+            }
             finish()
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            anyChanges = false
         }
     }
 

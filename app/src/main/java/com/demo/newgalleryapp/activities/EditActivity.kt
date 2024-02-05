@@ -242,8 +242,7 @@ class EditActivity : AppCompatActivity() {
             // Use MediaStore API for Android 11 and above
             val contentValues = ContentValues().apply {
                 put(
-                    MediaStore.Images.Media.DISPLAY_NAME,
-                    "edited_image_${System.currentTimeMillis()}.jpg"
+                    MediaStore.Images.Media.DISPLAY_NAME, "edited_image_${System.currentTimeMillis()}.jpg"
                 )
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             }

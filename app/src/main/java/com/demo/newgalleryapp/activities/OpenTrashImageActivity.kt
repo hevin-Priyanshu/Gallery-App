@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -33,7 +32,8 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
     //    private lateinit var recyclerView: RecyclerView
     private lateinit var viewPager: ViewPager
-    private lateinit var textView: TextView
+
+    //    private lateinit var textView: TextView
     private lateinit var backBtn: ImageView
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var toolbar: Toolbar
@@ -41,8 +41,11 @@ class OpenTrashImageActivity : AppCompatActivity() {
     private var tempList: ArrayList<TrashBin> = ArrayList()
     private var tempList2: ArrayList<TrashBin> = ArrayList()
     private var updated: Boolean = false
-    private lateinit var imagesSliderAdapter: ImageSliderAdapter
     private var currentPosition: Int = 0
+
+    companion object {
+        lateinit var imagesSliderAdapter: ImageSliderAdapter
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -65,7 +68,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
         viewPager = findViewById(R.id.viewPager_slider_trash)
 //        recyclerView = findViewById(R.id.recycler_view_trash_new)
-        textView = findViewById(R.id.trash_open_textView)
+//        textView = findViewById(R.id.trash_open_textView)
         backBtn = findViewById(R.id.back_btn_trash_open)
         bottomNavigationView = findViewById(R.id.bottomNavigation_trash)
         toolbar = findViewById(R.id.toolBar)
@@ -83,9 +86,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.allTrashData.observe(this, Observer {
                 tempList2.addAll(it)
                 val trash = it.map {
-                    MediaModel(
-                        0, it.currentPath, it.destinationImagePath, " ", 100, 100, 342343, false
-                    )
+                    MediaModel(0, it.currentPath, it.destinationImagePath, " ", 0, 0, 0, false)
                 }
                 models.addAll(trash)
                 setViewPagerAdapter(models)
@@ -95,19 +96,17 @@ class OpenTrashImageActivity : AppCompatActivity() {
             ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages()
                 .observe(this, Observer { it ->
                     tempList.addAll(it)
-                    val trash = it?.map {
+                    val trash = it.map {
                         MediaModel(
-                            0, it.currentPath, it.destinationImagePath, "", 111, 10, 232343, false
+                            0, it.currentPath, it.destinationImagePath, "", 0, 0, 0, false
                         )
-                    }!!
+                    }
                     models.addAll(trash)
                     setViewPagerAdapter(models)
                     viewPagerDataSetter()
                 })
         }
-
         bottomNavigationViewItemSetter()
-
     }
 
     override fun onBackPressed() {
@@ -124,7 +123,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
-                textView.text = models[position].displayName
+//                textView.text = models[position].path
             }
 
             override fun onPageSelected(position: Int) {
@@ -143,6 +142,14 @@ class OpenTrashImageActivity : AppCompatActivity() {
 //        recyclerView.visibility = View.GONE
         viewPager.adapter = imagesSliderAdapter
         viewPager.setCurrentItem(pos, false)
+
+        if (models.size == 0) {
+            if (updated) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+            }
+            finish()
+        }
     }
 
     private fun bottomNavigationViewItemSetter() {
@@ -188,18 +195,10 @@ class OpenTrashImageActivity : AppCompatActivity() {
                         val trashModel = tempList[currentPosition]
 
                         if (trashModel.currentPath.isNotEmpty()) {
-                            showPopupRestoreOne(bottomNavigationView, trashModel)
-//                            AlertDialog.Builder(this).setTitle("Restore 1 item")
-//                                .setMessage("Are you sure you want to restore these file?")
-//                                .setPositiveButton("Restore") { _, _ ->
-//                                    (application as AppClass).mainViewModel.restoreImage(trashModel)
-//                                    finish()
-//                                }.setNegativeButton("Cancel") { dialog, _ ->
-//                                    dialog.dismiss()
-//                                }.show()
+                            showPopupRestoreOne(bottomNavigationView, trashModel, currentPosition)
+                            updated = true
                         } else {
-                            Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -235,8 +234,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
                         if (trashModel.destinationImagePath.isNotEmpty()) {
 
-                            showPopupForDeletePermanentlyForOne(bottomNavigationView, trashModel)
-                            imagesSliderAdapter.remove(currentPosition)
+                            showPopupForDeletePermanentlyForOne(bottomNavigationView, trashModel, currentPosition)
 
 //                            AlertDialog.Builder(this).setTitle("Delete Image")
 //                                .setMessage("Are you sure you want to delete this image?")

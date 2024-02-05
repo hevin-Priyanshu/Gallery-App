@@ -8,16 +8,21 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.ERROR_TAG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 
@@ -40,7 +45,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var tempVideoList: ArrayList<MediaModel> = ArrayList()
     val folderList: ArrayList<Folder> = ArrayList()
 
-    var allTrashList: ArrayList<TrashBin> = ArrayList()
+    private var allTrashList: ArrayList<TrashBin> = ArrayList()
 
     init {
         allMediaList = getMediaFromInternalStorage()
@@ -50,52 +55,72 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     var flag: Boolean = false
+    var flagForTrashBinActivity: Boolean = false
+    private fun updateMediaData() {
+        val context: Context = getApplication()
+
+        val updatedImageList = getMediaFromInternalStorage()
+        _photosData.postValue(updatedImageList)
+
+        val updatedVideoList = getMediaFromInternalStorage()
+        _videosData.postValue(updatedVideoList)
+
+        val updatedAllDataList = ArrayList<MediaModel>()
+        updatedAllDataList.addAll(updatedImageList)
+        updatedAllDataList.addAll(updatedVideoList)
+        _allData.postValue(updatedAllDataList)
+    }
 
 
     fun getMediaFromInternalStorage(): ArrayList<MediaModel> {
+
         val mediaList = ArrayList<MediaModel>()
 
-        val uriForImages: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
+        viewModelScope.launch(Dispatchers.IO) {
 
-        val uriForVideos: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
-        } else {
-            MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        }
+            val uriForImages: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            }
 
-        // Define the columns you want to retrieve from the MediaStore
-        val projection = arrayOf(
-            MediaStore.MediaColumns._ID,
-            MediaStore.MediaColumns.DISPLAY_NAME,
-            MediaStore.MediaColumns.DATA,
-            MediaStore.MediaColumns.MIME_TYPE,
-            // MediaStore.MediaColumns.DURATION,
-            MediaStore.MediaColumns.SIZE,
-            MediaStore.MediaColumns.DATE_ADDED
-        )
+            val uriForVideos: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            } else {
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+            }
 
-        val sortOrder = "${MediaStore.MediaColumns.DATE_TAKEN} DESC"
+            // Define the columns you want to retrieve from the MediaStore
+            val projection = arrayOf(
+                MediaStore.MediaColumns._ID,
+                MediaStore.MediaColumns.DISPLAY_NAME,
+                MediaStore.MediaColumns.DATA,
+                MediaStore.MediaColumns.MIME_TYPE,
+                // MediaStore.MediaColumns.DURATION,
+                MediaStore.MediaColumns.SIZE,
+                MediaStore.MediaColumns.DATE_ADDED
+            )
 
-        // Query for images
-        val imageList = ArrayList<MediaModel>()
-        queryMediaStore(uriForImages, projection, null, null, sortOrder, imageList, false)
+            val sortOrder = "${MediaStore.MediaColumns.DATE_TAKEN} DESC"
+
+            // Query for images
+            val imageList = ArrayList<MediaModel>()
+            queryMediaStore(uriForImages, projection, null, null, sortOrder, imageList, false)
 //        allImagesSize = imageList.size
-        _photosData.postValue(imageList)
+            _photosData.postValue(imageList)
 
-        // Query for videos
-        val videoList = ArrayList<MediaModel>()
-        queryMediaStore(uriForVideos, projection, null, null, sortOrder, videoList, true)
+            // Query for videos
+            val videoList = ArrayList<MediaModel>()
+            queryMediaStore(uriForVideos, projection, null, null, sortOrder, videoList, true)
 //        allVideosSize = videoList.size
-        _videosData.postValue(videoList)
+            _videosData.postValue(videoList)
 
-        mediaList.addAll(imageList)
-        mediaList.addAll(videoList)
+            mediaList.addAll(imageList)
+            mediaList.addAll(videoList)
 
-        _allData.postValue(mediaList)
+            _allData.postValue(mediaList)
+
+        }
         return mediaList
     }
 
@@ -145,95 +170,108 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (imagePathToDelete.isEmpty()) {
             return
         }
-        val imagePath = File(imagePathToDelete)
-        val trashDirectory = createTrashDirectory()
 
-        if (imagePath.exists()) {
-
-            val destinationImage = File(trashDirectory, imagePath.name)
-
-            if (destinationImage.exists()) {
-                destinationImage.delete()
-            }
-            imagePath.copyTo(destinationImage)
-            val deletionTimestamp = System.currentTimeMillis()// current time in millisec
-
-            val trashBinModel =
-                TrashBin(0, imagePath.toString(), destinationImage.toString(), deletionTimestamp)
-
-            ImagesDatabase.getDatabase(context).favoriteImageDao().insertDeleteImage(trashBinModel)
-
-            imagePath.deleteRecursively()
-            scanFile(context, imagePath)
-
-            val updatedPhotoList = _photosData.value?.toMutableList()
-            updatedPhotoList?.removeAll { it.path == imagePathToDelete }
-            _photosData.postValue(updatedPhotoList)
-
-            // Notify observers about the deletion
-            _photosData.value?.let { _photosData.postValue(it) }
-
-            val updatedVideoList = _videosData.value?.toMutableList()
-            updatedVideoList?.removeAll { it.path == imagePathToDelete }
-            _videosData.postValue(updatedVideoList)
-
-            // Notify observers about the deletion
-            _videosData.value?.let { _videosData.postValue(it) }
-
-            Toast.makeText(getApplication(), "Move To Trash bin Successfully!!", Toast.LENGTH_SHORT)
-                .show()
-        } else {
-            Toast.makeText(getApplication(), "Error deleting file!!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    fun moveMultipleImagesInTrashBin(imagePathsToDelete: List<String>) {
-
-        val context: Context = getApplication()
-
-        if (imagePathsToDelete.isEmpty()) {
-            return
-        }
-
-        val trashDirectory = createTrashDirectory()
-
-        val updatedList = _allData.value?.toMutableList()
-
-        for (imagePathToDelete in imagePathsToDelete) {
+        viewModelScope.launch(Dispatchers.IO) {
             val imagePath = File(imagePathToDelete)
+            val trashDirectory = createTrashDirectory()
 
             if (imagePath.exists()) {
+
                 val destinationImage = File(trashDirectory, imagePath.name)
 
                 if (destinationImage.exists()) {
                     destinationImage.delete()
                 }
-
                 imagePath.copyTo(destinationImage)
+                val deletionTimestamp = System.currentTimeMillis()// current time in millisec
 
-                val deletionTimestamp = System.currentTimeMillis() // current time in millisec
+                val trashBinModel =
+                    TrashBin(
+                        0,
+                        imagePath.toString(),
+                        destinationImage.toString(),
+                        deletionTimestamp
+                    )
 
-                val trashBinModel = TrashBin(
-                    0, imagePath.toString(), destinationImage.toString(), deletionTimestamp
-                )
-
-                ImagesDatabase.getDatabase(context).favoriteImageDao().insertDeleteImage(trashBinModel)
+                ImagesDatabase.getDatabase(context).favoriteImageDao()
+                    .insertDeleteImage(trashBinModel)
 
                 imagePath.deleteRecursively()
                 scanFile(context, imagePath)
-                // Remove the deleted image from the list
-                updatedList?.removeAll { it.path == imagePathToDelete }
-            } else {
-                // Handle the case where the file doesn't exist
-                Toast.makeText(
-                    getApplication(), "Error deleting file: $imagePathToDelete", Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-        // Notify observers about the deletions
-        _allData.postValue(updatedList)
 
-        Toast.makeText(getApplication(), "Move To Trash bin Successfully!!", Toast.LENGTH_SHORT).show()
+                val updatedPhotoList = _photosData.value?.toMutableList()
+                updatedPhotoList?.removeAll { it.path == imagePathToDelete }
+                _photosData.postValue(updatedPhotoList)
+
+                // Notify observers about the deletion
+                _photosData.value?.let { _photosData.postValue(it) }
+
+                val updatedVideoList = _videosData.value?.toMutableList()
+                updatedVideoList?.removeAll { it.path == imagePathToDelete }
+                _videosData.postValue(updatedVideoList)
+
+                // Notify observers about the deletion
+                _videosData.value?.let { _videosData.postValue(it) }
+
+            } else {
+                Log.e(ERROR_TAG, "moveImageInTrashBin: Error deleting file!!")
+            }
+
+        }
+    }
+
+    fun moveMultipleImagesInTrashBin(imagePathsToDelete: List<String>) {
+
+        if (imagePathsToDelete.isEmpty()) {
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val context: Context = getApplication()
+
+            val trashDirectory = createTrashDirectory()
+
+            val updatedList = _allData.value?.toMutableList()
+
+            for (imagePathToDelete in imagePathsToDelete) {
+                val imagePath = File(imagePathToDelete)
+
+                if (imagePath.exists()) {
+                    val destinationImage = File(trashDirectory, imagePath.name)
+
+                    if (destinationImage.exists()) {
+                        destinationImage.delete()
+                    }
+
+                    imagePath.copyTo(destinationImage)
+
+                    val deletionTimestamp = System.currentTimeMillis() // current time in millisec
+
+                    val trashBinModel = TrashBin(
+                        0, imagePath.toString(), destinationImage.toString(), deletionTimestamp
+                    )
+
+                    ImagesDatabase.getDatabase(context).favoriteImageDao()
+                        .insertDeleteImage(trashBinModel)
+
+                    imagePath.deleteRecursively()
+                    scanFile(context, imagePath)
+                    // Remove the deleted image from the list
+                    updatedList?.removeAll { it.path == imagePathToDelete }
+//                Toast.makeText(getApplication(), "Move To Trash bin Successfully!!", Toast.LENGTH_SHORT)
+//                    .show()
+                } else {
+                    // Handle the case where the file doesn't exist
+                    Log.e(
+                        "error",
+                        "moveMultipleImagesInTrashBin: Error deleting file: $imagePathToDelete"
+                    )
+                }
+            }
+            // Notify observers about the deletions
+            _allData.postValue(updatedList)
+        }
     }
 
     //  This function delete images and video permanently
@@ -277,75 +315,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun restoreImage(trashBinModel: TrashBin) {
         val context: Context = getApplication()
 
-        // Get the deleted image information from the database
-        val deletedImage = File(trashBinModel.destinationImagePath)
-        val originalImagePath = File(trashBinModel.currentPath)
+        viewModelScope.launch(Dispatchers.IO) {
 
-        if (deletedImage.exists()) {
-            deletedImage.copyTo(originalImagePath, overwrite = true)
+            // Get the deleted image information from the database
+            val deletedImage = File(trashBinModel.destinationImagePath)
+            val originalImagePath = File(trashBinModel.currentPath)
+
+            if (deletedImage.exists()) {
+                deletedImage.copyTo(originalImagePath, overwrite = true)
 //          org.apache.commons.io.FileUtils.copyFile(deletedImage, originalImagePath)
 
-            deletedImage.deleteRecursively()
+                deletedImage.deleteRecursively()
 
-            scanFile(context, originalImagePath)
-            // Delete the entry from the database
-            ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(trashBinModel)
+                scanFile(context, originalImagePath)
+                // Delete the entry from the database
+                ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(trashBinModel)
 
-            // Notify observers about the restoration
-            val updatedList = _allData.value?.toMutableList()
-            updatedList?.add(
-                MediaModel(
-                    0, originalImagePath.toString(), deletedImage.toString(), "", 0, 0, 0, false
+                // Notify observers about the restoration
+                val updatedList = _allData.value?.toMutableList()
+                updatedList?.add(
+                    MediaModel(
+                        0, originalImagePath.toString(), deletedImage.toString(), "", 0, 0, 0, false
+                    )
                 )
-            )
-            // Add the restored image to the list
-            _allData.postValue(updatedList)
+                // Add the restored image to the list
+                _allData.postValue(updatedList)
+            } else {
+                Log.e("error", "restoreImage: Error restoring file. File not found in trash!!")
+            }
 
-            // Notify UI about the restoration
-            Toast.makeText(getApplication(), "Image restored successfully!!", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(
-                getApplication(),
-                "Error restoring file. File not found in trash!!",
-                Toast.LENGTH_SHORT
-            ).show()
         }
     }
 
     fun restoreMultipleImagesVideos(trashBinModel: ArrayList<TrashBin>) {
         val context: Context = getApplication()
+        viewModelScope.launch {
+            // Get the deleted image information from the database
+            for (get in trashBinModel) {
+                val deletedImage = File(get.destinationImagePath)
+                val originalImagePath = File(get.currentPath)
 
-        // Get the deleted image information from the database
-        for (get in trashBinModel) {
-            val deletedImage = File(get.destinationImagePath)
-            val originalImagePath = File(get.currentPath)
+                if (deletedImage.exists()) {
+                    deletedImage.copyTo(originalImagePath, overwrite = true)
 
-            if (deletedImage.exists()) {
-                deletedImage.copyTo(originalImagePath, overwrite = true)
+                    //org.apache.commons.io.FileUtils.copyFile(deletedImage, originalImagePath)
+                    deletedImage.deleteRecursively()
 
-                //org.apache.commons.io.FileUtils.copyFile(deletedImage, originalImagePath)
-                deletedImage.deleteRecursively()
+                    scanFile(context, originalImagePath)
+                    // Delete the entry from the database
+                    ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(get)
+                    // Notify observers about the restoration
+                    val updatedList = _allData.value?.toMutableList()
+                    updatedList?.add(MediaModel(0, originalImagePath.toString(), deletedImage.toString(), "", 0, 0, 0, false)) // Add the restored image to the list
+                    _allData.postValue(updatedList)
 
-                scanFile(context, originalImagePath)
-                // Delete the entry from the database
-                ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(get)
-
-                // Notify observers about the restoration
-                val updatedList = _allData.value?.toMutableList()
-                updatedList?.add(
-                    MediaModel(0, originalImagePath.toString(), deletedImage.toString(), "", 0, 0, 0, false)
-                ) // Add the restored image to the list
-                _allData.postValue(updatedList)
-
-                Toast.makeText(getApplication(), "Images restored successfully!!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(
-                    getApplication(),
-                    "Error restoring file. File not found in trash!!",
-                    Toast.LENGTH_SHORT
-                ).show()
+                } else {
+                    Log.e("error", "restoreMultipleImagesVideos: Error restoring file. File not found in trash!!")
+                }
+                ////////////
             }
+            ///////////
         }
+        ////////////
     }
 
     fun scanFile(context: Context, file: File) {
@@ -353,7 +384,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // This function create new folder in directory to store the images
-    private fun createTrashDirectory(): File {
+    fun createTrashDirectory(): File {
         val trashDirectory =
             File(getApplication<Application>().getExternalFilesDir(null), ".TrashBin")
         if (!trashDirectory.exists()) {
@@ -391,7 +422,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     @RequiresApi(Build.VERSION_CODES.R)
     fun getAllTrashMedia(): ArrayList<TrashBin> {
 //        allTrashList.clear()
-//        val context: Context = getApplication()
+        val context: Context = getApplication()
 
         val projection = arrayOf(
             MediaStore.MediaColumns._ID,
@@ -430,11 +461,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // Query for images
         val imageList = ArrayList<TrashBin>()
-        queryMediaStoreForAPI30(collectionOfImages, projection, bundle, imageList, null)
+        queryMediaStoreForAPI30(collectionOfImages, projection, bundle, imageList)
 
         // Query for videos
         val videoList = ArrayList<TrashBin>()
-        queryMediaStoreForAPI30(collectionOfVideos, projection, bundle, videoList, null)
+        queryMediaStoreForAPI30(collectionOfVideos, projection, bundle, videoList)
 
 //        val query = context.contentResolver.query(collection, projection, bundle, null)
 
@@ -451,8 +482,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         collectionOfImages: Uri,
         projection: Array<String>,
         bundle: Bundle,
-        list: ArrayList<TrashBin>,
-        nothing: Nothing?
+        list: ArrayList<TrashBin>
     ) {
         val context: Context = getApplication()
         val query = context.contentResolver.query(collectionOfImages, projection, bundle, null)
@@ -473,9 +503,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-
-
-
+//    fun getAllTrashMedia(uri: Uri): ArrayList<TrashBin> {
+//        val context: Context = getApplication()
+//        val trashDir = DocumentFile.fromTreeUri(context, uri) ?: return ArrayList()
+//
+////        val imageFiles = trashDir.listFiles().filter { it.isFile && it.type?.startsWith("android:query-arg-match-trashed") == true }
+//        val imageFiles = trashDir.listFiles().filter { it.name?.startsWith(".") == true }
+//
+//        val trashItemsList = ArrayList<TrashBin>()
+//        imageFiles.let { imageList ->
+//            trashItemsList.addAll(imageList.map {
+////                TrashBin(id = -1, it.name!!, it.lastModified(), it.uri)
+//                TrashBin(0, it.name!!, it.uri.toString(), it.lastModified())
+//            })
+//        }
+//
+//        _allTrashData.postValue(trashItemsList)
+//        return trashItemsList
+//    }
 
 
 //    @RequiresApi(Build.VERSION_CODES.R)

@@ -77,6 +77,10 @@ dependencies {
     // images filters libray
     implementation ("net.alhazmy13.ImageFilters:library:0.1.2-beta")
 
+    //gson // Or the latest version
+    implementation ("com.google.code.gson:gson:2.8.8")
+
+
     implementation ("commons-io:commons-io:2.11.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")

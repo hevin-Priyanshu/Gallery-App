@@ -17,6 +17,7 @@ import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
 import java.io.File
 
 class ImagesAd(
@@ -52,6 +53,25 @@ class ImagesAd(
         }
     }
 
+    fun removeItemsFromAdapter(itemsToRemove: List<String>) {
+        val iterator = dataList.iterator()
+        while (iterator.hasNext()) {
+            val item = iterator.next()
+            if (item is MediaModel) {
+                val model = item as MediaModel
+                if (itemsToRemove.contains(model.path)) {
+                    iterator.remove() // Remove the model from the list
+                }
+            } else if (item is String) {
+                val path = item as String
+                if (itemsToRemove.contains(path)) {
+                    iterator.remove() // Remove the string from the list
+                }
+            }
+            // Handle other types as needed
+        }
+        notifyDataSetChanged() // Notify the adapter of the data set change
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
         return if (viewType == 101) {
@@ -139,7 +159,7 @@ class ImagesAd(
                         }
                     }
                     intent.putExtra("currentState", state)
-                    context.startActivityForResult(intent, 11)
+                    context.startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY)
                 }
             }
 

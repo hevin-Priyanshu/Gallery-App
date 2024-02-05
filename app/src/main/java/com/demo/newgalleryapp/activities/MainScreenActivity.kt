@@ -32,6 +32,8 @@ import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_PERMISSION
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.resetVisibilityForDeleteItem
@@ -78,8 +80,8 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) ||
+            (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -139,8 +141,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         runOnUiThread {
             progressBar.visibility = View.GONE
 
-            setupFragments()
-
+//            setupFragments()
             bottomNavigationView.setOnItemSelectedListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.mediaItem -> {
@@ -158,7 +159,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                 true
             }
 
-//            bottomNavigationView.selectedItemId = R.id.mediaItem
+            bottomNavigationView.selectedItemId = R.id.mediaItem
         }
 
         bottomNavigationViewForLongSelect.setOnItemSelectedListener { menuItem ->
@@ -177,7 +178,17 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     private fun handleDeleteAction() {
         checkBoxList.clear()
-        checkBoxList.addAll(photosFragment.imagesAdapter!!.checkSelectedList)
+
+        val fragmentList = if (mediaFragment.viewPager.currentItem == 0) {
+            // If video is selected, get selected items from videoFragment
+            photosFragment.imagesAdapter?.checkSelectedList
+        } else {
+            // Otherwise, get selected items from photosFragment
+            videosFragment.imagesAdapter?.checkSelectedList
+        }
+//        val photosFragmentList = photosFragment.imagesAdapter!!.checkSelectedList
+
+        checkBoxList.addAll(fragmentList!!)
         val paths = checkBoxList.map { it.path }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -209,7 +220,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             } else {
                 showToast(this, "No images Selected to delete")
             }
-
         } else {
             if (paths.isNotEmpty()) {
                 showDeleteConfirmationDialog(paths)

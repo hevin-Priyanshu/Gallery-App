@@ -56,9 +56,9 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
         return view
     }
 
-//    override fun getItemPosition(`object`: Any): Int {
-//        return POSITION_NONE
-//    }
+    override fun getItemPosition(`object`: Any): Int {
+        return POSITION_NONE
+    }
 
     fun remove(position: Int) {
         if (position >= 0 && position < modelList.size) {

@@ -168,8 +168,7 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                 try {
                     if (uri != null) {
                         arrayList.add(uri)
-                        val pendingIntent: PendingIntent =
-                            MediaStore.createWriteRequest(contentResolver, arrayList)
+                        val pendingIntent: PendingIntent = MediaStore.createWriteRequest(contentResolver, arrayList)
                         startIntentSenderForResult(
                             pendingIntent.intentSender,
                             REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY,

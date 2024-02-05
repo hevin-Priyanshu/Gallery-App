@@ -23,7 +23,7 @@ import java.io.File
 class AlbumsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var folderAdapter: FolderAdapter
+    private var folderAdapter: FolderAdapter? = null
     private lateinit var searchEditTextAlbum: EditText
     private lateinit var search_close_btn: ImageView
     private var tempFolderList: ArrayList<Folder> = ArrayList()
@@ -95,7 +95,9 @@ class AlbumsFragment : Fragment() {
         }
 
         // Update the adapter with the filtered list
-        folderAdapter.updateData(filteredList)
+        if (folderAdapter != null) {
+            folderAdapter?.updateData(filteredList)
+        }
     }
 
     private fun observeAllData() {

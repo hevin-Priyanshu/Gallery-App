@@ -48,7 +48,7 @@ class MediaFragment : Fragment(), ImageClickListener {
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
     private lateinit var toolbar: Toolbar
-    private lateinit var viewPager: ViewPager
+    lateinit var viewPager: ViewPager
     private var allMediaList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var popupWindow2: PopupWindow? = null
@@ -92,7 +92,8 @@ class MediaFragment : Fragment(), ImageClickListener {
         textViewSelectAllMedia.setOnClickListener {
 
             if (viewPager.currentItem == 0) {
-                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
+                val photoList =
+                    (requireActivity().application as AppClass).mainViewModel.tempPhotoList
 
                 photosFragment.imagesAdapter?.isSelected = true
                 photosFragment.imagesAdapter?.updateSelectionState(true)
@@ -103,7 +104,8 @@ class MediaFragment : Fragment(), ImageClickListener {
                 textViewDeSelectAllMedia.visibility = View.VISIBLE
 
             } else {
-                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
+                val videoList =
+                    (requireActivity().application as AppClass).mainViewModel.tempVideoList
                 videosFragment.imagesAdapter?.isSelected = true
                 videosFragment.imagesAdapter?.updateSelectionState(true)
                 photosFragment.imagesAdapter?.checkSelectedList?.clear()
@@ -118,7 +120,8 @@ class MediaFragment : Fragment(), ImageClickListener {
 
             if (viewPager.currentItem == 0) {
 
-                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
+                val photoList =
+                    (requireActivity().application as AppClass).mainViewModel.tempPhotoList
                 photosFragment.imagesAdapter?.isSelected = false
                 photosFragment.imagesAdapter?.updateSelectionState(false)
                 photosFragment.imagesAdapter?.checkSelectedList?.removeAll(photoList.toSet())
@@ -127,7 +130,8 @@ class MediaFragment : Fragment(), ImageClickListener {
                 textViewSelectAllMedia.visibility = View.VISIBLE
             } else {
 
-                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
+                val videoList =
+                    (requireActivity().application as AppClass).mainViewModel.tempVideoList
                 videosFragment.imagesAdapter?.isSelected = false
                 videosFragment.imagesAdapter?.updateSelectionState(false)
                 videosFragment.imagesAdapter?.checkSelectedList?.removeAll(videoList.toSet())

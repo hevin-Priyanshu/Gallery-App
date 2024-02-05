@@ -3,8 +3,6 @@ package com.demo.newgalleryapp.adapters
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
-import android.net.Uri
-import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -23,6 +21,8 @@ import com.demo.newgalleryapp.activities.OpenTrashImageActivity
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
+import java.io.File
 
 
 class TrashBinAdapter(
@@ -103,7 +103,7 @@ class TrashBinAdapter(
             } else {
                 val intentTrash = Intent(context, OpenTrashImageActivity::class.java)
                 intentTrash.putExtra("trashBinPos", position)
-                context.startActivityForResult(intentTrash, 108)
+                context.startActivityForResult(intentTrash, REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY)
             }
         }
 
@@ -125,6 +125,10 @@ class TrashBinAdapter(
         }
 
         val imagePath = list[position].destinationImagePath
+//        Picasso.get()
+//            .load(fileName)
+//            .error(R.drawable.placeholder)
+//            .into(holder.image)
 
 //        val imageUri = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA))
 
