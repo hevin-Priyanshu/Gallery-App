@@ -1,11 +1,11 @@
 package com.demo.newgalleryapp.adapters
 
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -18,6 +18,7 @@ class FilterAdapter(
 ) : RecyclerView.Adapter<FilterAdapter.FilterViewHolder>() {
 
     private val filterNames = arrayOf(
+        "None",
         "Gray",
         "Relief",
         "Average Blur",
@@ -41,7 +42,7 @@ class FilterAdapter(
     var selectedPosition = RecyclerView.NO_POSITION
 
     interface OnItemClickListener {
-        fun onItemClick(filter: ImageFilter.Filter)
+        fun onItemClick(filter: ImageFilter.Filter, position: Int)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FilterViewHolder {
@@ -60,8 +61,10 @@ class FilterAdapter(
     }
 
     inner class FilterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val filterImageView: ImageView = itemView.findViewById(R.id.imageCrop_filter_preview)
+        private val filterImageView: ImageView =
+            itemView.findViewById(R.id.imageCrop_filter_preview)
         private val filterNameTextView: TextView = itemView.findViewById(R.id.filters_text)
+        private val filterCardView: CardView = itemView.findViewById(R.id.card_view_filter)
 
         init {
             itemView.setOnClickListener {
@@ -75,8 +78,10 @@ class FilterAdapter(
                         notifyItemChanged(previousSelected)
                         notifyItemChanged(selectedPosition)
 
+                        notifyDataSetChanged()
+
                         val filter = filterList[position]
-                        listener.onItemClick(filter)
+                        listener.onItemClick(filter, position)
                     }
                 }
             }
@@ -86,31 +91,66 @@ class FilterAdapter(
             // Load filtered image preview using Glide
             val requestOptions = RequestOptions().fitCenter()
 
-            Glide.with(itemView).load(getFilterPreviewResourceId(filter)) // Replace with your image resource ID
+            Glide.with(itemView)
+                .load(getFilterPreviewResourceId(filter)) // Replace with your image resource ID
                 .apply(requestOptions).into(filterImageView)
 
             filterNameTextView.text = getFilterName(filter)
 
             if (adapterPosition == selectedPosition) {
-                filterNameTextView.setBackgroundColor(
-                    ContextCompat.getColor(
-                        itemView.context, R.color.selected_filter_color
-                    )
+//
+                filterCardView.background = ContextCompat.getDrawable(
+                    itemView.context, R.drawable.cardview_selector
                 )
-                filterNameTextView.setTextColor(
+
+//                filterCardView.isSelected = true
+
+//                filterCardView.setBackgroundResource(
+//                    R.drawable.cardview_selector
+//                )
+
+//                filterNameTextView.setBackgroundColor(
+//                    ContextCompat.getColor(
+//                        itemView.context, R.color.selected_filter_color
+//                    )
+//                )
+//                filterNameTextView.setTextColor(
+//                    ContextCompat.getColor(
+//                        itemView.context, R.color.white
+//                    )
+//                )
+            } else {
+
+
+//                filterCardView.setBackgroundResource(0)
+//                    itemView.context.resources.getDimensionPixelSize(com.intuit.sdp.R.dimen._4sdp)
+
+                filterCardView.background = null
+                filterCardView.setCardBackgroundColor(
                     ContextCompat.getColor(
                         itemView.context, R.color.white
                     )
                 )
-            } else {
-                filterNameTextView.setBackgroundColor(Color.TRANSPARENT)
-                filterNameTextView.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context, R.color.black
-                    )
-                )
+                filterCardView.cardElevation = 4f
+                filterCardView.radius = 50f
+
+//                filterCardView.isSelected = false
+
+//                filterCardView.cardElevation = ContextCompat.dimensions(
+//                    itemView.context, R.drawable.cardview_selector
+//                )
+
+////                filterNameTextView.setBackgroundColor(Color.TRANSPARENT)
+//                filterNameTextView.setTextColor(
+//                    ContextCompat.getColor(
+//                        itemView.context, R.color.black
+//                    )
+//                )
             }
+            //////////
         }
+
+        //////////////
     }
 
 
@@ -122,6 +162,7 @@ class FilterAdapter(
         // Return the resource ID corresponding to the filter
         return when (filter) {
 
+            ImageFilter.Filter.GRAY -> R.drawable.cardview_selector
             ImageFilter.Filter.GRAY -> R.drawable.gray_preview_image
             ImageFilter.Filter.RELIEF -> R.drawable.relief_preview_image
             ImageFilter.Filter.AVERAGE_BLUR -> R.drawable.average_preview_image

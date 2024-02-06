@@ -1,7 +1,10 @@
 package com.demo.newgalleryapp.activities
 
+import android.app.Activity
 import android.content.ContentValues
+import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -21,6 +24,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -31,14 +35,16 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.FilterAdapter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.alhazmy13.imagefilter.ImageFilter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.concurrent.Executors
 
 
 class EditActivity : AppCompatActivity() {
@@ -54,7 +60,9 @@ class EditActivity : AppCompatActivity() {
     private lateinit var editProgressBar: ProgressBar
     lateinit var toolbar: Toolbar
     private lateinit var filteredBitmap: Bitmap
+    private var anyChanges: Boolean = false
     private var popupWindow: PopupWindow? = null
+    private var scopeJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +96,13 @@ class EditActivity : AppCompatActivity() {
         val uriString = intent.getStringExtra("Uri")
 
         backBtn.setOnClickListener {
+            if (anyChanges) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+                anyChanges = false
+            }
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            scopeJob?.cancel()
             finish()
         }
 
@@ -134,10 +149,57 @@ class EditActivity : AppCompatActivity() {
 
                 filterAdapter =
                     FilterAdapter(createFilterList(), object : FilterAdapter.OnItemClickListener {
-                        override fun onItemClick(filter: ImageFilter.Filter) {
-                            Executors.newSingleThreadExecutor().execute {
-                                applyFilter(filter)
+//                        override fun onItemClick(filter: ImageFilter.Filter) {
+//                            scopeJob?.cancel()
+////                            scopeJob?.ensureActive()
+////                            Executors.newSingleThreadExecutor().execute {
+////                                applyFilter(filter)
+////                            }
+//                            scopeJob = lifecycleScope.launch(Dispatchers.IO) {
+//                                applyFilter(filter)
+//                            }
+//                        }
+
+                        override fun onItemClick(filter: ImageFilter.Filter, position: Int) {
+                            scopeJob?.cancel()
+
+                            if (position == 0) {
+                                runOnUiThread {
+                                    Glide.with(this@EditActivity).load(uriString)
+                                        .listener(object : RequestListener<Drawable> {
+                                            override fun onLoadFailed(
+                                                e: GlideException?,
+                                                model: Any?,
+                                                target: Target<Drawable>?,
+                                                isFirstResource: Boolean
+                                            ): Boolean {
+                                                return false
+                                            }
+
+                                            override fun onResourceReady(
+                                                resource: Drawable?,
+                                                model: Any?,
+                                                target: Target<Drawable>?,
+                                                dataSource: DataSource?,
+                                                isFirstResource: Boolean
+                                            ): Boolean {
+                                                Log.d("IA", "onResourceReady: ${model.toString()}")
+                                                return false
+                                            }
+                                        }).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+                                        .into(cropView)
+
+                                    val noneImageFilter = uriStringToBitmap(uriString)
+                                    saveBitmapToInternalStorage(noneImageFilter!!)
+                                    anyChanges = true
+                                }
+
+                            } else {
+                                scopeJob = lifecycleScope.launch(Dispatchers.IO) {
+                                    applyFilter(filter)
+                                }
                             }
+                            ////////////////
                         }
                     })
                 filterRecyclerView.layoutManager =
@@ -176,6 +238,16 @@ class EditActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        if (anyChanges) {
+            val intent = Intent()
+            setResult(Activity.RESULT_OK, intent)
+            anyChanges = false
+        }
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        scopeJob?.cancel()
+        super.onBackPressed()
+    }
 
     private fun showThreeDotPopup(anchorView: View) {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -194,9 +266,10 @@ class EditActivity : AppCompatActivity() {
 
         popupTextSave.setOnClickListener {
             saveBitmapToInternalStorage(filteredBitmap)
-            (application as AppClass).mainViewModel.flag = true
+            anyChanges = true
             Toast.makeText(this, "Image Save Successfully!!", Toast.LENGTH_SHORT).show()
-            finish()
+            popupWindow?.dismiss()
+            scopeJob?.cancel()
         }
 
         popupTextCancel.setOnClickListener {
@@ -219,15 +292,16 @@ class EditActivity : AppCompatActivity() {
         return ImageFilter.Filter.values().toList()
     }
 
-    private fun applyFilter(filter: ImageFilter.Filter) {
-        runOnUiThread {
+    private suspend fun applyFilter(filter: ImageFilter.Filter) {
+//        runOnUiThread {
+        withContext(Dispatchers.Main) {
             editProgressBar.visibility = View.VISIBLE
         }
 
         // Apply the selected filter to the main image
         filteredBitmap = ImageFilter.applyFilter(originalBitmap, filter)
 
-        runOnUiThread {
+        withContext(Dispatchers.Main) {
             cropView.setImageBitmap(filteredBitmap)
             saveEditedImage.visibility = View.VISIBLE
             editProgressBar.visibility = View.GONE
@@ -242,7 +316,8 @@ class EditActivity : AppCompatActivity() {
             // Use MediaStore API for Android 11 and above
             val contentValues = ContentValues().apply {
                 put(
-                    MediaStore.Images.Media.DISPLAY_NAME, "edited_image_${System.currentTimeMillis()}.jpg"
+                    MediaStore.Images.Media.DISPLAY_NAME,
+                    "edited_image_${System.currentTimeMillis()}.jpg"
                 )
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
             }
@@ -289,5 +364,21 @@ class EditActivity : AppCompatActivity() {
             /////////////////////////
         }
     }
+
+
+    fun uriStringToBitmap(uriString: String): Bitmap? {
+        try {
+            // Convert the URI string to a URI object
+            val uri = Uri.parse(uriString)
+
+            // Use the URI to load the image as a Bitmap
+            val inputStream = contentResolver.openInputStream(uri)
+            return BitmapFactory.decodeStream(inputStream)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
     /////////////////////////
 }

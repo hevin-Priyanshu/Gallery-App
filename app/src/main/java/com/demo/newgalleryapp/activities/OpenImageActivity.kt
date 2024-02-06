@@ -27,10 +27,13 @@ import androidx.core.view.get
 import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.formatDate
@@ -118,6 +121,13 @@ class OpenImageActivity : AppCompatActivity() {
             imagesSliderAdapter.remove(viewPager.currentItem)
             imagesSliderAdapter.notifyDataSetChanged()
             Toast.makeText(this, "Delete Success.", Toast.LENGTH_SHORT).show()
+        } else if ((requestCode == REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY && resultCode == Activity.RESULT_OK) ||
+            (requestCode == REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)
+        ) {
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            photosFragment.imagesAdapter?.notifyDataSetChanged()
+            videosFragment.imagesAdapter?.notifyDataSetChanged()
+
         } else if (requestCode == 777 && resultCode == Activity.RESULT_OK) {
             try {
                 originalFilePath.copyTo(newFile)
@@ -131,14 +141,16 @@ class OpenImageActivity : AppCompatActivity() {
                 Log.e("error12", "onActivityResult: ${e.message}")
             }
         } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+
             val result = CropImage.getActivityResult(data)
+
             if (resultCode == Activity.RESULT_OK) {
                 result.uri?.let { uri ->
 //                    imagesSliderAdapter?.setImages(uri)
                     Log.d("cropView", "onActivityResult: $uri")
                     val intent = Intent(this, EditActivity::class.java)
                     intent.putExtra("Uri", uri.toString())
-                    startActivity(intent)
+                    startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY)
 //                    saveImageToDestination(uri, File(File(models[viewPager.currentItem].path).parent, "edited_image_${System.currentTimeMillis()}.jpg").path)
                 }
             } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
@@ -263,8 +275,8 @@ class OpenImageActivity : AppCompatActivity() {
             when (menuItem.itemId) {
                 R.id.shareItem -> handleShareItem(currentPosition)
                 R.id.favoriteItemUnSelect -> handleFavoriteItem(currentPosition)
-                R.id.deleteItem -> handleDeleteItem(currentPosition)
                 R.id.editItem -> handleEditItem(currentPosition)
+                R.id.deleteItem -> handleDeleteItem(currentPosition)
                 R.id.moreItem -> handleMoreItem()
             }
             true
@@ -318,7 +330,9 @@ class OpenImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.flag = true
         } else {
             if (imageToDelete.isNotEmpty()) {
-                showPopupForMoveToTrashBinForOpenActivityOnlyOne(bottomNavigationView, imageToDelete, currentPosition)
+                showPopupForMoveToTrashBinForOpenActivityOnlyOne(
+                    bottomNavigationView, imageToDelete, currentPosition
+                )
                 anyChanges = true
             } else {
                 CommonFunctions.showToast(this, "Error: Image not found")
@@ -550,9 +564,9 @@ class OpenImageActivity : AppCompatActivity() {
         if (anyChanges) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
+            anyChanges = false
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        anyChanges = false
         super.onBackPressed()
     }
 

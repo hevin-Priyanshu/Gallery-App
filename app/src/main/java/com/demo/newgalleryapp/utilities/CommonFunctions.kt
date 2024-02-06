@@ -18,16 +18,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.FolderImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationView
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationViewForLongSelect
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.imagesSliderAdapter
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity.Companion.trashBinAdapter
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForMainText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
+import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
+import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.TrashBin
 import java.io.File
 import java.io.IOException
@@ -57,6 +61,7 @@ object CommonFunctions {
     const val REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY = 111
     const val REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY = 112
     const val REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY = 113
+    const val REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY = 114
 
     const val ERROR_TAG = "Error"
     var FLAG_IN_FOLDER_ACTIVITY: Boolean = false
@@ -168,7 +173,13 @@ object CommonFunctions {
     }
 
     // here move multiple files in trash bin,  popup menu will show
-    fun Context.showPopupForMoveToTrashBin(anchorView: View, paths: List<String>) {
+    fun Context.showPopupForMoveToTrashBin(
+        anchorView: View,
+        paths: List<String>,
+        activity: Activity,
+        pathsToRemove: List<String>,
+        position: Int
+    ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowDelete: View = inflater.inflate(R.layout.delete_popup_menu, null)
@@ -195,14 +206,44 @@ object CommonFunctions {
 
         saveBtn.setOnClickListener {
             (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
-            photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+
+            if (activity is FolderImagesActivity) {
+                removeItemsAtPosition(position, pathsToRemove)
+                FolderImagesActivity.adapter.notifyDataSetChanged()
+                setAllVisibility()
+            } else if (activity is MainScreenActivity) {
+
+                if (viewPager.currentItem == 0) {
+                    photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+                } else {
+                    videosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+                }
+                resetVisibilityForDeleteItem()
+
+            }
             popupWindow_delete?.dismiss()
-            resetVisibilityForDeleteItem()
         }
 
         cancelBtn.setOnClickListener {
             popupWindow_delete?.dismiss()
+            setAllVisibility()
             resetVisibilityForDeleteItem()
+        }
+    }
+
+
+    private fun Context.removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
+        if (position >= 0 && position < (applicationContext as AppClass).mainViewModel.folderList.size) {
+
+            val folder = (applicationContext as AppClass).mainViewModel.folderList[position]
+            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
+            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
+
+            // Update the mainViewModel.folderList
+            (applicationContext as AppClass).mainViewModel.folderList[position] = updatedFolder
+
+            // Notify the adapter about the data change
+            FolderImagesActivity.adapter.updateList(updatedList)
         }
     }
 
@@ -283,7 +324,9 @@ object CommonFunctions {
         restoreBtn.setOnClickListener {
 //            (anchorView.context.applicationContext as AppClass).mainViewModel.restoreMultipleImagesVideos(selectedItemList)
 
-            (applicationContext as AppClass).mainViewModel.restoreMultipleImagesVideos(selectedItemList)
+            (applicationContext as AppClass).mainViewModel.restoreMultipleImagesVideos(
+                selectedItemList
+            )
             (applicationContext as AppClass).mainViewModel.flagForTrashBinActivity = true
             showToast(this, "Restore Successful!!")
             popupWindow_restore_trash?.dismiss()
@@ -421,7 +464,6 @@ object CommonFunctions {
         }
     }
 
-
     private fun getImageFileExtension(fileName: String): String {
         return if (fileName.contains(".")) {
             fileName.substringAfterLast(".", "")
@@ -432,12 +474,19 @@ object CommonFunctions {
 
     fun resetVisibilityForDeleteItem() {
         photosFragment.imagesAdapter?.updateSelectionState(false)
+        videosFragment.imagesAdapter?.updateSelectionState(false)
         bottomNavigationViewForLongSelect.visibility = View.GONE
         linearLayoutForSelectText.visibility = View.GONE
         bottomNavigationView.visibility = View.VISIBLE
         linearLayoutForMainText.visibility = View.VISIBLE
     }
 
+    private fun setAllVisibility() {
+        FolderImagesActivity.adapter.updateSelectionState(false)
+        FolderImagesActivity.bottomNavigationView.visibility = View.GONE
+        FolderImagesActivity.unselect_top_menu_bar.visibility = View.GONE
+        FolderImagesActivity.select_top_menu_bar.visibility = View.VISIBLE
+    }
 
     private fun trashBinActivityAllVisibility() {
         trashBinAdapter.updateSelectionState(false)

@@ -14,7 +14,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
@@ -29,8 +28,9 @@ import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
-import com.demo.newgalleryapp.utilities.CommonFunctions
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
 
@@ -40,18 +40,22 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var viewPager: ViewPager
     private lateinit var backBtn: ImageView
     private lateinit var closeBtn: ImageView
-    private lateinit var bottomNavigationView: BottomNavigationView
-    lateinit var adapter: ImagesAdapter
     private lateinit var itemSelected: TextView
     private lateinit var setTextAccToData: TextView
     private lateinit var albumFolderSize: TextView
-    private lateinit var select_top_menu_bar: LinearLayout
-    private lateinit var unselect_top_menu_bar: LinearLayout
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
     private var newList: ArrayList<MediaModel> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     var position: Int = 0
     private var updated: Boolean = false
+
+    companion object {
+        lateinit var adapter: ImagesAdapter
+        lateinit var bottomNavigationView: BottomNavigationView
+        lateinit var select_top_menu_bar: LinearLayout
+        lateinit var unselect_top_menu_bar: LinearLayout
+
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -60,6 +64,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 val pathsToRemove = checkBoxList.map { it.path }
                 removeItemsAtPosition(position, pathsToRemove)
                 adapter.notifyDataSetChanged()
+                updated = true
             }
         } else if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
             updated = true
@@ -89,6 +94,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             if (updated) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
+                updated = false
             }
             finish()
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -141,7 +147,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
         if (selectedImages.isNotEmpty()) {
             val uris = ArrayList<Uri>()
-
             // Convert file paths to Uri using FileProvider
             for (file in selectedImages) {
                 val uri = FileProvider.getUriForFile(
@@ -152,23 +157,22 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             // Handle share item
             (application as AppClass).mainViewModel.shareMultipleImages(uris, this)
         } else {
-            Toast.makeText(this, "No images selected to share", Toast.LENGTH_SHORT).show()
+            showToast(this@FolderImagesActivity, "No images selected to share")
         }
     }
-
 
     private fun handleFavoriteAction() {
         checkBoxList.clear()
         checkBoxList.addAll(adapter.checkSelectedList)
 
         if (checkBoxList.isEmpty()) {
-            CommonFunctions.showToast(this, "No images selected to add favorites!!")
+            showToast(this, "No images selected to add favorites!!")
         } else {
             for (addFavorite in checkBoxList) {
                 ImagesDatabase.getDatabase(this@FolderImagesActivity).favoriteImageDao()
                     .insertFavorite(addFavorite)
             }
-            CommonFunctions.showToast(this, "Favorite Added")
+            showToast(this, "Favorite Added")
             setAllVisibility()
         }
     }
@@ -201,27 +205,38 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             setAllVisibility()
         } else {
             if (paths.isNotEmpty()) {
-                val numImagesToDelete = paths.size
+//                val numImagesToDelete = paths.size
+                val pathsToRemove = checkBoxList.map { it.path }
 
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Delete $numImagesToDelete Item?")
-                    .setMessage("Are you sure to move $numImagesToDelete files to the trash bin?")
-                    .setPositiveButton("Delete") { _, _ ->
-                        // User clicked "Yes", proceed with deletion
-                        // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-                        (application as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
-                        setAllVisibility()
+                showPopupForMoveToTrashBin(bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position)
 
-                        val pathsToRemove = checkBoxList.map { it.path }
-                        removeItemsAtPosition(position, pathsToRemove)
-                        adapter.notifyDataSetChanged()
+//                setAllVisibility()
 
-                    }.setNegativeButton("Cancel") { dialog, _ ->
-                        // User clicked "No", do nothing
-                        dialog.dismiss()
-                    }.show()
+//                removeItemsAtPosition(position, pathsToRemove)
+//                adapter.notifyDataSetChanged()
+
+
+//                androidx.appcompat.app.AlertDialog.Builder(this)
+//                    .setTitle("Delete $numImagesToDelete Item?")
+//                    .setMessage("Are you sure to move $numImagesToDelete files to the trash bin?")
+//                    .setPositiveButton("Delete") { _, _ ->
+//                        // User clicked "Yes", proceed with deletion
+//                        // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
+//                        (application as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
+//
+//
+//                        setAllVisibility()
+//
+//                        val pathsToRemove = checkBoxList.map { it.path }
+//                        removeItemsAtPosition(position, pathsToRemove)
+//                        adapter.notifyDataSetChanged()
+//
+//                    }.setNegativeButton("Cancel") { dialog, _ ->
+//                        // User clicked "No", do nothing
+//                        dialog.dismiss()
+//                    }.show()
             } else {
-                Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT).show()
+                showToast(this@FolderImagesActivity, "Error: Image not found")
             }
         }
     }
@@ -323,8 +338,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         val imageViewWidth = screenWidth / sharedPreferencesHelper.getGridColumns()
 
         // Set layout parameters for the RecyclerView items
-        val layoutParams =
-            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
+        RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
 
         // Create a GridLayoutManager with the specified number of columns
         val gridLayoutManager = GridLayoutManager(
@@ -361,6 +375,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         if (updated) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
+            updated = false
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()

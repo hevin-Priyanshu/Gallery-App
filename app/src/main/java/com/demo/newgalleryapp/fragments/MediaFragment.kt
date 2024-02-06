@@ -50,7 +50,6 @@ class MediaFragment : Fragment(), ImageClickListener {
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
     private lateinit var toolbar: Toolbar
-    lateinit var viewPager: ViewPager
     private var allMediaList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var popupWindow2: PopupWindow? = null
@@ -58,6 +57,7 @@ class MediaFragment : Fragment(), ImageClickListener {
 
     companion object {
 
+        lateinit var viewPager: ViewPager
         lateinit var textViewSelectAllMedia: TextView
         lateinit var textViewDeSelectAllMedia: TextView
         lateinit var linearLayoutForMainText: LinearLayout

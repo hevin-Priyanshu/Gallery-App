@@ -31,7 +31,7 @@ class TrashBinAdapter(
     private val listener: ImageClickListener? = null
 ) : RecyclerView.Adapter<TrashBinAdapter.TrashBinViewHolder>() {
 
-    private var isSelected = false
+    var isSelected = false
     var checkTrashSelectedList: ArrayList<TrashBin> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
 

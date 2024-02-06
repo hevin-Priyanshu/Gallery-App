@@ -38,6 +38,7 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_OPEN_DOCUME
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_RESTORE_PERMISSION_IN_TRASH_BIN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForDeletePermanently
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupRestoreMultiple
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
@@ -141,7 +142,9 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
         itemSelectedAllTrashBinTxt.setOnClickListener {
             trashBinAdapter.updateSelectionState(true)
+            trashBinAdapter.isSelected = true
             trashBinAdapter.notifyDataSetChanged()
+            showToast(this, "Click")
 //            bottomNavigationView.visibility = View.GONE
 //            linearLayoutForMainText.visibility = View.VISIBLE
 //            linearLayoutForSelectText.visibility = View.GONE

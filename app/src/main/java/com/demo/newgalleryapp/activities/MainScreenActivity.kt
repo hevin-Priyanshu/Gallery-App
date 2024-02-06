@@ -25,6 +25,7 @@ import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.fragments.AlbumsFragment
 import com.demo.newgalleryapp.fragments.MediaFragment
+import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
 import com.demo.newgalleryapp.fragments.PhotosFragment
 import com.demo.newgalleryapp.fragments.SettingFragment
 import com.demo.newgalleryapp.fragments.VideosFragment
@@ -53,7 +54,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     private lateinit var progressBar: ProgressBar
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
     lateinit var mediaFragment: MediaFragment
-    lateinit var albumsFragment: AlbumsFragment
+    private lateinit var albumsFragment: AlbumsFragment
     private var currentFragment: Fragment? = null
     lateinit var sharedPreferencesHelper: SharedPreferencesHelper
 
@@ -80,8 +81,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) ||
-            (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -179,11 +179,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     private fun handleDeleteAction() {
         checkBoxList.clear()
 
-        val fragmentList = if (mediaFragment.viewPager.currentItem == 0) {
-            // If video is selected, get selected items from videoFragment
+        val fragmentList = if (viewPager.currentItem == 0) {
+            // if photo is selected, get selected items from photosFragment
             photosFragment.imagesAdapter?.checkSelectedList
         } else {
-            // Otherwise, get selected items from photosFragment
+            // If video is selected, get selected items from videoFragment
             videosFragment.imagesAdapter?.checkSelectedList
         }
 //        val photosFragmentList = photosFragment.imagesAdapter!!.checkSelectedList
@@ -231,7 +231,10 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     private fun showDeleteConfirmationDialog(paths: List<String>) {
         if (paths.isNotEmpty()) {
-            showPopupForMoveToTrashBin(bottomNavigationViewForLongSelect, paths)
+            showPopupForMoveToTrashBin(
+                bottomNavigationViewForLongSelect,
+                paths, this@MainScreenActivity, paths, 0
+            )
         } else {
             showToast(this, "Error: Image not found")
         }

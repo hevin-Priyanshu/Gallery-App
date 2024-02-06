@@ -63,7 +63,7 @@
         android:src="@drawable/ic_launcher_background" />
 
     <androidx.cardview.widget.CardView xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/card_view_filter"
+        android:id="@+id/wallpaper_card_view"
         android:layout_width="@dimen/_180sdp"
         android:layout_height="@dimen/_43sdp"
         android:layout_alignParentBottom="true"

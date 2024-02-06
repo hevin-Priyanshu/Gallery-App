@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- When the card view is pressed -->
-    <item android:state_pressed="true" android:drawable="@color/color_main" />
-    <!-- When the card view is focused -->
-    <item android:state_focused="true" android:drawable="@color/white" />
-    <!-- Default state -->
-    <item android:drawable="@color/white" />
+    <item>
+        <shape android:shape="rectangle">
+            <!-- Transparent color for background -->
+            <solid android:color="@android:color/transparent" />
+            <!-- Border color and width -->
+            <stroke android:width="2dp" android:color="@color/color_main" />
+            <!-- Corner radius for rounded corners -->
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
 </selector>

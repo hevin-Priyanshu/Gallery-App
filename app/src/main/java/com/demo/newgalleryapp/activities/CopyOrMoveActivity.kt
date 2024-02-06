@@ -9,14 +9,18 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,25 +33,28 @@ import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.util.concurrent.Executors
-
 
 class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
     private lateinit var recyclerViewCopyOrMove: RecyclerView
+    private lateinit var horizontalProgress: RelativeLayout
     private lateinit var copyText: TextView
     private lateinit var moveText: TextView
     private lateinit var closeBtn: ImageView
     private lateinit var noDataImage: LinearLayout
     private lateinit var folderAdapter: FolderAdapter
-    private var updated: Boolean = false
     private lateinit var sourceFile: File
     private lateinit var destinationFile: File
     private lateinit var folderPath: String
-    private lateinit var horizontalProgress: RelativeLayout
+    private var anyupdated: Boolean = false
+    private var popupWindow: PopupWindow? = null
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -89,7 +96,7 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
- 
+
         }
     }
 
@@ -116,7 +123,7 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
 
         closeBtn.setOnClickListener {
-            if (updated) {
+            if (anyupdated) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
             }
@@ -145,7 +152,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         }
     }
 
-
     override fun onClick(folderPath: String) {
         this.folderPath = folderPath
 
@@ -168,7 +174,8 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                 try {
                     if (uri != null) {
                         arrayList.add(uri)
-                        val pendingIntent: PendingIntent = MediaStore.createWriteRequest(contentResolver, arrayList)
+                        val pendingIntent: PendingIntent =
+                            MediaStore.createWriteRequest(contentResolver, arrayList)
                         startIntentSenderForResult(
                             pendingIntent.intentSender,
                             REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY,
@@ -193,83 +200,90 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         else {
             if (intent.hasExtra("copyImagePath")) {
 
-                AlertDialog.Builder(this).setTitle("Copy Item?")
-                    .setMessage("Are you sure to copy these image on $destinationFile?")
-                    .setPositiveButton("Copy") { _, _ ->
-                        copyImage(sourceFile, destinationFile)
-                    }.setNegativeButton("No") { dialog, _ ->
-                        // User clicked "No", do nothing
-                        dialog.dismiss()
-                    }.show()
+                showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Copy")
+
+//                AlertDialog.Builder(this).setTitle("Copy Item?")
+//                    .setMessage("Are you sure to copy these image on $destinationFile?")
+//                    .setPositiveButton("Copy") { _, _ ->
+//                        copyImage(sourceFile, destinationFile)
+//                    }.setNegativeButton("No") { dialog, _ ->
+//                        // User clicked "No", do nothing
+//                        dialog.dismiss()
+//                    }.show()
 
             } else {
-
-                AlertDialog.Builder(this).setTitle("Move Item?")
-                    .setMessage("Are you sure to move these image on $destinationFile?")
-                    .setPositiveButton("Move") { _, _ ->
-                        moveFile(sourceFile, destinationFile)
-                    }.setNegativeButton("No") { dialog, _ ->
-                        // User clicked "No", do nothing
-                        dialog.dismiss()
-                    }.show()
-
+                showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Move")
             }
         }
 
     }
 
+    override fun onBackPressed() {
+        if (anyupdated) {
+            val intent = Intent()
+            setResult(Activity.RESULT_OK, intent)
+        }
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        super.onBackPressed()
+    }
 
     private fun copyImage(sourcePath: File, destinationPath: File) {
 
-        Executors.newSingleThreadExecutor().execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 if (destinationPath.exists()) {
-                    runOnUiThread {
-                        Toast.makeText(this, "Image already exists!!", Toast.LENGTH_SHORT).show()
-                        return@runOnUiThread
+                    withContext(Dispatchers.Main) {
+                        showToast(this@CopyOrMoveActivity, "Item already exists!!")
+                        return@withContext
                     }
                     finish()
                 } else {
                     sourcePath.copyTo(destinationPath)
-                    (application as AppClass).mainViewModel.scanFile(this, destinationPath)
-                    (application as AppClass).mainViewModel.scanFile(this, sourcePath)
+                    (application as AppClass).mainViewModel.scanFile(
+                        this@CopyOrMoveActivity, destinationPath
+                    )
+                    (application as AppClass).mainViewModel.scanFile(
+                        this@CopyOrMoveActivity, sourcePath
+                    )
 
-                    runOnUiThread {
+                    withContext(Dispatchers.Main) {
                         horizontalProgress.visibility = View.GONE
                         recyclerViewCopyOrMove.visibility = View.VISIBLE
-                        Toast.makeText(this, "Image Copy successfully", Toast.LENGTH_SHORT).show()
-                        finish()
+                        showToast(this@CopyOrMoveActivity, "Item copy successfully!!")
                     }
                 }
             } catch (e: IOException) {
                 Log.e("CopyImage", "Error copying image: ${e.message}", e)
             }
         }
+        ////////////
     }
 
-    private fun moveFile(file: File, dir: File) {
+    private fun moveFile(sourcePath: File, destinationPath: File) {
 
-        Executors.newSingleThreadExecutor().execute {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                if (dir.exists()) {
-                    runOnUiThread {
-                        Toast.makeText(this, "Image already exists!!", Toast.LENGTH_SHORT).show()
-                        return@runOnUiThread
+                if (destinationPath.exists()) {
+                    withContext(Dispatchers.Main) {
+                        showToast(this@CopyOrMoveActivity, "Item already exists!!")
+                        return@withContext
                     }
                     finish()
                 } else {
                     try {
-                        Files.move(file.toPath(), dir.toPath())
+                        Files.move(sourcePath.toPath(), destinationPath.toPath())
 
-                        (application as AppClass).mainViewModel.scanFile(this, dir)
-                        (application as AppClass).mainViewModel.scanFile(this, file)
+                        (application as AppClass).mainViewModel.scanFile(
+                            this@CopyOrMoveActivity, destinationPath
+                        )
+                        (application as AppClass).mainViewModel.scanFile(
+                            this@CopyOrMoveActivity, sourcePath
+                        )
 
-                        runOnUiThread {
+                        withContext(Dispatchers.Main) {
                             horizontalProgress.visibility = View.GONE
                             recyclerViewCopyOrMove.visibility = View.VISIBLE
-                            Toast.makeText(this, "Image move successfully", Toast.LENGTH_SHORT)
-                                .show()
-                            finish()
+                            showToast(this@CopyOrMoveActivity, "Item move successfully!!")
                         }
                     } catch (e: java.lang.Exception) {
                         Log.e("tagDelete", e.message!!)
@@ -281,5 +295,49 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
         }
         ////////////////////
+    }
+
+    private fun showCopyOrMovePopupmenu(anchorView: View, setTitle: String) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupWindowRestoreOne: View = inflater.inflate(R.layout.copy_or_move_popup_menu, null)
+
+        popupWindow = PopupWindow(
+            popupWindowRestoreOne,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            true
+        )
+
+        popupWindow?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+        val copyMoveSaveBtn = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_save_btn)
+        val cancelBtn = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_cancel_btn)
+
+        val mainText = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_main_text)
+        val howManyItems = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_text)
+
+        mainText.text = "$setTitle Item ?"
+        howManyItems.text =
+            "Are you sure to $setTitle these image on ${destinationFile.parentFile} ?"
+
+        copyMoveSaveBtn.text = setTitle
+
+        copyMoveSaveBtn.setOnClickListener {
+            if (setTitle == "Copy") {
+                copyImage(sourceFile, destinationFile)
+                anyupdated = true
+            } else if (setTitle == "Move") {
+                moveFile(sourceFile, destinationFile)
+                anyupdated = true
+            }
+
+            popupWindow?.dismiss()
+        }
+
+        cancelBtn.setOnClickListener {
+            popupWindow?.dismiss()
+        }
     }
 }
