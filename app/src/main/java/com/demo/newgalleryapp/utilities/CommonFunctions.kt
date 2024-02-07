@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.CopyOrMoveActivity
 import com.demo.newgalleryapp.activities.FolderImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationView
@@ -46,6 +47,7 @@ object CommonFunctions {
     private var popupWindow_restore: PopupWindow? = null
     private var popupWindow_restore_trash: PopupWindow? = null
     private var popupForDeletePermanently: PopupWindow? = null
+    private var popupWindowMore: PopupWindow? = null
 
     const val REQ_CODE_FOR_PERMISSION = 100
     const val REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY = 101
@@ -62,10 +64,13 @@ object CommonFunctions {
     const val REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY = 112
     const val REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY = 113
     const val REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY = 114
+    const val REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY = 115
 
     const val ERROR_TAG = "Error"
     var FLAG_IN_FOLDER_ACTIVITY: Boolean = false
-    var FLAG_IN_MAIN_SCREEN_ACTIVITY: Int = 0
+    var FLAG_FOR_CHANGES_IN_RENAME: Boolean = false
+//    var FLAG_FOR_MAIN_SCREEN_ACTIVITY: Boolean = false
+//    var FLAG_IN_MAIN_SCREEN_ACTIVITY: Int = 0
 
     fun showToast(context: Context, message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -111,6 +116,74 @@ object CommonFunctions {
         }
     }
 
+
+    fun Activity.showPopupForMainScreenMoreItem(
+        anchorView: View,
+        paths: List<String>
+    ) {
+
+        val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupWindow_for_main_screen_more: View =
+            inflater.inflate(R.layout.popup_more_item_main_screen_activity, null)
+
+        popupWindowMore = PopupWindow(
+            popupWindow_for_main_screen_more,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            true
+        )
+
+        popupWindowMore?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+        val copyBtn = popupWindow_for_main_screen_more.findViewById<TextView>(R.id.copy_more_item)
+        val moveBtn = popupWindow_for_main_screen_more.findViewById<TextView>(R.id.move_more_item)
+//        val slideShowBtn =
+//            popupWindow_for_main_screen_more.findViewById<TextView>(R.id.slide_show_more_item)
+
+
+        copyBtn.setOnClickListener {
+            val intent = Intent(this, CopyOrMoveActivity::class.java)
+            intent.putExtra("pathsList", ArrayList(paths))
+            intent.putExtra("copySelectedMainScreenActivity", true)
+            intent.putExtra("mainScreenActivity", true)
+            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
+            popupWindowMore?.dismiss()
+            resetVisibilityForDeleteItem()
+        }
+
+        moveBtn.setOnClickListener {
+            val intent = Intent(this, CopyOrMoveActivity::class.java)
+            intent.putExtra("pathsList", ArrayList(paths))
+            intent.putExtra("moveSelectedMainScreenActivity", true)
+            intent.putExtra("mainScreenActivity", true)
+            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
+            popupWindowMore?.dismiss()
+            resetVisibilityForDeleteItem()
+        }
+
+
+//        slideShowBtn.setOnClickListener {
+//            val intent = Intent(this, SlideShowActivity::class.java)
+//            intent.putExtra("pathsList", ArrayList(paths))
+//            intent.putExtra("slideShowSelectedMainScreenActivity", true)
+//            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
+//            popupWindow?.dismiss()
+//        }
+
+        val popupItem =
+            popupWindow_for_main_screen_more.findViewById<LinearLayout>(R.id.popupItem_more_main_screen_activity)
+
+        popupItem.setOnClickListener {
+            popupWindowMore?.dismiss()
+        }
+        // Set dismiss listener to nullify the reference
+        popupWindowMore?.setOnDismissListener {
+            popupWindowMore = null
+        }
+    }
+
     fun Context.showRenamePopup(
         anchorView: View, selectedImagePath: String, activity: OpenImageActivity
     ) {
@@ -134,9 +207,7 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
 
             val newName = searchEditText.text.toString().trim()
-
             val directory = File(selectedImagePath).parent
-
             val originalPath = File(selectedImagePath)
             val lastText = getImageFileExtension(selectedImagePath)
             val destinationPath = File(directory, "$newName.$lastText")
@@ -147,7 +218,8 @@ object CommonFunctions {
                     originalPath.renameTo(destinationPath)
                     (activity.application as AppClass).mainViewModel.scanFile(this, destinationPath)
                     (activity.application as AppClass).mainViewModel.scanFile(this, originalPath)
-                    Toast.makeText(this, "success", Toast.LENGTH_SHORT).show()
+                    FLAG_FOR_CHANGES_IN_RENAME = true
+                    showToast(this, "Rename Successful!!")
                 } catch (e: IOException) {
                     Log.e("CopyOrMoveActivity", "Error creating write request", e)
                 }

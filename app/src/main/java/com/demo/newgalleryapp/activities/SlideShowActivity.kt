@@ -40,6 +40,8 @@ class SlideShowActivity : AppCompatActivity() {
         currentImageIndex = intent.getIntExtra("SlideImagePosition", 0)
         val isSlideShow = intent.hasExtra("FromSlideShow")
 
+//        val mainScreenActivity = intent.getBooleanExtra("slideShowSelectedMainScreenActivity", false)
+
         Glide.with(this).load(slideImagePath).placeholder(R.drawable.placeholder)
             .listener(object : RequestListener<Drawable> {
                 override fun onLoadFailed(
@@ -63,6 +65,14 @@ class SlideShowActivity : AppCompatActivity() {
                 }
             }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(slideShow)
 
+//        if (mainScreenActivity) {
+//            val objectList = intent.getSerializableExtra("pathsList") as ArrayList<MediaModel>
+//            imagesSliderAdapter = ImageSliderAdapter(this, objectList)
+//            viewPager.adapter = imagesSliderAdapter
+//            viewPager.setCurrentItem(currentImageIndex, false)
+//            startSlideshow(currentImageIndex, objectList)
+//        } else {
+
         if (isSlideShow) {
             val newModels = (application as AppClass).mainViewModel.allMediaList
             imagesSliderAdapter = ImageSliderAdapter(this, newModels)
@@ -76,6 +86,8 @@ class SlideShowActivity : AppCompatActivity() {
             viewPager.setCurrentItem(currentImageIndex, false)
             startSlideshow(currentImageIndex, models)
         }
+
+//        }
 
 
     }

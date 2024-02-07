@@ -36,9 +36,10 @@ import com.demo.newgalleryapp.models.MediaModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 class MediaFragment : Fragment(), ImageClickListener {
 
@@ -50,7 +51,10 @@ class MediaFragment : Fragment(), ImageClickListener {
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
     private lateinit var toolbar: Toolbar
-    private var allMediaList: ArrayList<MediaModel> = ArrayList()
+
+    //    private var allMediaList: ArrayList<MediaModel> = ArrayList()
+    private var getPhotosList: ArrayList<MediaModel> = ArrayList()
+    private var getVideosList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var popupWindow2: PopupWindow? = null
     private var selectedColumns = 0
@@ -89,33 +93,44 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         searchCloseBtn.setOnClickListener {
             searchEvent.text.clear()
-            lifecycleScope.launch {
-                photosFragment.observeAllData(selectedColumns)
-                videosFragment.observeAllData(selectedColumns)
-            }
+//
+//            val count =
+//                (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
+//            photosFragment.observeAllData(count)
+//            photosFragment.imagesAdapter?.notifyDataSetChanged()
+//            videosFragment.observeAllData(count)
+//            videosFragment.imagesAdapter?.notifyDataSetChanged()
+
+            // Update data for photosFragment
+
+//            videosFragment.notifyAdapter(getVideosList as ArrayList<Any>)
+//            videosFragment.imagesAdapter?.updateData(getVideosList as ArrayList<Any>)
+//            videosFragment.imagesAdapter?.notifyDataSetChanged()
+//
+////            photosFragment.notifyAdapter(getPhotosList as ArrayList<Any>)
+//            photosFragment.imagesAdapter?.updateData(getPhotosList as ArrayList<Any>)
+//            photosFragment.imagesAdapter?.notifyDataSetChanged()
+
         }
 
         textViewSelectAllMedia.setOnClickListener {
 
             if (viewPager.currentItem == 0) {
-                val photoList =
-                    (requireActivity().application as AppClass).mainViewModel.tempPhotoList
-
+//                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
                 photosFragment.imagesAdapter?.isSelected = true
                 photosFragment.imagesAdapter?.updateSelectionState(true)
                 photosFragment.imagesAdapter?.checkSelectedList?.clear()
-                photosFragment.imagesAdapter?.checkSelectedList?.addAll(photoList)
+                photosFragment.imagesAdapter?.checkSelectedList?.addAll(getPhotosList)
                 (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
                 textViewSelectAllMedia.visibility = View.GONE
                 textViewDeSelectAllMedia.visibility = View.VISIBLE
 
             } else {
-                val videoList =
-                    (requireActivity().application as AppClass).mainViewModel.tempVideoList
+//                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
                 videosFragment.imagesAdapter?.isSelected = true
                 videosFragment.imagesAdapter?.updateSelectionState(true)
-                photosFragment.imagesAdapter?.checkSelectedList?.clear()
-                videosFragment.imagesAdapter?.checkSelectedList?.addAll(videoList)
+                videosFragment.imagesAdapter?.checkSelectedList?.clear()
+                videosFragment.imagesAdapter?.checkSelectedList?.addAll(getVideosList)
                 (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
                 textViewSelectAllMedia.visibility = View.GONE
                 textViewDeSelectAllMedia.visibility = View.VISIBLE
@@ -126,21 +141,19 @@ class MediaFragment : Fragment(), ImageClickListener {
 
             if (viewPager.currentItem == 0) {
 
-                val photoList =
-                    (requireActivity().application as AppClass).mainViewModel.tempPhotoList
+//                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
                 photosFragment.imagesAdapter?.isSelected = false
                 photosFragment.imagesAdapter?.updateSelectionState(false)
-                photosFragment.imagesAdapter?.checkSelectedList?.removeAll(photoList.toSet())
+                photosFragment.imagesAdapter?.checkSelectedList?.removeAll(getPhotosList.toSet())
                 (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
                 textViewDeSelectAllMedia.visibility = View.GONE
                 textViewSelectAllMedia.visibility = View.VISIBLE
             } else {
 
-                val videoList =
-                    (requireActivity().application as AppClass).mainViewModel.tempVideoList
+//                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
                 videosFragment.imagesAdapter?.isSelected = false
                 videosFragment.imagesAdapter?.updateSelectionState(false)
-                videosFragment.imagesAdapter?.checkSelectedList?.removeAll(videoList.toSet())
+                videosFragment.imagesAdapter?.checkSelectedList?.removeAll(getVideosList.toSet())
                 (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
                 textViewDeSelectAllMedia.visibility = View.GONE
                 textViewSelectAllMedia.visibility = View.VISIBLE
@@ -163,12 +176,24 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 viewPager.visibility = View.GONE
                 searchCloseBtn.visibility = View.VISIBLE
-                filterData(s.toString())
+
+                if (viewPager.currentItem == 0) {
+                    filterData(s.toString(), getPhotosList)
+                } else {
+                    filterData(s.toString(), getVideosList)
+                }
             }
 
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
                     searchCloseBtn.visibility = View.GONE
+//                    if (viewPager.currentItem == 0) {
+//                        photosFragment.notifyAdapter(getPhotosList as ArrayList<Any>)
+//                        photosFragment.imagesAdapter?.notifyDataSetChanged()
+//                    } else {
+//                        videosFragment.notifyAdapter(getVideosList as ArrayList<Any>)
+//                        videosFragment.imagesAdapter?.notifyDataSetChanged()
+//                    }
                 }
             }
         })
@@ -224,7 +249,9 @@ class MediaFragment : Fragment(), ImageClickListener {
     }
 
     private fun initializeViews(view: View) {
-        allMediaList = (requireActivity().application as AppClass).mainViewModel.allMediaList
+//        allMediaList = (requireActivity().application as AppClass).mainViewModel.allMediaList
+        getPhotosList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
+        getVideosList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
 
         viewPager = view.findViewById(R.id.view_pager_main)
         textPhoto = view.findViewById(R.id.text_photo)
@@ -248,14 +275,14 @@ class MediaFragment : Fragment(), ImageClickListener {
             (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
     }
 
-    private fun filterData(query: String) {
+    private fun filterData(query: String, getList: ArrayList<MediaModel>) {
 
         mediaProgressBar.visibility = View.VISIBLE
 
         val commonList: ArrayList<Any> = ArrayList()
         lifecycleScope.launch(Dispatchers.IO) {
             // Filter your original data list based on the search query
-            val filteredList = allMediaList.filter { item ->
+            val filteredList = getList.filter { item ->
                 // Check if the display name contains the query string
                 val nameMatch = item.displayName.contains(query, ignoreCase = true)
 
@@ -268,9 +295,8 @@ class MediaFragment : Fragment(), ImageClickListener {
             }
 
             val groupedPhotos: List<Map.Entry<String, List<MediaModel>>> = filteredList.groupBy {
-                SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(
-                    Date(it.date * 1000)
-                )
+                getFormattedDate(it.date)
+//                SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date(it.date * 1000))
             }.entries.toList()
 
 //            for (entry in groupedPhotos) {
@@ -286,8 +312,14 @@ class MediaFragment : Fragment(), ImageClickListener {
                 commonList.addAll(itemList)
             }
             withContext(Dispatchers.Main) {
-                photosFragment.notifyAdapter(commonList)
-                videosFragment.notifyAdapter(commonList)
+
+                if (viewPager.currentItem == 0) {
+                    photosFragment.imagesAdapter?.updateData(commonList)
+//                    photosFragment.notifyAdapter(commonList)
+                } else {
+                    videosFragment.imagesAdapter?.updateData(commonList)
+                    videosFragment.notifyAdapter(commonList)
+                }
 
                 viewPager.visibility = View.VISIBLE
                 mediaProgressBar.visibility = View.GONE
@@ -496,6 +528,17 @@ class MediaFragment : Fragment(), ImageClickListener {
         videosFragment.observeAllData(tempColumn)
         photosFragment.imagesAdapter?.notifyDataSetChanged()
         videosFragment.imagesAdapter?.notifyDataSetChanged()
+    }
+
+    private fun getFormattedDate(dateAdded: Long): String {
+
+        val dateAddedInSeconds = dateAdded ?: 0L
+        val dateAddedInMillis = dateAddedInSeconds * 1000
+
+        val localDate =
+            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+
+        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
     }
 
     override fun counter(select: Int) {

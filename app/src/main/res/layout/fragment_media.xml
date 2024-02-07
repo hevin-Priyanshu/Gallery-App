@@ -169,6 +169,7 @@
             android:hint="@string/search_for_files_or_albums"
             android:imeOptions="actionSearch"
             android:inputType="text"
+            android:textColor="@color/black"
             android:paddingHorizontal="@dimen/_40sdp"
             android:paddingVertical="@dimen/_10sdp"
             android:textColorHint="#ABABAB"

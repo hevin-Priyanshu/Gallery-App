@@ -365,7 +365,6 @@ class EditActivity : AppCompatActivity() {
         }
     }
 
-
     fun uriStringToBitmap(uriString: String): Bitmap? {
         try {
             // Convert the URI string to a URI object

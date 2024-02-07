@@ -40,6 +40,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
@@ -61,31 +62,51 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
         if (requestCode == REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY && resultCode == Activity.RESULT_OK) {
             try {
-                // check its from copy image path or click
-                if (intent.hasExtra("copyImagePath")) {
+
+                val mainScreenActivity = intent.getBooleanExtra("mainScreenActivity", false)
+
+                if (mainScreenActivity) {
+
+                    val objectList = intent.getSerializableExtra("pathsList") as ArrayList<String>
+                    if (intent.hasExtra("copySelectedMainScreenActivity")) {
+                        recyclerViewCopyOrMove.visibility = View.GONE
+                        horizontalProgress.visibility = View.VISIBLE
+                        copyOrMoveImages(objectList, folderPath, false)
+                        anyupdated = true
+                    } else {
+                        recyclerViewCopyOrMove.visibility = View.GONE
+                        horizontalProgress.visibility = View.VISIBLE
+                        copyOrMoveImages(objectList, folderPath, true)
+                        anyupdated = true
+                    }
+                } else {
+                    // check its from copy image path or click
+                    if (intent.hasExtra("copyImagePath")) {
 //                    if (destinationFile.exists()) {
 //                        // If it exists, delete it before copying
 //                        destinationFile.delete()
 //                    }
 //                    sourceFile.copyTo(destinationFile)
-                    recyclerViewCopyOrMove.visibility = View.GONE
-                    horizontalProgress.visibility = View.VISIBLE
-                    copyImage(sourceFile, destinationFile)
+                        recyclerViewCopyOrMove.visibility = View.GONE
+                        horizontalProgress.visibility = View.VISIBLE
+                        copyImage(sourceFile, destinationFile)
+                        anyupdated = true
 
-                } else {
+                    } else {
 //                    if (destinationFile.exists()) {
 //                        // If it exists, delete it before copying
 //                        destinationFile.delete()
 //                    }
 //                    sourceFile.copyTo(destinationFile)
 //                    sourceFile.delete()
-//                    Toast.makeText(this, "Image Move Successfully.", Toast.LENGTH_SHORT).show()
-//                    finish()
-                    recyclerViewCopyOrMove.visibility = View.GONE
-                    horizontalProgress.visibility = View.VISIBLE
-                    moveFile(sourceFile, destinationFile)
-
+                        recyclerViewCopyOrMove.visibility = View.GONE
+                        horizontalProgress.visibility = View.VISIBLE
+                        moveFile(sourceFile, destinationFile)
+                        anyupdated = true
+                    }
                 }
+
+
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Handle the exception, e.g., show an error message
@@ -113,13 +134,26 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
         observeAllData()
 
-        if (intent.hasExtra("copyImagePath")) {
-            copyText.visibility = View.VISIBLE
-            moveText.visibility = View.GONE
+        val mainScreenActivity = intent.getBooleanExtra("mainScreenActivity", false)
+
+        if (mainScreenActivity) {
+            if (intent.hasExtra("copySelectedMainScreenActivity")) {
+                copyText.visibility = View.VISIBLE
+                moveText.visibility = View.GONE
+            } else {
+                copyText.visibility = View.GONE
+                moveText.visibility = View.VISIBLE
+            }
         } else {
-            copyText.visibility = View.GONE
-            moveText.visibility = View.VISIBLE
+            if (intent.hasExtra("copyImagePath")) {
+                copyText.visibility = View.VISIBLE
+                moveText.visibility = View.GONE
+            } else {
+                copyText.visibility = View.GONE
+                moveText.visibility = View.VISIBLE
+            }
         }
+
 
 
         closeBtn.setOnClickListener {
@@ -155,67 +189,123 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
     override fun onClick(folderPath: String) {
         this.folderPath = folderPath
 
-        val originalCopyPath = intent.getStringExtra("copyImagePath")
-        val originalMovePath = intent.getStringExtra("moveImagePath")
+        val mainScreenActivity = intent.getBooleanExtra("mainScreenActivity", false)
 
-        sourceFile = if (intent.hasExtra("copyImagePath")) {
-            File(originalCopyPath!!)
-        } else {
-            File(originalMovePath!!)
-        }
+        if (mainScreenActivity) {
 
-        val name = sourceFile.name
-        destinationFile = File(folderPath, name)
+            val objectList = intent.getSerializableExtra("pathsList") as ArrayList<String>
 
-        // for android 11 and above
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val arrayList: ArrayList<Uri> = ArrayList()
-            MediaScannerConnection.scanFile(this, arrayOf(sourceFile.path), null) { file, uri ->
-                try {
-                    if (uri != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+                if (objectList.isNotEmpty()) {
+                    val arrayList: ArrayList<Uri> = ArrayList()
+                    MediaScannerConnection.scanFile(
+                        this, objectList.toTypedArray(), null
+                    ) { _, uri ->
                         arrayList.add(uri)
-                        val pendingIntent: PendingIntent =
-                            MediaStore.createWriteRequest(contentResolver, arrayList)
-                        startIntentSenderForResult(
-                            pendingIntent.intentSender,
-                            REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY,
-                            null,
-                            0,
-                            0,
-                            0,
-                            null
-                        )
-                    } else {
-                        Log.e(
-                            "CopyOrMoveActivity",
-                            "MediaScannerConnection scanFile callback returned null Uri $uri"
-                        )
+                        try {
+                            if (arrayList.size == objectList.size) {
+                                val pendingIntent: PendingIntent =
+                                    MediaStore.createWriteRequest(contentResolver, arrayList)
+                                startIntentSenderForResult(
+                                    pendingIntent.intentSender,
+                                    REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY,
+                                    null,
+                                    0,
+                                    0,
+                                    0
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Log.e("TAG", "000AAA: $e")
+                        }
                     }
-                } catch (e: Exception) {
-                    Log.e("CopyOrMoveActivity", "Error creating write request", e)
+                } else {
+                    showToast(this, "No Item Selected to Modify")
+                }
+            } else {
+                if (intent.hasExtra("copySelectedMainScreenActivity")) {
+                    copyOrMoveImages(objectList, folderPath, false)
+                } else {
+                    copyOrMoveImages(objectList, folderPath, true)
                 }
             }
-        }
-        // for below android 10 versions
-        else {
-            if (intent.hasExtra("copyImagePath")) {
+            ////////////////////
+        } else {
 
-                showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Copy")
+            val originalCopyPath = intent.getStringExtra("copyImagePath")
+            val originalMovePath = intent.getStringExtra("moveImagePath")
 
-//                AlertDialog.Builder(this).setTitle("Copy Item?")
-//                    .setMessage("Are you sure to copy these image on $destinationFile?")
-//                    .setPositiveButton("Copy") { _, _ ->
-//                        copyImage(sourceFile, destinationFile)
-//                    }.setNegativeButton("No") { dialog, _ ->
-//                        // User clicked "No", do nothing
-//                        dialog.dismiss()
-//                    }.show()
-
+            sourceFile = if (intent.hasExtra("copyImagePath")) {
+                File(originalCopyPath!!)
             } else {
-                showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Move")
+                File(originalMovePath!!)
+            }
+
+            val name = sourceFile.name
+            destinationFile = File(folderPath, name)
+
+            // for android 11 and above
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val arrayList: ArrayList<Uri> = ArrayList()
+                MediaScannerConnection.scanFile(this, arrayOf(sourceFile.path), null) { file, uri ->
+                    try {
+                        if (uri != null) {
+                            arrayList.add(uri)
+                            val pendingIntent: PendingIntent =
+                                MediaStore.createWriteRequest(contentResolver, arrayList)
+                            startIntentSenderForResult(
+                                pendingIntent.intentSender,
+                                REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY,
+                                null,
+                                0,
+                                0,
+                                0,
+                                null
+                            )
+                        } else {
+                            Log.e(
+                                "CopyOrMoveActivity",
+                                "MediaScannerConnection scanFile callback returned null Uri $uri"
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.e("CopyOrMoveActivity", "Error creating write request", e)
+                    }
+                }
+            }
+            // for below android 10 versions
+            else {
+                if (intent.hasExtra("copyImagePath")) {
+                    showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Copy")
+                } else {
+                    showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Move")
+                }
+            }
+            /////////////////
+        }
+        //////////////
+    }
+
+
+    private fun copyOrMoveImages(
+        imagePaths: ArrayList<String>, destinationFolder: String, move: Boolean
+    ) {
+        for (imagePath in imagePaths) {
+            val sourcePath = File(imagePath)
+            val imageName = sourcePath.name
+            val destinationFile = File(destinationFolder, imageName)
+
+            if (move) {
+                // Move the file
+                moveFile(sourcePath, destinationFile)
+//                sourcePath.renameTo(destinationFile)
+            } else {
+                // Copy the file
+                copyImage(sourcePath, destinationFile)
+//                sourcePath.copyTo(destinationFile, true)
             }
         }
-
     }
 
     override fun onBackPressed() {
@@ -271,7 +361,11 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                     finish()
                 } else {
                     try {
-                        Files.move(sourcePath.toPath(), destinationPath.toPath())
+                        Files.move(
+                            sourcePath.toPath(),
+                            destinationPath.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING
+                        )
 
                         (application as AppClass).mainViewModel.scanFile(
                             this@CopyOrMoveActivity, destinationPath
@@ -292,7 +386,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             } catch (e: java.lang.Exception) {
                 Log.e("tagDelete", e.message!!)
             }
-
         }
         ////////////////////
     }

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/popupItem_more_main_screen_activity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#68000000"
+    android:gravity="bottom">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="150dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="?attr/actionBarSize"
+        android:background="@drawable/more_item_round_shape"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+
+            <TextView
+                android:id="@+id/copy_more_item"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="10dp"
+                android:text="Copy to Album"
+                android:textColor="@color/black"
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/move_more_item"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="10dp"
+                android:text="Move to Album"
+                android:textColor="@color/black"
+                android:textSize="17sp" />
+
+            <!--            <TextView-->
+            <!--                android:id="@+id/slide_show_more_item"-->
+            <!--                android:layout_width="match_parent"-->
+            <!--                android:layout_height="wrap_content"-->
+            <!--                android:layout_marginStart="@dimen/_6sdp"-->
+            <!--                android:layout_marginBottom="@dimen/_10sdp"-->
+            <!--                android:fontFamily="@font/poppins_medium"-->
+            <!--                android:padding="10dp"-->
+            <!--                android:text="Slideshow"-->
+            <!--                android:textColor="@color/black"-->
+            <!--                android:textSize="17sp" />-->
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

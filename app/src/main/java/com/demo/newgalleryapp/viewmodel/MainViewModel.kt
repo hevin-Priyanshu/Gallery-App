@@ -98,10 +98,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 MediaStore.MediaColumns.MIME_TYPE,
                 // MediaStore.MediaColumns.DURATION,
                 MediaStore.MediaColumns.SIZE,
-                MediaStore.MediaColumns.DATE_ADDED
+                MediaStore.MediaColumns.DATE_MODIFIED
             )
 
-            val sortOrder = "${MediaStore.MediaColumns.DATE_TAKEN} DESC"
+            val sortOrder = "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
 
             // Query for images
             val imageList = ArrayList<MediaModel>()
@@ -152,7 +152,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //                val duration = c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION))
                 val size = c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE))
                 val dateAdded =
-                    c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED))
+                    c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED))
 
                 // Create a MediaModel object and add it to the list
                 val mediaModel =
@@ -428,7 +428,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DISPLAY_NAME,
             MediaStore.MediaColumns.DATA,
-            MediaStore.MediaColumns.DATE_TAKEN,
+            MediaStore.MediaColumns.DATE_MODIFIED,
         )
 
 
@@ -446,13 +446,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //        val selection = "${MediaStore.MediaColumns.IS_TRASHED} = 1"
 
         val collectionOfImages: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+//            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         } else {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         }
 
         val collectionOfVideos: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+//            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         } else {
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI
         }
@@ -496,7 +498,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val data =
                     cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA))
                 val date =
-                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_TAKEN))
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED))
                 list.add(TrashBin(id, displayName, data, date))
             }
         }

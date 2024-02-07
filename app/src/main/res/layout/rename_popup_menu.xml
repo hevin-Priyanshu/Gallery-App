@@ -34,6 +34,7 @@
             android:padding="@dimen/_10sdp"
             android:layout_marginBottom="@dimen/_12sdp"
             android:inputType="text"
+            android:textColor="@color/black"
             android:textColorHint="#ABABAB"
             android:textSize="@dimen/_12sdp" />
 

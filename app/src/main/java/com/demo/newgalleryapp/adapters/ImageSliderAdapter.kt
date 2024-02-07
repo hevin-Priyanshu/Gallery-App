@@ -37,7 +37,7 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
 
         imageViewForSlider = view.findViewById(R.id.imageView)
 
-//        imageViewForSlider.setActivity(OpenImageActivity())
+//       imageViewForSlider.setActivity(OpenImageActivity())
         imageVideo = view.findViewById(R.id.imageViewVideo)
 
         if (modelList[position].isVideo) {

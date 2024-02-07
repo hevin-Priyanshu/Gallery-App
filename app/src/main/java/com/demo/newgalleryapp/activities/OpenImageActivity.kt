@@ -239,13 +239,6 @@ class OpenImageActivity : AppCompatActivity() {
         })
     }
 
-//    private fun setTapListener(photoView: PhotoView?) {
-//        val attacher = PhotoViewAttacher(photoView)
-//        attacher.setOnViewTapListener { _, _, _ ->
-//            stopSlideShow()
-//        }
-//    }
-
 //    private fun stopSlideShow() {
 //        timer.cancel()
 //        // Optionally, remove any OnPageChangeListener if added

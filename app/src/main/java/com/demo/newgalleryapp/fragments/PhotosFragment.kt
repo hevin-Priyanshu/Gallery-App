@@ -167,8 +167,7 @@ class PhotosFragment : Fragment() {
         val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000
 
-        val localDate =
-            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+        val localDate = Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
 
         return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
     }

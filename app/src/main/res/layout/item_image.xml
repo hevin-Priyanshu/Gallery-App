@@ -11,6 +11,7 @@
         android:layout_marginTop="@dimen/_4sdp"
         android:layout_marginBottom="@dimen/_4sdp"
         android:fontFamily="@font/poppins_medium"
+        android:textColor="@color/black"
         android:textSize="@dimen/_16sdp" />
 
     <!-- RecyclerView for displaying images within each date -->

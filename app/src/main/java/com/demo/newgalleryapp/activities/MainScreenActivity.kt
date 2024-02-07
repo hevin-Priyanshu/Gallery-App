@@ -33,12 +33,15 @@ import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.FLAG_FOR_CHANGES_IN_RENAME
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_PERMISSION
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.resetVisibilityForDeleteItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showAppSettings
+import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.demo.newgalleryapp.viewmodel.MainViewModel
@@ -81,10 +84,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
+            FLAG_FOR_CHANGES_IN_RENAME = false
         }
     }
 
@@ -111,6 +115,25 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     }
 
+    private fun askForPermission() {
+
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            arrayOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+        } else {
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+        }
+        ActivityCompat.requestPermissions(this, permission, REQ_CODE_FOR_PERMISSION)
+    }
+
     // Refactored function to load media data
     private fun loadMediaData() {
 
@@ -123,17 +146,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         videosFragment = VideosFragment.newInstance(1)
 
         loadData()
-    }
-
-    private fun setupFragments() {
-        val fragmentTag = mediaFragment.javaClass.simpleName
-        val existingFragment = supportFragmentManager.findFragmentByTag(fragmentTag)
-
-        if (existingFragment == null) {
-            supportFragmentManager.beginTransaction()
-                .add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
-        }
-        currentFragment = mediaFragment
     }
 
     private fun loadData() {
@@ -174,7 +186,35 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     }
 
-    private fun handleMoreAction() {}
+    private fun setupFragments() {
+        val fragmentTag = mediaFragment.javaClass.simpleName
+        val existingFragment = supportFragmentManager.findFragmentByTag(fragmentTag)
+
+        if (existingFragment == null) {
+            supportFragmentManager.beginTransaction()
+                .add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
+        }
+        currentFragment = mediaFragment
+    }
+
+    private fun handleMoreAction() {
+
+        checkBoxList.clear()
+
+        val fragmentList = if (viewPager.currentItem == 0) {
+            // if photo is selected, get selected items from photosFragment
+            photosFragment.imagesAdapter?.checkSelectedList
+        } else {
+            // If video is selected, get selected items from videoFragment
+            videosFragment.imagesAdapter?.checkSelectedList
+        }
+
+        checkBoxList.addAll(fragmentList!!)
+        val paths = checkBoxList.map { it.path }
+
+
+        showPopupForMainScreenMoreItem(bottomNavigationViewForLongSelect, paths)
+    }
 
     private fun handleDeleteAction() {
         checkBoxList.clear()
@@ -229,20 +269,18 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         }
     }
 
-    private fun showDeleteConfirmationDialog(paths: List<String>) {
-        if (paths.isNotEmpty()) {
-            showPopupForMoveToTrashBin(
-                bottomNavigationViewForLongSelect,
-                paths, this@MainScreenActivity, paths, 0
-            )
-        } else {
-            showToast(this, "Error: Image not found")
-        }
-    }
-
     private fun handleFavoriteAction() {
         checkBoxList.clear()
-        checkBoxList.addAll(photosFragment.imagesAdapter!!.checkSelectedList)
+
+        val fragmentList = if (viewPager.currentItem == 0) {
+            // if photo is selected, get selected items from photosFragment
+            photosFragment.imagesAdapter?.checkSelectedList
+        } else {
+            // If video is selected, get selected items from videoFragment
+            videosFragment.imagesAdapter?.checkSelectedList
+        }
+
+        checkBoxList.addAll(fragmentList!!)
 //        val paths = checkBoxList.map { it.path }
 
         if (checkBoxList.isEmpty()) {
@@ -260,7 +298,15 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     private fun shareSelectedImages() {
         checkBoxList.clear()
-        checkBoxList.addAll(photosFragment.imagesAdapter?.checkSelectedList.orEmpty())
+
+        val fragmentList = if (viewPager.currentItem == 0) {
+            // if photo is selected, get selected items from photosFragment
+            photosFragment.imagesAdapter?.checkSelectedList
+        } else {
+            // If video is selected, get selected items from videoFragment
+            videosFragment.imagesAdapter?.checkSelectedList
+        }
+        checkBoxList.addAll(fragmentList!!)
 
         val selectedImages = checkBoxList.map { it.path }
 
@@ -281,23 +327,15 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         }
     }
 
-    private fun askForPermission() {
 
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VIDEO,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+    private fun showDeleteConfirmationDialog(paths: List<String>) {
+        if (paths.isNotEmpty()) {
+            showPopupForMoveToTrashBin(
+                bottomNavigationViewForLongSelect, paths, this@MainScreenActivity, paths, 0
             )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
         } else {
-            arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
+            showToast(this, "Error: Image not found")
         }
-        ActivityCompat.requestPermissions(this, permission, REQ_CODE_FOR_PERMISSION)
     }
 
     private fun permissionCheck(): Boolean {
@@ -356,6 +394,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 //        fragmentTransaction.commit()
 //    }
 
+
+    override fun onBackPressed() {
+        finish()
+        super.onBackPressed()
+    }
 
     private fun loadFragment(fragment: Fragment) {
 
