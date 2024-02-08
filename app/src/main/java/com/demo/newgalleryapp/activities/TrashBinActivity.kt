@@ -17,7 +17,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -59,6 +58,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var howManyItemInTrash: TextView
     private lateinit var itemSelectedTrashBinTxt: TextView
     private lateinit var itemSelectedAllTrashBinTxt: TextView
+    private lateinit var itemDeSelectedAllTrashBinTxt: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     private var count: Int = 0
@@ -131,39 +131,49 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
         itemSelectedTrashBinTxt = findViewById(R.id.item_selected_text_view_trash)
         itemSelectedAllTrashBinTxt = findViewById(R.id.trash_bin_selectAll_text)
+        itemDeSelectedAllTrashBinTxt = findViewById(R.id.trash_bin_DeselectAll_text)
         bottomNavigationView = findViewById(R.id.bottomNavigation_trashBin)
         progressBar = findViewById(R.id.progressBar_trash)
 
 
-
-        recyclerIsEmptyOrNot()
-
+//        recyclerIsEmptyOrNot()
         progressBar.visibility = View.VISIBLE
 
         itemSelectedAllTrashBinTxt.setOnClickListener {
-            trashBinAdapter.updateSelectionState(true)
             trashBinAdapter.isSelected = true
-            trashBinAdapter.notifyDataSetChanged()
-            showToast(this, "Click")
+            trashBinAdapter.updateSelectionState(true)
+            trashBinAdapter.checkTrashSelectedList.clear()
+            trashBinAdapter.checkTrashSelectedList.addAll(trashList)
+            counter(trashBinAdapter.checkTrashSelectedList.size)
+
+            itemSelectedAllTrashBinTxt.visibility = View.GONE
+            itemDeSelectedAllTrashBinTxt.visibility = View.VISIBLE
 //            bottomNavigationView.visibility = View.GONE
 //            linearLayoutForMainText.visibility = View.VISIBLE
 //            linearLayoutForSelectText.visibility = View.GONE
         }
 
-        // Get the URI from the intent
-//        val receivedUri: Uri = intent.data!!
 
-//        val isDirectoryCreated = createFolderInUri()
+        itemDeSelectedAllTrashBinTxt.setOnClickListener {
+            trashBinAdapter.isSelected = false
+            trashBinAdapter.updateSelectionState(false)
+            trashBinAdapter.checkTrashSelectedList.clear()
+            counter(trashBinAdapter.checkTrashSelectedList.size)
+
+            itemDeSelectedAllTrashBinTxt.visibility = View.GONE
+            itemSelectedAllTrashBinTxt.visibility = View.VISIBLE
+//            bottomNavigationView.visibility = View.GONE
+//            linearLayoutForMainText.visibility = View.VISIBLE
+//            linearLayoutForSelectText.visibility = View.GONE
+        }
 
         sharedPreferencesHelper = SharedPreferencesHelper(this@TrashBinActivity)
         count = sharedPreferencesHelper.getGridColumns()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            (application as AppClass).mainViewModel.getAllTrashMedia()
+//            (application as AppClass).mainViewModel.getAllTrashMedia()
             //these code is for android 11 and above
             loadAllTrashData()
-            progressBar.visibility = View.GONE
-
 //            loadAllDeletedDatabaseData()
         } else {
             //this is for below android 10 version
@@ -232,6 +242,18 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
     private fun loadAllDeletedDatabaseData() {
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages().observe(this) {
+            trashList.clear()
+            trashList.addAll(it)
+
+            if (trashList.isEmpty()) {
+                noData.visibility = View.VISIBLE
+                recyclerViewTrash.visibility = View.GONE
+                trashBinTxt.visibility = View.GONE
+            } else {
+                noData.visibility = View.GONE
+                trashBinTxt.visibility = View.VISIBLE
+                recyclerViewTrash.visibility = View.VISIBLE
+            }
             recyclerViewTrash.layoutManager =
                 GridLayoutManager(this, count, LinearLayoutManager.VERTICAL, false)
             trashBinAdapter = TrashBinAdapter(
@@ -240,20 +262,33 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
             recyclerViewTrash.adapter = trashBinAdapter
             howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
         }
+        progressBar.visibility = View.GONE
     }
 
     private fun loadAllTrashData() {
         (application as AppClass).mainViewModel.allTrashData.observe(this) {
             trashList.clear()
             trashList.addAll(it)
-
 //            val newList = readTrashDirectory(".Trash")
+
+            if (trashList.isEmpty()) {
+                noData.visibility = View.VISIBLE
+                recyclerViewTrash.visibility = View.GONE
+                trashBinTxt.visibility = View.GONE
+            } else {
+                noData.visibility = View.GONE
+                trashBinTxt.visibility = View.VISIBLE
+                recyclerViewTrash.visibility = View.VISIBLE
+            }
+
             recyclerViewTrash.layoutManager =
                 GridLayoutManager(this, count, LinearLayoutManager.VERTICAL, false)
             trashBinAdapter = TrashBinAdapter(this, trashList, this@TrashBinActivity)
             recyclerViewTrash.adapter = trashBinAdapter
             howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
+
         }
+        progressBar.visibility = View.GONE
     }
 
     private fun copyFiles(files: ArrayList<TrashBin>, destinationDir: File?): List<File> {
@@ -299,24 +334,6 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
         return copiedFiles
     }
-
-//    private fun createTrashDirectory(trashDirectory: File?, trashList: ArrayList<TrashBin>): File? {
-//        val file = File(trashDirectory, "model_list.json")
-//
-//        try {
-//            FileWriter(file).use { fileWriter ->
-//                val gson = Gson()
-//                val jsonString = gson.toJson(trashList)
-//                fileWriter.write(jsonString)
-//            }
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//            return null
-//        }
-//
-//        return trashDirectory
-//    }
-
 
     private fun readTrashDirectory(trashDirectory: File): ArrayList<TrashBin>? {
         val file = File(trashDirectory, "model_list.json")
@@ -395,24 +412,11 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                     }
                 } else {
                     if (selectedItemList.isNotEmpty()) {
-
                         showPopupRestoreMultiple(bottomNavigationView, selectedItemList)
-//                        AlertDialog.Builder(this).setTitle("Restore ${selectedItemList.size} item?")
-//                            .setMessage("Are you sure to restore these ${selectedItemList.size} files?")
-//                            .setPositiveButton("Yes") { _, _ ->
-//                                // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-//                                (application as AppClass).mainViewModel.flag = true
-//                                (application as AppClass).mainViewModel.restoreMultipleImagesVideos(selectedItemList)
-//
-//                            }.setNegativeButton("No") { dialog, _ ->
-//                                setAllVisibility()
-//                                dialog.dismiss()
-//                            }.show()
                     } else {
                         Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT).show()
                     }
                 }
-
 
             }
 
@@ -448,65 +452,45 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                     if (paths.isNotEmpty()) {
                         showPopupForDeletePermanently(bottomNavigationView, selectedItemList)
                     } else {
-                        CommonFunctions.showToast(this, "Error: Image not found")
+                        showToast(this, "Error: Image not found")
                     }
-
-//                    if (paths.isNotEmpty()) {
-//                        AlertDialog.Builder(this).setTitle("Delete Image")
-//                            .setMessage("Are you sure you want to delete this image?")
-//                            .setPositiveButton("Yes") { _, _ ->
-//                                // User clicked "Yes", proceed with deletion
-//                                val deletedImagePath =
-//                                    // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-//                                    (application as AppClass).mainViewModel.deleteMultiple(selectedItemList)
-//                                deletedImagePath.let {
-//                                    trashBinAdapter.remove(currentPosition)
-//                                }
-//
-//                                setAllVisibility()
-//                            }.setNegativeButton("No") { dialog, _ ->
-//                                dialog.dismiss()
-//                            }.show()
-//                    } else {
-//                        Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT).show()
-//                    }
                 }
 
             }
         }
     }
 
-    private fun recyclerIsEmptyOrNot() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            (application as AppClass).mainViewModel.allTrashData.observe(this, Observer {
-                if (it.isEmpty()) {
-                    noData.visibility = View.VISIBLE
-                    recyclerViewTrash.visibility = View.GONE
-                    trashBinTxt.visibility = View.GONE
-                } else {
-                    noData.visibility = View.GONE
-                    trashBinTxt.visibility = View.VISIBLE
-                    recyclerViewTrash.visibility = View.VISIBLE
-                }
-
-            })
-        } else {
-            ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages()
-                .observe(this) { userNotes ->
-                    if (userNotes.isEmpty()) {
-                        noData.visibility = View.VISIBLE
-                        recyclerViewTrash.visibility = View.GONE
-                        trashBinTxt.visibility = View.GONE
-                    } else {
-                        noData.visibility = View.GONE
-                        trashBinTxt.visibility = View.VISIBLE
-                        recyclerViewTrash.visibility = View.VISIBLE
-                    }
-                }
-
-        }
-    }
+//    private fun recyclerIsEmptyOrNot() {
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//            (application as AppClass).mainViewModel.allTrashData.observe(this, Observer {
+//                if (it.isEmpty()) {
+//                    noData.visibility = View.VISIBLE
+//                    recyclerViewTrash.visibility = View.GONE
+//                    trashBinTxt.visibility = View.GONE
+//                } else {
+//                    noData.visibility = View.GONE
+//                    trashBinTxt.visibility = View.VISIBLE
+//                    recyclerViewTrash.visibility = View.VISIBLE
+//                }
+//
+//            })
+//        } else {
+//            ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages()
+//                .observe(this) { userNotes ->
+//                    if (userNotes.isEmpty()) {
+//                        noData.visibility = View.VISIBLE
+//                        recyclerViewTrash.visibility = View.GONE
+//                        trashBinTxt.visibility = View.GONE
+//                    } else {
+//                        noData.visibility = View.GONE
+//                        trashBinTxt.visibility = View.VISIBLE
+//                        recyclerViewTrash.visibility = View.VISIBLE
+//                    }
+//                }
+//
+//        }
+//    }
 
     override fun onLongClick() {
         bottomNavigationView.visibility = View.VISIBLE

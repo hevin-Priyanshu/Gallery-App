@@ -54,4 +54,5 @@
     <string name="select_all">Select All</string>
     <string name="deselect_all">Deselect All</string>
     <string name="restore">Restore</string>
+    <string name="galley_allText">Gallery app is fast, light, modern and rich-feature app for organizing your photos\n</string>
 </resources>

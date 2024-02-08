@@ -1,5 +1,8 @@
 package com.demo.newgalleryapp.adapters
 
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,11 +17,11 @@ import com.demo.newgalleryapp.R
 import net.alhazmy13.imagefilter.ImageFilter
 
 class FilterAdapter(
+    val context: Context,
     private val filterList: List<ImageFilter.Filter>, private val listener: OnItemClickListener
 ) : RecyclerView.Adapter<FilterAdapter.FilterViewHolder>() {
 
     private val filterNames = arrayOf(
-        "None",
         "Gray",
         "Relief",
         "Average Blur",
@@ -39,118 +42,58 @@ class FilterAdapter(
         "Motion Blur",
         "Gotham"
     )
-    var selectedPosition = RecyclerView.NO_POSITION
+
+    private var selectedPosition = RecyclerView.NO_POSITION
 
     interface OnItemClickListener {
         fun onItemClick(filter: ImageFilter.Filter, position: Int)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FilterViewHolder {
-        val itemView =
-            LayoutInflater.from(parent.context).inflate(R.layout.image_filters, parent, false)
+        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.image_filters, parent, false)
         return FilterViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: FilterViewHolder, position: Int) {
         val filter = filterList[position]
-        holder.bind(filter)
+
+        val requestOptions = RequestOptions().fitCenter()
+
+        Glide.with(context)
+            .load(getFilterPreviewResourceId(filter)) // Replace with your image resource ID
+            .apply(requestOptions).into(holder.filterImageView)
+
+        holder.filterNameTextView.text = getFilterName(filter)
+
+        if (position == selectedPosition) {
+            holder.filterCardView.background =
+                ContextCompat.getDrawable(context, R.drawable.cardview_selector)
+        } else {
+            holder.filterCardView.background = null
+//            holder.filterCardView.background = ColorDrawable(Color.TRANSPARENT)
+//            holder.filterCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
+//            holder.filterCardView.cardElevation = 4f
+//            holder.filterCardView.radius = 6f
+        }
+
+        holder.filterCardView.setOnClickListener {
+//            holder.filterCardView.background = ContextCompat.getDrawable(holder.itemView.context, R.drawable.cardview_selector)
+            val previousSelected = selectedPosition
+            selectedPosition = holder.absoluteAdapterPosition
+            notifyItemChanged(previousSelected)
+            notifyItemChanged(selectedPosition)
+            listener.onItemClick(filter, position)
+        }
     }
 
     override fun getItemCount(): Int {
         return filterList.size
     }
 
-    inner class FilterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val filterImageView: ImageView =
-            itemView.findViewById(R.id.imageCrop_filter_preview)
-        private val filterNameTextView: TextView = itemView.findViewById(R.id.filters_text)
-        private val filterCardView: CardView = itemView.findViewById(R.id.card_view_filter)
-
-        init {
-            itemView.setOnClickListener {
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    if (position != selectedPosition) {
-                        // Update the selected filter position
-                        val previousSelected = selectedPosition
-                        selectedPosition = position
-                        // Notify item changes to redraw the UI
-                        notifyItemChanged(previousSelected)
-                        notifyItemChanged(selectedPosition)
-
-                        notifyDataSetChanged()
-
-                        val filter = filterList[position]
-                        listener.onItemClick(filter, position)
-                    }
-                }
-            }
-        }
-
-        fun bind(filter: ImageFilter.Filter) {
-            // Load filtered image preview using Glide
-            val requestOptions = RequestOptions().fitCenter()
-
-            Glide.with(itemView)
-                .load(getFilterPreviewResourceId(filter)) // Replace with your image resource ID
-                .apply(requestOptions).into(filterImageView)
-
-            filterNameTextView.text = getFilterName(filter)
-
-            if (adapterPosition == selectedPosition) {
-//
-                filterCardView.background = ContextCompat.getDrawable(
-                    itemView.context, R.drawable.cardview_selector
-                )
-
-//                filterCardView.isSelected = true
-
-//                filterCardView.setBackgroundResource(
-//                    R.drawable.cardview_selector
-//                )
-
-//                filterNameTextView.setBackgroundColor(
-//                    ContextCompat.getColor(
-//                        itemView.context, R.color.selected_filter_color
-//                    )
-//                )
-//                filterNameTextView.setTextColor(
-//                    ContextCompat.getColor(
-//                        itemView.context, R.color.white
-//                    )
-//                )
-            } else {
-
-
-//                filterCardView.setBackgroundResource(0)
-//                    itemView.context.resources.getDimensionPixelSize(com.intuit.sdp.R.dimen._4sdp)
-
-                filterCardView.background = null
-                filterCardView.setCardBackgroundColor(
-                    ContextCompat.getColor(
-                        itemView.context, R.color.white
-                    )
-                )
-                filterCardView.cardElevation = 4f
-                filterCardView.radius = 50f
-
-//                filterCardView.isSelected = false
-
-//                filterCardView.cardElevation = ContextCompat.dimensions(
-//                    itemView.context, R.drawable.cardview_selector
-//                )
-
-////                filterNameTextView.setBackgroundColor(Color.TRANSPARENT)
-//                filterNameTextView.setTextColor(
-//                    ContextCompat.getColor(
-//                        itemView.context, R.color.black
-//                    )
-//                )
-            }
-            //////////
-        }
-
-        //////////////
+    class FilterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val filterImageView: ImageView = itemView.findViewById(R.id.imageCrop_filter_preview)
+        val filterNameTextView: TextView = itemView.findViewById(R.id.filters_text)
+        val filterCardView: CardView = itemView.findViewById(R.id.card_view_filter)
     }
 
 
@@ -162,7 +105,7 @@ class FilterAdapter(
         // Return the resource ID corresponding to the filter
         return when (filter) {
 
-            ImageFilter.Filter.GRAY -> R.drawable.cardview_selector
+//            ImageFilter.Filter.GRAY -> R.drawable.cardview_selector
             ImageFilter.Filter.GRAY -> R.drawable.gray_preview_image
             ImageFilter.Filter.RELIEF -> R.drawable.relief_preview_image
             ImageFilter.Filter.AVERAGE_BLUR -> R.drawable.average_preview_image

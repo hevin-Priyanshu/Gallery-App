@@ -22,12 +22,10 @@ import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
-import java.io.File
-
 
 class TrashBinAdapter(
-    val context: Activity,
-    val list: ArrayList<TrashBin>,
+    private val context: Activity,
+    private val list: ArrayList<TrashBin>,
     private val listener: ImageClickListener? = null
 ) : RecyclerView.Adapter<TrashBinAdapter.TrashBinViewHolder>() {
 
@@ -103,7 +101,9 @@ class TrashBinAdapter(
             } else {
                 val intentTrash = Intent(context, OpenTrashImageActivity::class.java)
                 intentTrash.putExtra("trashBinPos", position)
-                context.startActivityForResult(intentTrash, REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY)
+                context.startActivityForResult(
+                    intentTrash, REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
+                )
             }
         }
 

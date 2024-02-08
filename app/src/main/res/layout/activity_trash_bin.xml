@@ -151,6 +151,18 @@
                         android:textColor="@color/color_main"
                         android:textSize="@dimen/_14sdp" />
 
+
+                    <TextView
+                        android:id="@+id/trash_bin_DeselectAll_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:text="DeSelect All"
+                        android:visibility="gone"
+                        android:textColor="@color/color_main"
+                        android:textSize="@dimen/_14sdp" />
+
                 </LinearLayout>
 
             </LinearLayout>
@@ -171,6 +183,13 @@
         android:text="Items in Trash bin will be removed after 10 days."
         android:textColor="@color/black"
         android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressBar_trash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        />
 
     <LinearLayout
         android:id="@+id/no_data"
@@ -196,7 +215,6 @@
 
     </LinearLayout>
 
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/trashBin_recycler_view"
         android:layout_width="match_parent"
@@ -204,15 +222,6 @@
         android:layout_above="@+id/bottomNavigation_trashBin"
         android:layout_below="@+id/trash_txt"
         android:padding="@dimen/_6sdp" />
-
-
-    <ProgressBar
-        android:id="@+id/progressBar_trash"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:visibility="gone" />
-
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation_trashBin"

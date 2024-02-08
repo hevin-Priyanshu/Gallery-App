@@ -92,7 +92,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -172,6 +171,8 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             }
 
             bottomNavigationView.selectedItemId = R.id.mediaItem
+
+
         }
 
         bottomNavigationViewForLongSelect.setOnItemSelectedListener { menuItem ->

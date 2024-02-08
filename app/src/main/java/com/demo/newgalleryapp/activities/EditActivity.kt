@@ -37,6 +37,7 @@ import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.FilterAdapter
+import com.demo.newgalleryapp.utilities.CommonFunctions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -53,13 +54,13 @@ class EditActivity : AppCompatActivity() {
     private lateinit var filterAdapter: FilterAdapter // Create a custom RecyclerView adapter for filters
     private lateinit var originalBitmap: Bitmap
     private lateinit var cropView: ImageView
-
-    //    private lateinit var originalImage: ImageView
+    private lateinit var originalImageSave: TextView
     private lateinit var saveEditedImage: TextView
     private lateinit var backBtn: ImageView
     private lateinit var editProgressBar: ProgressBar
     lateinit var toolbar: Toolbar
     private lateinit var filteredBitmap: Bitmap
+    private var uriString: String? = null
     private var anyChanges: Boolean = false
     private var popupWindow: PopupWindow? = null
     private var scopeJob: Job? = null
@@ -70,30 +71,19 @@ class EditActivity : AppCompatActivity() {
 
         cropView = findViewById(R.id.cropView)
         filterRecyclerView = findViewById(R.id.filterRecyclerView)
-//        originalImage = findViewById(R.id.revertButton)
+        originalImageSave = findViewById(R.id.image_original_save)
         backBtn = findViewById(R.id.filter_back_btn)
         saveEditedImage = findViewById(R.id.image_filter_save_btn)
         editProgressBar = findViewById(R.id.edit_progressBar)
         toolbar = findViewById(R.id.toolBar_edit)
 
-
         saveEditedImage.setOnClickListener {
-
-            showThreeDotPopup(toolbar)
-//            AlertDialog.Builder(this).setTitle("Save Edited Image")
-//                .setMessage("Are you sure to save these image").setPositiveButton("Save") { _, _ ->
-//                    saveBitmapToInternalStorage(filteredBitmap)
-//                    (application as AppClass).mainViewModel.flag = true
-//                    Toast.makeText(this, "Image Save Successfully!!", Toast.LENGTH_SHORT).show()
-//                    finish()
-//                }.setNegativeButton("Cancel") { dialog, _ ->
-//                    dialog.dismiss()
-//                }.show()
-//            Log.d("originalBitmap", "onCreate: $originalBitmap")
+            showThreeDotPopup(toolbar, "filterImage")
         }
 
 
-        val uriString = intent.getStringExtra("Uri")
+        uriString = intent.getStringExtra("Uri")
+
 
         backBtn.setOnClickListener {
             if (anyChanges) {
@@ -131,6 +121,12 @@ class EditActivity : AppCompatActivity() {
                 }
             }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(cropView)
 
+            // this line of code save the original crop image
+            originalImageSave.setOnClickListener {
+                showThreeDotPopup(toolbar, "original")
+            }
+
+
             runOnUiThread {
                 // Initialize the originalBitmap with the loaded image
                 Glide.with(this).asBitmap().load(uriString)
@@ -147,57 +143,41 @@ class EditActivity : AppCompatActivity() {
                         }
                     })
 
-                filterAdapter =
-                    FilterAdapter(createFilterList(), object : FilterAdapter.OnItemClickListener {
-//                        override fun onItemClick(filter: ImageFilter.Filter) {
-//                            scopeJob?.cancel()
-////                            scopeJob?.ensureActive()
-////                            Executors.newSingleThreadExecutor().execute {
-////                                applyFilter(filter)
-////                            }
-//                            scopeJob = lifecycleScope.launch(Dispatchers.IO) {
-//                                applyFilter(filter)
-//                            }
-//                        }
+                filterAdapter = FilterAdapter(this@EditActivity,
+                    createFilterList(),
+                    object : FilterAdapter.OnItemClickListener {
 
                         override fun onItemClick(filter: ImageFilter.Filter, position: Int) {
                             scopeJob?.cancel()
 
-                            if (position == 0) {
-                                runOnUiThread {
-                                    Glide.with(this@EditActivity).load(uriString)
-                                        .listener(object : RequestListener<Drawable> {
-                                            override fun onLoadFailed(
-                                                e: GlideException?,
-                                                model: Any?,
-                                                target: Target<Drawable>?,
-                                                isFirstResource: Boolean
-                                            ): Boolean {
-                                                return false
-                                            }
+//                            Glide.with(this@EditActivity).load(uriString)
+//                                .listener(object : RequestListener<Drawable> {
+//                                    override fun onLoadFailed(
+//                                        e: GlideException?,
+//                                        model: Any?,
+//                                        target: Target<Drawable>?,
+//                                        isFirstResource: Boolean
+//                                    ): Boolean {
+//                                        return false
+//                                    }
+//
+//                                    override fun onResourceReady(
+//                                        resource: Drawable?,
+//                                        model: Any?,
+//                                        target: Target<Drawable>?,
+//                                        dataSource: DataSource?,
+//                                        isFirstResource: Boolean
+//                                    ): Boolean {
+//                                        Log.d("IA", "onResourceReady: ${model.toString()}")
+//                                        return false
+//                                    }
+//                                }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(cropView)
 
-                                            override fun onResourceReady(
-                                                resource: Drawable?,
-                                                model: Any?,
-                                                target: Target<Drawable>?,
-                                                dataSource: DataSource?,
-                                                isFirstResource: Boolean
-                                            ): Boolean {
-                                                Log.d("IA", "onResourceReady: ${model.toString()}")
-                                                return false
-                                            }
-                                        }).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
-                                        .into(cropView)
 
-                                    val noneImageFilter = uriStringToBitmap(uriString)
-                                    saveBitmapToInternalStorage(noneImageFilter!!)
-                                    anyChanges = true
-                                }
-
-                            } else {
-                                scopeJob = lifecycleScope.launch(Dispatchers.IO) {
-                                    applyFilter(filter)
-                                }
+                            scopeJob = lifecycleScope.launch(Dispatchers.IO) {
+                                originalImageSave.visibility = View.GONE
+                                saveEditedImage.visibility = View.VISIBLE
+                                applyFilter(filter)
                             }
                             ////////////////
                         }
@@ -206,32 +186,6 @@ class EditActivity : AppCompatActivity() {
                     LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
                 filterRecyclerView.adapter = filterAdapter
             }
-
-//            originalImage.setOnClickListener {
-//                Glide.with(this).load(uriString).listener(object : RequestListener<Drawable> {
-//                    override fun onLoadFailed(
-//                        e: GlideException?,
-//                        model: Any?,
-//                        target: Target<Drawable>?,
-//                        isFirstResource: Boolean
-//                    ): Boolean {
-//                        return false
-//                    }
-//
-//                    override fun onResourceReady(
-//                        resource: Drawable?,
-//                        model: Any?,
-//                        target: Target<Drawable>?,
-//                        dataSource: DataSource?,
-//                        isFirstResource: Boolean
-//                    ): Boolean {
-//                        Log.d("IA", "onResourceReady: ${model.toString()}")
-//                        return false
-//                    }
-//                }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(cropView)
-//                filterAdapter.selectedPosition = RecyclerView.NO_POSITION
-//                filterAdapter.notifyDataSetChanged()
-//            }
         } else {
             Log.e("EditActivity", "No URI provided")
             finish()
@@ -249,7 +203,7 @@ class EditActivity : AppCompatActivity() {
         super.onBackPressed()
     }
 
-    private fun showThreeDotPopup(anchorView: View) {
+    private fun showThreeDotPopup(anchorView: View, onclickText: String) {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupView: View = inflater.inflate(R.layout.save_popup_menu, null)
 
@@ -265,11 +219,20 @@ class EditActivity : AppCompatActivity() {
         val popupTextCancel = popupView.findViewById<TextView>(R.id.cancel_column)
 
         popupTextSave.setOnClickListener {
-            saveBitmapToInternalStorage(filteredBitmap)
-            anyChanges = true
-            Toast.makeText(this, "Image Save Successfully!!", Toast.LENGTH_SHORT).show()
-            popupWindow?.dismiss()
-            scopeJob?.cancel()
+
+            if (onclickText == "original") {
+                val noneImageFilter = uriStringToBitmap(uriString!!)
+                saveBitmapToInternalStorage(noneImageFilter!!)
+                anyChanges = true
+                CommonFunctions.showToast(this, "Image Save Successfully!!")
+                popupWindow?.dismiss()
+            } else if(onclickText == "filterImage") {
+                saveBitmapToInternalStorage(filteredBitmap)
+                anyChanges = true
+                CommonFunctions.showToast(this, "Image Save Successfully!!")
+                popupWindow?.dismiss()
+                scopeJob?.cancel()
+            }
         }
 
         popupTextCancel.setOnClickListener {
@@ -365,7 +328,7 @@ class EditActivity : AppCompatActivity() {
         }
     }
 
-    fun uriStringToBitmap(uriString: String): Bitmap? {
+    private fun uriStringToBitmap(uriString: String): Bitmap? {
         try {
             // Convert the URI string to a URI object
             val uri = Uri.parse(uriString)

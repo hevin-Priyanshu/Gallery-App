@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
 import com.demo.newgalleryapp.models.MediaModel
@@ -139,6 +140,7 @@ class PhotosFragment : Fragment() {
         recyclerView.adapter = imagesAdapter
 
         mediaProgressBar.visibility = View.GONE
+        MainScreenActivity.bottomNavigationView.visibility = View.VISIBLE
     }
 
 
@@ -158,11 +160,6 @@ class PhotosFragment : Fragment() {
 //        val date = Date(dateAddedInMillis)
 //        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
 //        return dateFormat.format(date)
-
-//        val instant = Instant.ofEpochMilli(dateAddedInMillis)
-//        val formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy", Locale.getDefault())
-//        return formatter.format(instant)
-
 
         val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000

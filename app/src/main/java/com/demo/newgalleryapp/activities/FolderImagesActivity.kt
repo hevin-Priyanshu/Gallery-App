@@ -43,6 +43,8 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var itemSelected: TextView
     private lateinit var setTextAccToData: TextView
     private lateinit var albumFolderSize: TextView
+    private lateinit var selectAll: TextView
+    private lateinit var deSelectAll: TextView
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
     private var newList: ArrayList<MediaModel> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
@@ -90,6 +92,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         select_top_menu_bar = findViewById(R.id.select_top_menu_bar)
         unselect_top_menu_bar = findViewById(R.id.unselect_top_menu_bar)
 
+        selectAll = findViewById(R.id.folder_selectAll_textView)
+        deSelectAll = findViewById(R.id.folder_DeselectAll_textView)
+
         backBtn.setOnClickListener {
             if (updated) {
                 val intent = Intent()
@@ -119,10 +124,31 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             true
         }
 
-//        bottomNavigationView.setOnItemSelectedListener { menuItem ->
-//            setBottomNavigationItem(menuItem.itemId)
-//            true
-//        }
+
+        selectAll.setOnClickListener {
+
+            adapter.isSelected = true
+            adapter.updateSelectionState(true)
+            adapter.checkSelectedList.clear()
+            adapter.checkSelectedList.addAll(newList)
+            counter(adapter.checkSelectedList.size)
+
+            selectAll.visibility = View.GONE
+            deSelectAll.visibility = View.VISIBLE
+        }
+
+
+        deSelectAll.setOnClickListener {
+
+            adapter.isSelected = false
+            adapter.updateSelectionState(false)
+            adapter.checkSelectedList.clear()
+            adapter.checkSelectedList.removeAll(newList)
+            counter(adapter.checkSelectedList.size)
+
+            deSelectAll.visibility = View.GONE
+            selectAll.visibility = View.VISIBLE
+        }
 
         // IF USER SLIDE THE SCREEN ON FOLDER THEN THE BELOW CODE GIVES THE FOLDER LIST OF IMAGES
         if (intent.hasExtra("folderPosition")) {
@@ -208,7 +234,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 //                val numImagesToDelete = paths.size
                 val pathsToRemove = checkBoxList.map { it.path }
 
-                showPopupForMoveToTrashBin(bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position)
+                showPopupForMoveToTrashBin(
+                    bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position
+                )
 
 //                setAllVisibility()
 
@@ -323,12 +351,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 //                    }
 //                }
 //            }
-//
-//            R.id.editItem -> {
-//            }
-//        }
-//
-//    }
 
     private fun loadRecyclerViewNew(list: ArrayList<MediaModel>, position: Int) {
         val screenWidth = resources.displayMetrics.widthPixels
@@ -358,13 +380,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     }
 
 
-//    private fun loadRecyclerView(list: ArrayList<MediaModel>, position: Int) {
-//        recyclerView.visibility = View.VISIBLE
-//        recyclerView.layoutManager = GridLayoutManager(this, 4, LinearLayoutManager.VERTICAL, false)
-//        adapter = ImagesAdapter(this, list, position, this@FolderImagesActivity)
-//        recyclerView.adapter = adapter
-//    }
-
     override fun onLongClick() {
         bottomNavigationView.visibility = View.VISIBLE
         unselect_top_menu_bar.visibility = View.VISIBLE
@@ -390,7 +405,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     }
 
     private fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
-        if (position >= 0 && position < (application as AppClass).mainViewModel.folderList.size) {
+
+        val tempFolderList = (application as AppClass).mainViewModel.folderList
+        if (position >= 0 && position < tempFolderList.size) {
 
             val folder = (application as AppClass).mainViewModel.folderList[position]
             val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
