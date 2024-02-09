@@ -22,7 +22,7 @@ class FavoriteImagesActivity : AppCompatActivity() {
     private lateinit var howManyItemOn: TextView
     private lateinit var favoriteAdapter: FavoriteAdapter
     private lateinit var noData: LinearLayout
-
+    private var tempFavoriteList: ArrayList<MediaModel> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -34,14 +34,17 @@ class FavoriteImagesActivity : AppCompatActivity() {
         noData = findViewById(R.id.no_data)
         howManyItemOn = findViewById(R.id.howManyItemOn)
 
-        recyclerIsEmptyOrNot()
-
 
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllFavorites()
-            .observe(this, Observer {
-                recyclerView.layoutManager =
-                    GridLayoutManager(this, 4, LinearLayoutManager.VERTICAL, false)
-                favoriteAdapter = FavoriteAdapter(this@FavoriteImagesActivity, it as ArrayList<MediaModel>)
+            .observe(this, Observer { favorites ->
+
+                tempFavoriteList.clear()
+                tempFavoriteList.addAll(favorites)
+
+                recyclerIsEmptyOrNot(tempFavoriteList)
+
+                recyclerView.layoutManager = GridLayoutManager(this, 4, LinearLayoutManager.VERTICAL, false)
+                favoriteAdapter = FavoriteAdapter(this@FavoriteImagesActivity, tempFavoriteList)
                 recyclerView.adapter = favoriteAdapter
                 howManyItemOn.text = favoriteAdapter.itemCount.toString()
             })
@@ -54,16 +57,14 @@ class FavoriteImagesActivity : AppCompatActivity() {
         }
     }
 
-    private fun recyclerIsEmptyOrNot() {
-        ImagesDatabase.getDatabase(this).favoriteImageDao().getAllFavorites()
-            .observe(this) { userNotes ->
-                if (userNotes.isEmpty()) {
-                    noData.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
-                } else {
-                    noData.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                }
-            }
+    private fun recyclerIsEmptyOrNot(tempFavoriteList: ArrayList<MediaModel>) {
+        if (tempFavoriteList.isEmpty()) {
+            noData.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            noData.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
+
     }
 }

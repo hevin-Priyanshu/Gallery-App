@@ -86,6 +86,16 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         super.onActivityResult(requestCode, resultCode, data)
         if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            
+            // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
+            if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
+                checkBoxList.map {
+                    it.path
+                }.forEach {
+                    ImagesDatabase.getDatabase(this).favoriteImageDao().deleteFavorites(it)
+                }
+            }
+
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
             FLAG_FOR_CHANGES_IN_RENAME = false
@@ -327,7 +337,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             showToast(this, "No images selected to share")
         }
     }
-
 
     private fun showDeleteConfirmationDialog(paths: List<String>) {
         if (paths.isNotEmpty()) {

@@ -19,24 +19,25 @@ import com.bumptech.glide.request.target.Target
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.OpenTrashImageActivity
 import com.demo.newgalleryapp.interfaces.ImageClickListener
+import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
 
-class TrashBinAdapter(
+class TrashBinAdapterAboveVersion(
     private val context: Activity,
     private val list: ArrayList<TrashBinAboveVersion>,
     private val listener: ImageClickListener? = null
-) : RecyclerView.Adapter<TrashBinAdapter.TrashBinViewHolder>() {
+) : RecyclerView.Adapter<TrashBinAdapterAboveVersion.TrashBinViewHolderNew>() {
 
     var isSelected = false
     var checkTrashSelectedList: ArrayList<TrashBinAboveVersion> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrashBinViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TrashBinViewHolderNew {
         val layout =
             LayoutInflater.from(parent.context).inflate(R.layout.images_item, parent, false)
-        return TrashBinViewHolder(layout)
+        return TrashBinViewHolderNew(layout)
     }
 
     override fun getItemCount(): Int {
@@ -58,7 +59,7 @@ class TrashBinAdapter(
         notifyDataSetChanged()
     }
 
-    override fun onBindViewHolder(holder: TrashBinViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: TrashBinViewHolderNew, position: Int) {
 
         val screenWidth = context.resources.displayMetrics.widthPixels
         sharedPreferencesHelper = SharedPreferencesHelper(context)
@@ -70,13 +71,9 @@ class TrashBinAdapter(
             RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
         holder.image.layoutParams = layoutParams
 
-        if (list[position].isVideo) {
-            holder.imageVideoThumbnail.visibility = View.VISIBLE
-        } else {
-            holder.imageVideoThumbnail.visibility = View.GONE
-        }
 
-        if (checkTrashSelectedList.map { it.uri }.contains(list[position].uri)) {
+        if (checkTrashSelectedList.map { it.uri }
+                .contains(list[position].uri)) {
             holder.isSelectedCheckbox.setImageResource(R.drawable.right_tick_item)
         } else {
             holder.isSelectedCheckbox.setImageResource(R.drawable.empty_select_item_blur)
@@ -164,10 +161,9 @@ class TrashBinAdapter(
             ).into(holder.image)
     }
 
-    class TrashBinViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class TrashBinViewHolderNew(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var image: ImageView = itemView.findViewById(R.id.image_view)
         var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox)
-        var imageVideoThumbnail: ImageView = itemView.findViewById(R.id.imageView_video_logo)
 
         init {
             isSelectedCheckbox.visibility = View.GONE // or View.INVISIBLE

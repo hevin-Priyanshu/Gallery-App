@@ -2,6 +2,8 @@ package com.demo.newgalleryapp.adapters
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.drawable.Drawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +11,11 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
@@ -72,6 +78,7 @@ class ImagesAd(
         }
         notifyDataSetChanged() // Notify the adapter of the data set change
     }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
 
         return if (viewType == 101) {
@@ -104,7 +111,7 @@ class ImagesAd(
 
         } else if (holder is InnerImageViewHolder) {
 
-           val imageModel = dataList[position] as MediaModel
+            val imageModel = dataList[position] as MediaModel
 
             if (imageModel.isVideo) {
                 holder.imageVideoThumbnail.visibility = View.VISIBLE
@@ -159,7 +166,9 @@ class ImagesAd(
                         }
                     }
                     intent.putExtra("currentState", state)
-                    context.startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY)
+                    context.startActivityForResult(
+                        intent, REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
+                    )
                 }
             }
 
@@ -183,8 +192,29 @@ class ImagesAd(
             }
 
             // Load and display the image using Glide or your preferred image-loading library
-            Glide.with(holder.itemView.context).load(File(imageModel.path))
-                .placeholder(R.drawable.placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
+            Glide.with(context).load(File(imageModel.path))
+                .listener(object : RequestListener<Drawable?> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable?>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("TAG_E", "onLoadFailed: ${e?.message}")
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable?>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("TAG_E", "onResourceReady: ${model.toString()}")
+                        return false
+                    }
+                }).placeholder(R.drawable.placeholder).diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .into(holder.imageView)
         }
     }

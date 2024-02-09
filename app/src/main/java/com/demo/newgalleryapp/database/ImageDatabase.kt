@@ -4,10 +4,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBin
+import com.demo.newgalleryapp.models.TrashBinAboveVersion
+import com.demo.newgalleryapp.models.UriConverter
 
-@Database(entities = [MediaModel::class, TrashBin::class], version = 2, exportSchema = false)
+@Database(entities = [MediaModel::class, TrashBinAboveVersion::class], version = 2, exportSchema = false)
+@TypeConverters(UriConverter::class)
 abstract class ImagesDatabase : RoomDatabase() {
     abstract fun favoriteImageDao(): ImageDao
 

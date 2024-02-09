@@ -1,8 +1,6 @@
 package com.demo.newgalleryapp.fragments
 
-import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +13,6 @@ import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
-import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_OPEN_DOCUMENT_TREE_REQUEST_CODE
 
 class SettingFragment : Fragment() {
 
@@ -35,24 +32,6 @@ class SettingFragment : Fragment() {
             return fragment
         }
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQ_CODE_FOR_OPEN_DOCUMENT_TREE_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            data?.data?.also { uri ->
-
-//                val contentResolver = requireContext().contentResolver
-//                val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION
-////                // Check for the freshest data.
-//                contentResolver.takePersistableUriPermission(uri, takeFlags)
-//
-//                sharedPreferencesHelper.saveUri(uri) // Save for later use
-                openTrashBinActivity(uri)
-            }
-        }
-    }
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -75,18 +54,8 @@ class SettingFragment : Fragment() {
         }
 
         trash.setOnClickListener {
-
             val intent = Intent(requireContext(), TrashBinActivity::class.java)
-            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY )
-//
-//            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-//            startActivityForResult(intent, OPEN_DOCUMENT_TREE_REQUEST_CODE)
-
-//            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-//              putExtra("android.content.extra.INITIAL_URI", Uri.parse("/storage/emulated/0/.trashed"))
-////                putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.parse("/com.google.android.apps.nbu.files.trash.ui.TrashActivity"))
-//            }
-//            startActivityForResult(intent, OPEN_DOCUMENT_TREE_REQUEST_CODE)
+            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY)
         }
 
         language.setOnClickListener {
@@ -115,20 +84,6 @@ class SettingFragment : Fragment() {
             val shareIntent = Intent.createChooser(sendIntent, null)
             startActivity(shareIntent)
         }
-
-
         return view
-    }
-
-    private fun requestDirectoryAccess() {
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        startActivityForResult(intent, REQ_CODE_FOR_OPEN_DOCUMENT_TREE_REQUEST_CODE)
-    }
-
-
-    private fun openTrashBinActivity(storedUri: Uri) {
-        val intent = Intent(requireContext(), TrashBinActivity::class.java)
-        intent.data = storedUri
-        startActivity(intent)
     }
 }

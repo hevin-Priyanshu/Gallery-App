@@ -19,7 +19,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
@@ -36,16 +35,16 @@ import com.demo.newgalleryapp.utilities.CommonFunctions
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.formatDate
 import com.demo.newgalleryapp.utilities.CommonFunctions.formatTime
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBinForOpenActivityOnlyOne
 import com.demo.newgalleryapp.utilities.CommonFunctions.showRenamePopup
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
 
 class OpenImageActivity : AppCompatActivity() {
@@ -56,8 +55,6 @@ class OpenImageActivity : AppCompatActivity() {
     private lateinit var timeOfImage: TextView
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var toolbar: Toolbar
-    private lateinit var originalFilePath: File
-    private lateinit var newFile: File
     private var tempList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var fabCount = 0
@@ -70,47 +67,6 @@ class OpenImageActivity : AppCompatActivity() {
 
     private val handler = Handler()
 
-    private fun copyFiles(file: File, destinationDir: File) {
-//        val copiedFiles = mutableListOf<TrashBin>()
-
-//        files.forEach { trash ->
-
-//            val file = File(trash.destinationImagePath)
-        // Create a new File object for the destination file
-        try {
-            val destinationFile = File(destinationDir, file.name)
-
-            // Open an input stream for reading from the source file
-            val inputStream = FileInputStream(file)
-
-            // Open an output stream for writing to the destination file
-            val outputStream = FileOutputStream(destinationFile)
-            try {
-                // Define a buffer for reading from the input stream
-                val buffer = ByteArray(1024)
-                var length: Int
-
-
-                // Read from the input stream and write to the output stream
-                while (inputStream.read(buffer).also { length = it } > 0) {
-                    outputStream.write(buffer, 0, length)
-                }
-//                copiedFiles.add(destinationFile) // Add the copied file to the list
-//                copiedFiles.add(TrashBin(trash.id, destinationFile.path, trash.destinationImagePath, trash.deletionTimestamp)) // Add the copied file to the list
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                // Close the streams
-                inputStream.close()
-                outputStream.close()
-            }
-//        }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
         Log.d("MyApp", "onActivityResult: requestCode=$requestCode, resultCode=$resultCode")
@@ -118,28 +74,25 @@ class OpenImageActivity : AppCompatActivity() {
 
         if (requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+
+            val imageToDelete = models[viewPager.currentItem].path
+            ImagesDatabase.getDatabase(this@OpenImageActivity).favoriteImageDao().deleteFavorites(imageToDelete)
+
             imagesSliderAdapter.remove(viewPager.currentItem)
             imagesSliderAdapter.notifyDataSetChanged()
-            Toast.makeText(this, "Delete Success.", Toast.LENGTH_SHORT).show()
-        } else if ((requestCode == REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY && resultCode == Activity.RESULT_OK) ||
-            (requestCode == REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)
-        ) {
+            showToast(this, "Delete Success.")
+
+        } else if ((requestCode == REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
 
-        } else if (requestCode == 777 && resultCode == Activity.RESULT_OK) {
-            try {
-                originalFilePath.copyTo(newFile)
-                originalFilePath.delete()
-                Log.d("newFile", "onActivityResult: $newFile")
-                Toast.makeText(this, "Image Rename Successfully.", Toast.LENGTH_SHORT).show()
+        } else if (requestCode == REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            popupWindow?.dismiss()
+            val selectedImagePath = models[viewPager.currentItem].path
+            // Here rename image in android 11 and above device
+            showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
 
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(this, "Failed to copy image.", Toast.LENGTH_SHORT).show()
-                Log.e("error12", "onActivityResult: ${e.message}")
-            }
         } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
 
             val result = CropImage.getActivityResult(data)
@@ -225,7 +178,7 @@ class OpenImageActivity : AppCompatActivity() {
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
                 textView.text = models[position].displayName
-                timeOfImage.text = CommonFunctions.formatTime(models[position].date)
+                timeOfImage.text = formatTime(models[position].date)
                 setFavoriteIcon(position)
                 fabCount = position
             }
@@ -255,6 +208,7 @@ class OpenImageActivity : AppCompatActivity() {
     private fun sendFavoriteListToViewPager() {
 
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllFavorites().observe(this) {
+            tempList.clear()
             tempList.addAll(it)
             models = tempList
             setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
@@ -301,9 +255,7 @@ class OpenImageActivity : AppCompatActivity() {
             MediaScannerConnection.scanFile(this, arrayOf(filePath.path), null) { _, uri ->
                 arrayList.add(uri)
                 try {
-                    copyFiles(
-                        filePath, (application as AppClass).mainViewModel.createTrashDirectory()
-                    )
+
                     val pendingIntent: PendingIntent =
                         MediaStore.createTrashRequest(contentResolver, arrayList, true)
                     startIntentSenderForResult(
@@ -315,7 +267,7 @@ class OpenImageActivity : AppCompatActivity() {
                         0,
                         null
                     )
-//                    copyFiles(filePath, (application as AppClass).mainViewModel.createTrashDirectory())
+
                 } catch (e: Exception) {
                     Log.e("TAG", "000AAA: $e")
                 }
@@ -323,33 +275,11 @@ class OpenImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.flag = true
         } else {
             if (imageToDelete.isNotEmpty()) {
-                showPopupForMoveToTrashBinForOpenActivityOnlyOne(
-                    bottomNavigationView, imageToDelete, currentPosition
-                )
+                showPopupForMoveToTrashBinForOpenActivityOnlyOne(bottomNavigationView, imageToDelete, currentPosition, models[currentPosition].isVideo)
                 anyChanges = true
             } else {
-                CommonFunctions.showToast(this, "Error: Image not found")
+                showToast(this, "Error: Image not found")
             }
-
-//            if (!imageToDelete.isNullOrEmpty()) {
-//                AlertDialog.Builder(this).setTitle("Delete 1 Item ?")
-//                    .setMessage("Are you sure to move 1 file to the trash bin?")
-//                    .setPositiveButton("Delete") { _, _ ->
-//                        // User clicked "Yes", proceed with deletion
-//                        (application as AppClass).mainViewModel.flag = true
-//                        val deletedImagePath =
-//                            // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-//                            (application as AppClass).mainViewModel.moveImageInTrashBin(imageToDelete)
-//                        deletedImagePath.let {
-//                            imagesSliderAdapter.remove(
-//                                currentPosition
-//                            )
-//                        }
-//
-//                    }.setNegativeButton("Cancel") { dialog, _ ->
-//                        dialog.dismiss()
-//                    }.show()
-//            }
         }
     }
 
@@ -362,7 +292,7 @@ class OpenImageActivity : AppCompatActivity() {
 
         if (roomModel == null) {
             favoriteImageDao.insertFavorite(model)
-            Toast.makeText(this, "Favorite Added", Toast.LENGTH_SHORT).show()
+            showToast(this, "Favorite Added")
         } else {
             favoriteImageDao.deleteFavorite(roomModel)
         }
@@ -430,43 +360,42 @@ class OpenImageActivity : AppCompatActivity() {
         }
 
         popupTextRename.setOnClickListener {
-            popupWindow?.dismiss()
-            showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
 
-//            val editText = EditText(this@OpenImageActivity)
-//            val dialog = AlertDialog.Builder(this@OpenImageActivity).setTitle("Rename Image")
-//                .setMessage("Enter new name:").setView(editText)
-//                .setPositiveButton("Rename") { _, _ ->
-//
-//                    val newName = editText.text.toString().trim()
-//                    val directory = File(selectedImagePath).parent
-//                    val originalPath = File(selectedImagePath)
-//                    val lastText = getImageFileExtension(selectedImagePath)
-//                    val destinationPath = File(directory, "$newName.$lastText")
-//
-//                    if (newName.isNotEmpty()) {
-//
-//                        try {
-//                            originalPath.renameTo(destinationPath)
-//                            (application as AppClass).mainViewModel.scanFile(this, destinationPath)
-//                            (application as AppClass).mainViewModel.scanFile(this, originalPath)
-//                            Toast.makeText(this, "success", Toast.LENGTH_SHORT).show()
-//                        } catch (e: IOException) {
-//                            Log.e("CopyOrMoveActivity", "Error creating write request", e)
-//                        }
-////                            renameImage(selectedImagePath, newName)
-//                        popupWindow?.dismiss()
-//                    } else {
-//                        Toast.makeText(this, "Please enter a valid name.", Toast.LENGTH_SHORT)
-//                            .show()
-//                    }
-//                }.setNegativeButton("No") { dialog, _ ->
-//                    // User clicked "No", do nothing
-//                    popupWindow?.dismiss()
-//                    dialog.dismiss()
-//                }.show()
-//
-//            dialog.show()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+                if (selectedImagePath.isNotEmpty()) {
+                    try {
+                        val arrayList: ArrayList<Uri> = ArrayList()
+                        MediaScannerConnection.scanFile(
+                            this, arrayOf(selectedImagePath), null
+                        ) { file, uri ->
+
+                            arrayList.add(uri)
+                            val pendingIntent: PendingIntent =
+                                MediaStore.createWriteRequest(contentResolver, arrayList)
+                            startIntentSenderForResult(
+                                pendingIntent.intentSender,
+                                REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY,
+                                null,
+                                0,
+                                0,
+                                0,
+                                null
+                            )
+
+                        }
+
+                    } catch (e: Exception) {
+                        Log.e("TAG", "bottomNavigationViewItemSetter: $e")
+                    }
+                } else {
+                    showToast(this, "Error: Image not found!!!")
+                }
+            } else {
+                showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
+                popupWindow?.dismiss()
+            }
+            //////////////////
         }
 
         popupTextSlideShow.setOnClickListener {

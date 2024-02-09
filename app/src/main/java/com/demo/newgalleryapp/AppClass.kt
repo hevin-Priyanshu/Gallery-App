@@ -27,7 +27,7 @@ class AppClass : Application() {
                 mainViewModel.allMediaList
                 mainViewModel.photosData
                 mainViewModel.videosData
-                mainViewModel.allTrashData
+                mainViewModel.tempAllTrashData
             }
         }
         Executors.newSingleThreadExecutor().execute {
@@ -40,7 +40,7 @@ class AppClass : Application() {
                             .selectImages(timestamp)
 
                     imagesToDelete.forEach {
-                        File(it.destinationImagePath).deleteRecursively()
+                        File(it.path).deleteRecursively()
                         ImagesDatabase.getDatabase(applicationContext).favoriteImageDao()
                             .deleteImages(it)
                     }

@@ -33,7 +33,7 @@ import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForM
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
 import com.demo.newgalleryapp.models.Folder
-import com.demo.newgalleryapp.models.TrashBin
+import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -59,12 +59,12 @@ object CommonFunctions {
     const val REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY = 107
     const val REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY = 108
     const val REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY = 109
-    const val REQ_CODE_FOR_OPEN_DOCUMENT_TREE_REQUEST_CODE = 110
-    const val REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY = 111
-    const val REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY = 112
-    const val REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY = 113
-    const val REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY = 114
-    const val REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY = 115
+    const val REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY = 110
+    const val REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY = 111
+    const val REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY = 112
+    const val REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY = 113
+    const val REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY = 114
+    const val REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY = 115
 
     const val ERROR_TAG = "Error"
     var FLAG_IN_FOLDER_ACTIVITY: Boolean = false
@@ -279,6 +279,7 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
             (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
 
+
             if (activity is FolderImagesActivity) {
                 removeItemsAtPosition(position, pathsToRemove)
                 FolderImagesActivity.adapter.notifyDataSetChanged()
@@ -321,7 +322,7 @@ object CommonFunctions {
 
     // here move only one file in trash bin,  popup menu will show
     fun Context.showPopupForMoveToTrashBinForOpenActivityOnlyOne(
-        anchorView: View, path: String, currentPosition: Int
+        anchorView: View, path: String, currentPosition: Int, isVideoOrNot: Boolean
     ) {
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowDelete: View = inflater.inflate(R.layout.delete_popup_menu, null)
@@ -349,13 +350,9 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
             (applicationContext as AppClass).mainViewModel.flag = true
             // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-            (applicationContext as AppClass).mainViewModel.moveImageInTrashBin(path)
+            (applicationContext as AppClass).mainViewModel.moveImageInTrashBin(path, isVideoOrNot)
 
             OpenImageActivity.imagesSliderAdapter.remove(currentPosition)
-//
-//            photosFragment.imagesAdapter?.remove(currentPosition)
-//            photosFragment.imagesAdapter?.notifyDataSetChanged()
-
             popupWindow_delete?.dismiss()
             showToast(this, "Move To Trash bin Successfully!!")
         }
@@ -366,7 +363,7 @@ object CommonFunctions {
     }
 
     // here restore multiple popup menu will show
-    fun Context.showPopupRestoreMultiple(anchorView: View, selectedItemList: ArrayList<TrashBin>) {
+    fun Context.showPopupRestoreMultiple(anchorView: View, selectedItemList: ArrayList<TrashBinAboveVersion>) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowRestoreTrash: View = inflater.inflate(R.layout.restore_popup_menu, null)
@@ -411,7 +408,7 @@ object CommonFunctions {
         }
     }
 
-    fun Activity.showPopupRestoreOne(anchorView: View, paths: TrashBin, currentPosition: Int) {
+    fun Activity.showPopupRestoreOne(anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowRestoreOne: View = inflater.inflate(R.layout.restore_popup_menu, null)
@@ -453,7 +450,7 @@ object CommonFunctions {
     // here DeletePermanently multiple popup menu will show
     fun Context.showPopupForDeletePermanently(
         anchorView: View,
-        deletePaths: ArrayList<TrashBin>,
+        deletePaths: ArrayList<TrashBinAboveVersion>,
     ) {
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowDeletePermanently: View = inflater.inflate(R.layout.delete_popup_menu, null)
@@ -495,7 +492,7 @@ object CommonFunctions {
 
     // here DeletePermanently one only items popup menu will show
     fun Context.showPopupForDeletePermanentlyForOne(
-        anchorView: View, paths: TrashBin, currentPosition: Int
+        anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater

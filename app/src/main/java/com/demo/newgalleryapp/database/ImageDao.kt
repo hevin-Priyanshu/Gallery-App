@@ -8,6 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBin
+import com.demo.newgalleryapp.models.TrashBinAboveVersion
 
 @Dao
 interface ImageDao {
@@ -20,6 +21,9 @@ interface ImageDao {
     @Query("SELECT * FROM favorites")
     fun getAllFavorites(): LiveData<List<MediaModel>>
 
+    @Query("DELETE FROM favorites WHERE path = :path")
+    fun deleteFavorites(path: String)
+
     @Query("SELECT * FROM favorites WHERE path = :path")
     fun getModelByFile(path: String): MediaModel
 
@@ -29,17 +33,17 @@ interface ImageDao {
 
     ///  TRASH BIN WORK
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertDeleteImage(trashBin: TrashBin)
+    fun insertDeleteImage(trashBin: TrashBinAboveVersion)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insertDeleteMultipleImage(trashBin: ArrayList<TrashBin>)
+    fun insertDeleteMultipleImage(trashBin: ArrayList<TrashBinAboveVersion>)
 
     @Query("SELECT * FROM trashBin")
-    fun getAllDeleteImages(): LiveData<List<TrashBin>>
+    fun getAllDeleteImages(): LiveData<List<TrashBinAboveVersion>>
 
     @Delete
-    fun deleteImages(trashBin: TrashBin)
+    fun deleteImages(trashBin: TrashBinAboveVersion)
 
-    @Query("SELECT * FROM trashBin WHERE deletionTimestamp < :timestamp")
-    fun selectImages(timestamp: Long): List<TrashBin>
+    @Query("SELECT * FROM trashBin WHERE date < :timestamp")
+    fun selectImages(timestamp: Long): List<TrashBinAboveVersion>
 }
