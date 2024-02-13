@@ -1,7 +1,6 @@
 package com.demo.newgalleryapp.adapters
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -17,7 +16,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.ZoomageView
+import com.demo.newgalleryapp.classes.ZoomageView
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.VideoViewActivity
 import com.demo.newgalleryapp.interfaces.SetCropImages
@@ -45,7 +44,8 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
             imageVideo.setOnClickListener {
                 val videoPath = modelList[position].path
                 val intent = Intent(context, VideoViewActivity::class.java)
-                intent.putExtra("path", videoPath)
+                intent.putExtra("currentVideoPosition", position)
+                intent.putExtra("modelList",  ArrayList(modelList))
                 context.startActivity(intent)
             }
         }

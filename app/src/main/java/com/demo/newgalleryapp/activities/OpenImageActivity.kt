@@ -21,14 +21,15 @@ import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.view.get
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.viewpager.widget.ViewPager
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions
@@ -76,7 +77,8 @@ class OpenImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
 
             val imageToDelete = models[viewPager.currentItem].path
-            ImagesDatabase.getDatabase(this@OpenImageActivity).favoriteImageDao().deleteFavorites(imageToDelete)
+            ImagesDatabase.getDatabase(this@OpenImageActivity).favoriteImageDao()
+                .deleteFavorites(imageToDelete)
 
             imagesSliderAdapter.remove(viewPager.currentItem)
             imagesSliderAdapter.notifyDataSetChanged()
@@ -122,11 +124,14 @@ class OpenImageActivity : AppCompatActivity() {
         fabCount = intent.getIntExtra("selectedImagePosition", 0)
 
         if (isFolder) {
+            // Here passing the folder list to viewpager , if isFolder is true (i.e Albums folder)
             models = (application as AppClass).mainViewModel.folderList[intent.getIntExtra(
                 "folderPosition", 0
             )].models
             setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
         } else {
+
+
             val menuItem = bottomNavigationView.menu.findItem(R.id.editItem)
             when (intent.getIntExtra("currentState", 0)) {
                 1 -> {
@@ -137,17 +142,20 @@ class OpenImageActivity : AppCompatActivity() {
                         models = (application as AppClass).mainViewModel.tempPhotoList
                         setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
 
+                        // Here showing edit button for images
                         menuItem.isVisible = true
                     } else {
                         fabCount = (application as AppClass).mainViewModel.tempVideoList.indexOf(sM)
                         models = (application as AppClass).mainViewModel.tempVideoList
                         setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
 
+                        // Here hiding edit button for videos
                         menuItem.isVisible = false
                     }
                 }
 
                 2 -> {
+                    // here on that , we set the favorite images in view pager
                     sendFavoriteListToViewPager()
                 }
             }
@@ -156,6 +164,10 @@ class OpenImageActivity : AppCompatActivity() {
         backBtnHandle()
         bottomNavigationViewItemSetter()
         viewPagerDataSetter()
+
+
+        // This will do when, if you want to apply any other icon drawable for menu item
+        bottomNavigationView.itemIconTintList = null
     }
 
     private fun initView() {
@@ -192,17 +204,20 @@ class OpenImageActivity : AppCompatActivity() {
         })
     }
 
-//    private fun stopSlideShow() {
-//        timer.cancel()
-//        // Optionally, remove any OnPageChangeListener if added
-//        viewPager.clearOnPageChangeListeners()
-//    }
-
     private fun setViewPagerAdapter(model: ArrayList<MediaModel>, currentPosition: Int) {
         models = model
         imagesSliderAdapter = ImageSliderAdapter(this@OpenImageActivity, model)
         viewPager.adapter = imagesSliderAdapter
         viewPager.setCurrentItem(currentPosition, false)
+
+        if (model.size == 0) {
+            if (anyChanges) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+                anyChanges = false
+            }
+            finish()
+        }
     }
 
     private fun sendFavoriteListToViewPager() {
@@ -224,14 +239,15 @@ class OpenImageActivity : AppCompatActivity() {
                 R.id.favoriteItemUnSelect -> handleFavoriteItem(currentPosition)
                 R.id.editItem -> handleEditItem(currentPosition)
                 R.id.deleteItem -> handleDeleteItem(currentPosition)
-                R.id.moreItem -> handleMoreItem()
+                R.id.moreItem -> handleMoreItem(currentPosition)
             }
             true
         }
     }
 
-    private fun handleMoreItem() {
-        moreItemClick(bottomNavigationView)
+    private fun handleMoreItem(currentPosition: Int) {
+        val isVideoOrNot = models[currentPosition].isVideo
+        moreItemClick(bottomNavigationView, isVideoOrNot)
     }
 
     private fun handleEditItem(currentPosition: Int) {
@@ -275,7 +291,12 @@ class OpenImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.flag = true
         } else {
             if (imageToDelete.isNotEmpty()) {
-                showPopupForMoveToTrashBinForOpenActivityOnlyOne(bottomNavigationView, imageToDelete, currentPosition, models[currentPosition].isVideo)
+                showPopupForMoveToTrashBinForOpenActivityOnlyOne(
+                    bottomNavigationView,
+                    imageToDelete,
+                    currentPosition,
+                    models[currentPosition].isVideo
+                )
                 anyChanges = true
             } else {
                 showToast(this, "Error: Image not found")
@@ -312,7 +333,7 @@ class OpenImageActivity : AppCompatActivity() {
         (application as AppClass).mainViewModel.shareImage(uri, this)
     }
 
-    private fun moreItemClick(bottomNavigationView: BottomNavigationView) {
+    private fun moreItemClick(bottomNavigationView: BottomNavigationView, isVideoOrNot: Boolean) {
 
         val inflater: LayoutInflater =
             getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -326,6 +347,7 @@ class OpenImageActivity : AppCompatActivity() {
             bottomNavigationView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
         )
 
+
         val popupTextWallpaper = popupView.findViewById<TextView>(R.id.setAsWallpaper)
         val popupTextCopy = popupView.findViewById<TextView>(R.id.Copy)
         val popupTextMove = popupView.findViewById<TextView>(R.id.Move)
@@ -335,6 +357,11 @@ class OpenImageActivity : AppCompatActivity() {
 
         val selectedImagePath = models[viewPager.currentItem].path
 
+        if (isVideoOrNot) {
+            popupTextWallpaper.visibility = View.GONE
+        } else {
+            popupTextWallpaper.visibility = View.VISIBLE
+        }
 
         popupTextWallpaper.setOnClickListener {
 //            setAsWallpaper(selectedImagePath)
@@ -426,9 +453,16 @@ class OpenImageActivity : AppCompatActivity() {
 
     }
 
+//    private fun launchImageCrop(uri: Uri) {
+//        CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON)
+//            .setAspectRatio(10000, 10000).setCropShape(CropImageView.CropShape.RECTANGLE).start(this)
+//    }
+
+    ///////////////////////
+
     private fun launchImageCrop(uri: Uri) {
         CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON)
-            .setAspectRatio(2000, 1500).setCropShape(CropImageView.CropShape.RECTANGLE).start(this)
+            .setCropShape(CropImageView.CropShape.RECTANGLE).start(this)
     }
 
     private fun showDetails(anchorView: View) {
@@ -505,17 +539,28 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     private fun setFavoriteIcon(currentItem: Int) {
+        val favoriteMenuItem = bottomNavigationView.menu.findItem(R.id.favoriteItemUnSelect)
 
-        if (ImagesDatabase.getDatabase(this).favoriteImageDao()
-                .getModelByFile(models[currentItem].path) == null
-        ) {
-            bottomNavigationView.menu[1].setIcon(R.drawable.favorite_icon_new)
-        } else {
-            bottomNavigationView.menu[1].setIcon(R.drawable.favorite_blue_color_icon)
+        val favoriteImageDao = ImagesDatabase.getDatabase(this).favoriteImageDao()
+        val isFavorite = favoriteImageDao.getModelByFile(models[currentItem].path) != null
+
+        // Get the drawable resource based on the favorite status
+        val drawableResId = if (isFavorite) R.drawable.favorite_blue_color_icon
+        else R.drawable.favorite_icon_new
+
+        // Get the drawable from the resource ID
+        val drawable = ContextCompat.getDrawable(this, drawableResId)
+
+        // Apply tint color to the drawable
+        val iconTint = if (isFavorite) ContextCompat.getColor(this, R.color.color_main)
+        else ContextCompat.getColor(this, R.color.icon_color)
+        drawable?.let {
+            val wrappedDrawable = DrawableCompat.wrap(it)
+            DrawableCompat.setTint(wrappedDrawable, iconTint)
+            favoriteMenuItem.icon = wrappedDrawable
         }
     }
 
-    // Remove the runnable to prevent memory leaks
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()

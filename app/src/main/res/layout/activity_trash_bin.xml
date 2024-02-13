@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="@color/white">
 
     <androidx.appcompat.widget.Toolbar
@@ -159,9 +160,9 @@
                         android:layout_marginEnd="@dimen/_10sdp"
                         android:fontFamily="@font/poppins_medium"
                         android:text="DeSelect All"
-                        android:visibility="gone"
                         android:textColor="@color/color_main"
-                        android:textSize="@dimen/_14sdp" />
+                        android:textSize="@dimen/_14sdp"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
@@ -188,8 +189,7 @@
         android:id="@+id/progressBar_trash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        />
+        android:layout_centerInParent="true" />
 
     <LinearLayout
         android:id="@+id/no_data"
@@ -201,17 +201,18 @@
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/no_connection" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:fontFamily="@font/montserrat_semibold"
+            android:fontFamily="@font/poppins_medium"
             android:gravity="center"
-            android:text="@string/no_data_found" />
+            android:text="@string/no_data_found"
+            android:textColor="@color/icon_color"
+            android:textSize="@dimen/_15sdp" />
 
     </LinearLayout>
 
@@ -232,11 +233,8 @@
         android:background="@color/white"
         android:visibility="gone"
         app:itemIconTint="@color/icon_color"
-        app:itemTextAppearanceActive="@style/BottomNavigationView"
         app:itemTextColor="@color/icon_color"
-        app:menu="@menu/bottom_item_trash">
-
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
+        app:menu="@menu/bottom_item_trash"/>
 
 
 </RelativeLayout>

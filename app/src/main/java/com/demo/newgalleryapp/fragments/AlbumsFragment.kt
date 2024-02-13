@@ -1,5 +1,7 @@
 package com.demo.newgalleryapp.fragments
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -12,12 +14,13 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.FolderAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import java.io.File
 
 class AlbumsFragment : Fragment() {
@@ -25,7 +28,7 @@ class AlbumsFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private var folderAdapter: FolderAdapter? = null
     private lateinit var searchEditTextAlbum: EditText
-    private lateinit var search_close_btn: ImageView
+    private lateinit var searchCloseBtn: ImageView
     private var tempFolderList: ArrayList<Folder> = ArrayList()
 
     companion object {
@@ -34,6 +37,14 @@ class AlbumsFragment : Fragment() {
             val args = Bundle()
             fragment.arguments = args
             return fragment
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            (requireActivity().application as AppClass).mainViewModel.getMediaFromInternalStorage()
         }
     }
 
@@ -46,37 +57,36 @@ class AlbumsFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recycler_view_album)
         searchEditTextAlbum = view.findViewById(R.id.searchEditText_album)
-        search_close_btn = view.findViewById(R.id.search_close_btn_album)
+        searchCloseBtn = view.findViewById(R.id.search_close_btn_album)
 
 
-
-        search_close_btn.setOnClickListener {
+        searchCloseBtn.setOnClickListener {
             searchEditTextAlbum.text.clear()
             observeAllData()
         }
-
 
         searchEditTextAlbum.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s.isNullOrBlank()) {
-                    search_close_btn.visibility = View.GONE
+                    searchCloseBtn.visibility = View.GONE
                     observeAllData()
 
                 } else {
-                    search_close_btn.visibility = View.VISIBLE
+                    searchCloseBtn.visibility = View.VISIBLE
                 }
                 filterData(s.toString())
             }
 
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
-                    search_close_btn.visibility = View.GONE
+                    searchCloseBtn.visibility = View.GONE
                     observeAllData()
                 }
             }
         })
+
         observeAllData()
 
         return view
@@ -93,7 +103,6 @@ class AlbumsFragment : Fragment() {
             // If the query is empty, show all folders
             tempFolderList
         }
-
         // Update the adapter with the filtered list
         if (folderAdapter != null) {
             folderAdapter?.updateData(filteredList)
@@ -107,6 +116,7 @@ class AlbumsFragment : Fragment() {
             }
             (requireActivity().application as AppClass).mainViewModel.folderList.clear()
             (requireActivity().application as AppClass).mainViewModel.folderList.addAll(folders)
+
             recyclerView.layoutManager =
                 GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
             folderAdapter = FolderAdapter(

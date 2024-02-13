@@ -73,15 +73,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Define the columns you want to retrieve from the MediaStore
-            val projection = arrayOf(
-                MediaStore.MediaColumns._ID,
-                MediaStore.MediaColumns.DISPLAY_NAME,
-                MediaStore.MediaColumns.DATA,
-                MediaStore.MediaColumns.MIME_TYPE,
-                // MediaStore.MediaColumns.DURATION,
-                MediaStore.MediaColumns.SIZE,
-                MediaStore.MediaColumns.DATE_MODIFIED
-            )
+            val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                arrayOf(
+                    MediaStore.MediaColumns._ID,
+                    MediaStore.MediaColumns.DISPLAY_NAME,
+                    MediaStore.MediaColumns.DATA,
+                    MediaStore.MediaColumns.MIME_TYPE,
+                    MediaStore.MediaColumns.DURATION,
+                    MediaStore.MediaColumns.SIZE,
+                    MediaStore.MediaColumns.DATE_MODIFIED
+                )
+            } else {
+                arrayOf(
+                    MediaStore.MediaColumns._ID,
+                    MediaStore.MediaColumns.DISPLAY_NAME,
+                    MediaStore.MediaColumns.DATA,
+                    MediaStore.MediaColumns.MIME_TYPE,
+                    MediaStore.MediaColumns.SIZE,
+                    MediaStore.MediaColumns.DATE_MODIFIED
+                )
+            }
 
             val sortOrder = "${MediaStore.MediaColumns.DATE_MODIFIED} DESC"
 
@@ -95,7 +106,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val videoList = ArrayList<MediaModel>()
             queryMediaStore(uriForVideos, projection, null, null, sortOrder, videoList, true)
 //        allVideosSize = videoList.size
-            _videosData.postValue(videoList)
+            _videosData.postValue(videoList) 
 
             mediaList.addAll(imageList)
             mediaList.addAll(videoList)
@@ -131,14 +142,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val data = c.getString(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA))
                 val mimeType =
                     c.getString(c.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE))
-//                val duration = c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION))
+
+                var duration = if (isVideo && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DURATION))
+                } else {
+                    0L
+                }
+
                 val size = c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE))
                 val dateAdded =
                     c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED))
 
                 // Create a MediaModel object and add it to the list
                 val mediaModel =
-                    MediaModel(id, displayName, data, mimeType, 0L, size, dateAdded, isVideo)
+                    MediaModel(id, displayName, data, mimeType, duration, size, dateAdded, isVideo)
                 mediaList.add(mediaModel)
             }
         }
@@ -174,7 +191,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     imagePath.toString(),
                     imagePath.name,
                     "",
-                    deletionTimestamp.toString(), isVideoOrNot
+                    deletionTimestamp.toString(),
+                    isVideoOrNot
                 )
 
                 // Here adding current and destination path in database , for showing item in trash bin
@@ -244,7 +262,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         imagePath.toString(),
                         imagePath.name,
                         "",
-                        deletionTimestamp.toString(), false
+                        deletionTimestamp.toString(),
+                        false
                     )
 
                     ImagesDatabase.getDatabase(context).favoriteImageDao()
@@ -391,6 +410,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
         ////////////
     }
+
+    fun formatDuration(durationInMillis: Long): String {
+        val seconds = durationInMillis / 1000
+        val minutes = seconds / 60
+        val remainingSeconds = seconds % 60
+        val hours = minutes / 60
+
+        return if (hours > 0) {
+            val remainingMinutes = minutes % 60
+            String.format("%02d:%02d:%02d", hours, remainingMinutes, remainingSeconds)
+        } else {
+            String.format("%02d:%02d", minutes, remainingSeconds)
+        }
+    }
+
 
     fun scanFile(context: Context, file: File) {
         MediaScannerConnection.scanFile(context, arrayOf(file.toString()), null, null)

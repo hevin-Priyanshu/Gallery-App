@@ -19,15 +19,6 @@
             app:shapeAppearanceOverlay="@style/RoundedSquare" />
 
 
-        <ImageView
-            android:id="@+id/imageView_video_logo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:padding="10dp"
-            android:src="@drawable/ic_play_btn_video"
-            android:visibility="gone" />
-
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,10 +26,42 @@
             android:layout_alignParentBottom="true"
             android:padding="@dimen/_6sdp">
 
+            <LinearLayout
+                android:id="@+id/imageView_video_logo_inner_item"
+                android:layout_width="@dimen/_35sdp"
+                android:layout_height="@dimen/_14sdp"
+                android:background="@drawable/background"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:weightSum="3">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="@dimen/_3sdp"
+                    android:layout_weight="2"
+                    android:gravity="center"
+                    android:src="@drawable/ic_new_video_icon" />
+
+                <TextView
+                    android:id="@+id/videoTime_inner_item"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="@dimen/_3sdp"
+                    android:layout_marginEnd="@dimen/_3sdp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/poppins_medium"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/_6sdp" />
+
+            </LinearLayout>
+
             <ImageView
                 android:id="@+id/isSelectedCheckbox"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="@dimen/_15sdp"
+                android:layout_height="@dimen/_15sdp"
                 android:layout_alignParentEnd="true"
                 android:src="@drawable/empty_select_item_blur" />
 

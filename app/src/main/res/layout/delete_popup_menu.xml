@@ -19,11 +19,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fontFamily="@font/poppins_medium"
+            android:layout_marginTop="@dimen/_6sdp"
             android:gravity="center"
-            android:layout_margin="@dimen/_6sdp"
             android:textColor="@color/black"
-            android:textSize="@dimen/_18sdp" />
-
+            android:textSize="@dimen/_16sdp" />
 
         <TextView
             android:id="@+id/setHowManyImagesWantToDeleteText"
@@ -35,7 +34,7 @@
             android:layout_marginEnd="@dimen/_10sdp"
             android:layout_marginBottom="@dimen/_10sdp"
             android:textColor="#8A8A8A"
-            android:textSize="@dimen/_13sdp" />
+            android:textSize="@dimen/_12sdp" />
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.AppClass
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
@@ -27,7 +27,6 @@ class VideosFragment : Fragment() {
     var imagesAdapter: ImagesAd? = null
     private var position: Int = 0
     private val commonList: ArrayList<Any> = arrayListOf()
-
 
     // Use this method to create new instances of the GalleryFragment with arguments
     companion object {

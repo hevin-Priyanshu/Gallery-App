@@ -22,7 +22,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationView
@@ -31,6 +30,7 @@ import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFrag
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.activities.SlideShowActivity
 import com.demo.newgalleryapp.adapters.ViewPagerAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +43,9 @@ import java.time.format.FormatStyle
 
 class MediaFragment : Fragment(), ImageClickListener {
 
+    private var getPhotosList: ArrayList<MediaModel> = ArrayList()
+    private var getVideosList: ArrayList<MediaModel> = ArrayList()
+
     private lateinit var textPhoto: TextView
     private lateinit var textVideo: TextView
     private lateinit var selectItem: TextView
@@ -51,10 +54,6 @@ class MediaFragment : Fragment(), ImageClickListener {
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
     private lateinit var toolbar: Toolbar
-
-    //    private var allMediaList: ArrayList<MediaModel> = ArrayList()
-    private var getPhotosList: ArrayList<MediaModel> = ArrayList()
-    private var getVideosList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var popupWindow2: PopupWindow? = null
     private var selectedColumns = 0
@@ -93,74 +92,15 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         searchCloseBtn.setOnClickListener {
             searchEvent.text.clear()
-//
-//            val count =
-//                (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
-//            photosFragment.observeAllData(count)
-//            photosFragment.imagesAdapter?.notifyDataSetChanged()
-//            videosFragment.observeAllData(count)
-//            videosFragment.imagesAdapter?.notifyDataSetChanged()
-
-            // Update data for photosFragment
-
-//            videosFragment.notifyAdapter(getVideosList as ArrayList<Any>)
-//            videosFragment.imagesAdapter?.updateData(getVideosList as ArrayList<Any>)
-//            videosFragment.imagesAdapter?.notifyDataSetChanged()
-//
-////            photosFragment.notifyAdapter(getPhotosList as ArrayList<Any>)
-//            photosFragment.imagesAdapter?.updateData(getPhotosList as ArrayList<Any>)
-//            photosFragment.imagesAdapter?.notifyDataSetChanged()
-
         }
 
         textViewSelectAllMedia.setOnClickListener {
-
-            if (viewPager.currentItem == 0) {
-//                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
-                photosFragment.imagesAdapter?.isSelected = true
-                photosFragment.imagesAdapter?.updateSelectionState(true)
-                photosFragment.imagesAdapter?.checkSelectedList?.clear()
-                photosFragment.imagesAdapter?.checkSelectedList?.addAll(getPhotosList)
-                (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
-                textViewSelectAllMedia.visibility = View.GONE
-                textViewDeSelectAllMedia.visibility = View.VISIBLE
-
-            } else {
-//                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
-                videosFragment.imagesAdapter?.isSelected = true
-                videosFragment.imagesAdapter?.updateSelectionState(true)
-                videosFragment.imagesAdapter?.checkSelectedList?.clear()
-                videosFragment.imagesAdapter?.checkSelectedList?.addAll(getVideosList)
-                (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
-                textViewSelectAllMedia.visibility = View.GONE
-                textViewDeSelectAllMedia.visibility = View.VISIBLE
-            }
+            handleSelectAllMedia()
         }
 
         textViewDeSelectAllMedia.setOnClickListener {
-
-            if (viewPager.currentItem == 0) {
-
-//                val photoList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
-                photosFragment.imagesAdapter?.isSelected = false
-                photosFragment.imagesAdapter?.updateSelectionState(false)
-                photosFragment.imagesAdapter?.checkSelectedList?.removeAll(getPhotosList.toSet())
-                (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
-                textViewDeSelectAllMedia.visibility = View.GONE
-                textViewSelectAllMedia.visibility = View.VISIBLE
-            } else {
-
-//                val videoList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
-                videosFragment.imagesAdapter?.isSelected = false
-                videosFragment.imagesAdapter?.updateSelectionState(false)
-                videosFragment.imagesAdapter?.checkSelectedList?.removeAll(getVideosList.toSet())
-                (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
-                textViewDeSelectAllMedia.visibility = View.GONE
-                textViewSelectAllMedia.visibility = View.VISIBLE
-            }
-
+            handleDeselectAllMedia()
         }
-
 
         textPhoto.setOnClickListener {
             viewPager.currentItem = 0
@@ -168,6 +108,10 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         textVideo.setOnClickListener {
             viewPager.currentItem = 1
+        }
+
+        threeDotItem.setOnClickListener {
+            showThreeDotPopup(toolbar)
         }
 
         searchEvent.addTextChangedListener(object : TextWatcher {
@@ -187,23 +131,12 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
                     searchCloseBtn.visibility = View.GONE
-//                    if (viewPager.currentItem == 0) {
-//                        photosFragment.notifyAdapter(getPhotosList as ArrayList<Any>)
-//                        photosFragment.imagesAdapter?.notifyDataSetChanged()
-//                    } else {
-//                        videosFragment.notifyAdapter(getVideosList as ArrayList<Any>)
-//                        videosFragment.imagesAdapter?.notifyDataSetChanged()
-//                    }
                 }
             }
         })
 
         val whiteTextColor = ContextCompat.getColor(requireContext(), R.color.white)
         val blueTextColor = ContextCompat.getColor(requireContext(), R.color.color_main)
-
-        threeDotItem.setOnClickListener {
-            showThreeDotPopup(toolbar)
-        }
 
         viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrolled(
@@ -222,14 +155,12 @@ class MediaFragment : Fragment(), ImageClickListener {
                 if (position == 0) {
                     textPhoto.setTextColor(whiteTextColor)
                     textVideo.setTextColor(blueTextColor)
-                    textPhoto.background =
-                        requireContext().getDrawable(R.drawable.text_photo_background_view)
+                    textPhoto.background = requireContext().getDrawable(R.drawable.text_photo_background_view)
                     textVideo.background = null
                 } else {
                     textPhoto.setTextColor(blueTextColor)
                     textVideo.setTextColor(whiteTextColor)
-                    textVideo.background =
-                        requireContext().getDrawable(R.drawable.text_video_background_view)
+                    textVideo.background = requireContext().getDrawable(R.drawable.text_video_background_view)
                     textPhoto.background = null
 
                 }
@@ -239,6 +170,45 @@ class MediaFragment : Fragment(), ImageClickListener {
         })
 
         return view
+    }
+
+    private fun handleDeselectAllMedia() {
+        if (viewPager.currentItem == 0) {
+            photosFragment.imagesAdapter?.isSelected = false
+            photosFragment.imagesAdapter?.updateSelectionState(false)
+            photosFragment.imagesAdapter?.checkSelectedList?.removeAll(getPhotosList.toSet())
+            (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
+            textViewDeSelectAllMedia.visibility = View.GONE
+            textViewSelectAllMedia.visibility = View.VISIBLE
+        } else {
+            videosFragment.imagesAdapter?.isSelected = false
+            videosFragment.imagesAdapter?.updateSelectionState(false)
+            videosFragment.imagesAdapter?.checkSelectedList?.removeAll(getVideosList.toSet())
+            (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
+            textViewDeSelectAllMedia.visibility = View.GONE
+            textViewSelectAllMedia.visibility = View.VISIBLE
+        }
+    }
+
+    private fun handleSelectAllMedia() {
+        if (viewPager.currentItem == 0) {
+            photosFragment.imagesAdapter?.isSelected = true
+            photosFragment.imagesAdapter?.updateSelectionState(true)
+            photosFragment.imagesAdapter?.checkSelectedList?.clear()
+            photosFragment.imagesAdapter?.checkSelectedList?.addAll(getPhotosList)
+            (context as MainScreenActivity).mediaFragment.counter(photosFragment.imagesAdapter?.checkSelectedList?.size!!)
+            textViewSelectAllMedia.visibility = View.GONE
+            textViewDeSelectAllMedia.visibility = View.VISIBLE
+
+        } else {
+            videosFragment.imagesAdapter?.isSelected = true
+            videosFragment.imagesAdapter?.updateSelectionState(true)
+            videosFragment.imagesAdapter?.checkSelectedList?.clear()
+            videosFragment.imagesAdapter?.checkSelectedList?.addAll(getVideosList)
+            (context as MainScreenActivity).mediaFragment.counter(videosFragment.imagesAdapter?.checkSelectedList?.size!!)
+            textViewSelectAllMedia.visibility = View.GONE
+            textViewDeSelectAllMedia.visibility = View.VISIBLE
+        }
     }
 
     private fun setupViewPager() {
@@ -299,14 +269,6 @@ class MediaFragment : Fragment(), ImageClickListener {
 //                SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date(it.date * 1000))
             }.entries.toList()
 
-//            for (entry in groupedPhotos) {
-//                val date = entry.key
-//                commonList.add(date)
-//                for (image in entry.value) {
-//                    commonList.add(image)
-//                }
-//            }
-
             for ((date, itemList) in groupedPhotos) {
                 commonList.add(date)
                 commonList.addAll(itemList)
@@ -326,31 +288,6 @@ class MediaFragment : Fragment(), ImageClickListener {
             }
         }
     }
-
-
-//    fun filterDataNew2(query: String) {
-//
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            val commonList: ArrayList<Any> = ArrayList()
-//            allMediaList.sortWith(compareBy({ it.displayName }, { it.date }))
-//
-//            val groupedPhotos: Map<String, List<MediaModel>> = allMediaList.groupBy {
-//                SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(Date(it.date * 1000))
-//            }
-//
-//            for ((date, itemList) in groupedPhotos) {
-//                commonList.add(date)
-//                commonList.addAll(itemList)
-//            }
-//
-//            // Notify your adapters with the sorted and formatted list
-//            withContext(Dispatchers.Main) {
-//                photosFragment.notifyAdapter(commonList)
-//                videosFragment.notifyAdapter(commonList)
-//            }
-//
-//        }
-//    }
 
     private fun showThreeDotPopup(anchorView: View) {
 
@@ -373,9 +310,17 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         popupTextSelectCheckBox.setOnClickListener {
             selectItem.text = "Item Selected 0"
-            photosFragment.imagesAdapter?.isSelected = true
-            onLongClick()
-            photosFragment.imagesAdapter?.notifyDataSetChanged()
+
+            if(viewPager.currentItem == 0){
+                photosFragment.imagesAdapter?.isSelected = true
+                onLongClick()
+                photosFragment.imagesAdapter?.notifyDataSetChanged()
+            }else{
+                videosFragment.imagesAdapter?.isSelected = true
+                onLongClick()
+                videosFragment.imagesAdapter?.notifyDataSetChanged()
+            }
+
             popupWindow?.dismiss()
         }
 
@@ -481,6 +426,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             checkBox2.setImageResource(R.drawable.right_tick_icon)
             tempColumn = 2
         }
+
         linearLayout3.setOnClickListener {
             checkBox2.setImageResource(R.drawable.empty_select_item)
             checkBox3.setImageResource(R.drawable.empty_select_item)

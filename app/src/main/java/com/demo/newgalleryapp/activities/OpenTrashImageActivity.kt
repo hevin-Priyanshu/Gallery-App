@@ -3,19 +3,24 @@ package com.demo.newgalleryapp.activities
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.TypefaceSpan
 import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
 import androidx.viewpager.widget.ViewPager
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
@@ -28,7 +33,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class OpenTrashImageActivity : AppCompatActivity() {
 
-    //    private lateinit var recyclerView: RecyclerView
     private lateinit var viewPager: ViewPager
     private lateinit var backBtn: ImageView
     private lateinit var bottomNavigationView: BottomNavigationView
@@ -46,18 +50,19 @@ class OpenTrashImageActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_OPEN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK) {
-            imagesSliderAdapter.remove(currentPosition)
-            tempList.removeAt(currentPosition)
-            updated = true
+            doChanges()
             showToast(this, "Restore Successfully.")
 
-
         } else if (requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK) {
-            imagesSliderAdapter.remove(currentPosition)
-            tempList.removeAt(currentPosition)
-            updated = true
+            doChanges()
             showToast(this, "Delete Successfully.")
         }
+    }
+
+    private fun doChanges() {
+        imagesSliderAdapter.remove(currentPosition)
+        tempList.removeAt(currentPosition)
+        updated = true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,8 +70,6 @@ class OpenTrashImageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_open_trash_image)
 
         viewPager = findViewById(R.id.viewPager_slider_trash)
-//        recyclerView = findViewById(R.id.recycler_view_trash_new)
-//        textView = findViewById(R.id.trash_open_textView)
         backBtn = findViewById(R.id.back_btn_trash_open)
         bottomNavigationView = findViewById(R.id.bottomNavigation_trash)
         toolbar = findViewById(R.id.toolBar)
@@ -75,6 +78,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
             if (updated) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
+                updated = false
             }
             finish()
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -111,12 +115,22 @@ class OpenTrashImageActivity : AppCompatActivity() {
                 })
         }
         bottomNavigationViewItemSetter()
+
+        val menu = bottomNavigationView.menu
+        for (i in 0 until menu.size()) {
+            val item = menu.getItem(i)
+            val spannableString = SpannableString(item.title)
+            val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
+            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            item.title = spannableString
+        }
     }
 
     override fun onBackPressed() {
         if (updated) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
+            updated = false
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()
@@ -141,9 +155,9 @@ class OpenTrashImageActivity : AppCompatActivity() {
     }
 
     private fun setViewPagerAdapter(models: ArrayList<MediaModel>) {
+
         val pos = intent.getIntExtra("trashBinPos", 0)
         imagesSliderAdapter = ImageSliderAdapter(this, models)
-//        recyclerView.visibility = View.GONE
         viewPager.adapter = imagesSliderAdapter
         viewPager.setCurrentItem(pos, false)
 
@@ -151,6 +165,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
             if (updated) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
+                updated = false
             }
             finish()
         }

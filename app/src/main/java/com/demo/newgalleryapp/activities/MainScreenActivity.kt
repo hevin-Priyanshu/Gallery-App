@@ -20,7 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
-import com.demo.newgalleryapp.AppClass
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.fragments.AlbumsFragment
@@ -84,7 +84,10 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)
+            || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) ||
+            (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)
+            || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             
             // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
@@ -182,7 +185,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
             bottomNavigationView.selectedItemId = R.id.mediaItem
 
-
         }
 
         bottomNavigationViewForLongSelect.setOnItemSelectedListener { menuItem ->
@@ -208,7 +210,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         currentFragment = mediaFragment
     }
 
-    private fun handleMoreAction() {
+     private fun handleMoreAction() {
 
         checkBoxList.clear()
 
@@ -223,11 +225,10 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         checkBoxList.addAll(fragmentList!!)
         val paths = checkBoxList.map { it.path }
 
-
         showPopupForMainScreenMoreItem(bottomNavigationViewForLongSelect, paths)
     }
 
-    private fun handleDeleteAction() {
+     private fun handleDeleteAction() {
         checkBoxList.clear()
 
         val fragmentList = if (viewPager.currentItem == 0) {
@@ -243,7 +244,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         val paths = checkBoxList.map { it.path }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-
             if (paths.isNotEmpty()) {
                 val arrayList: ArrayList<Uri> = ArrayList()
                 MediaScannerConnection.scanFile(

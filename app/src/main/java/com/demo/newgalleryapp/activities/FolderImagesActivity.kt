@@ -20,15 +20,16 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImagesAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -49,9 +50,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private var newList: ArrayList<MediaModel> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     var position: Int = 0
-    private var updated: Boolean = false
 
     companion object {
+        var isUpdatedFolderActivity: Boolean = false
         lateinit var adapter: ImagesAdapter
         lateinit var bottomNavigationView: BottomNavigationView
         lateinit var select_top_menu_bar: LinearLayout
@@ -66,13 +67,14 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 val pathsToRemove = checkBoxList.map { it.path }
                 removeItemsAtPosition(position, pathsToRemove)
                 adapter.notifyDataSetChanged()
-                updated = true
+                isUpdatedFolderActivity = true
             }
         } else if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
-            updated = true
+            isUpdatedFolderActivity = true
             val pathsToRemove = checkBoxList.map { it.path }
             removeItemsAtPosition(position, pathsToRemove)
             adapter.notifyDataSetChanged()
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             setAllVisibility()
         }
     }
@@ -96,10 +98,10 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         deSelectAll = findViewById(R.id.folder_DeselectAll_textView)
 
         backBtn.setOnClickListener {
-            if (updated) {
+            if (isUpdatedFolderActivity) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
-                updated = false
+                isUpdatedFolderActivity = false
             }
             finish()
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -233,36 +235,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             if (paths.isNotEmpty()) {
 //                val numImagesToDelete = paths.size
                 val pathsToRemove = checkBoxList.map { it.path }
-
                 showPopupForMoveToTrashBin(
                     bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position
                 )
-
-//                setAllVisibility()
-
-//                removeItemsAtPosition(position, pathsToRemove)
-//                adapter.notifyDataSetChanged()
-
-
-//                androidx.appcompat.app.AlertDialog.Builder(this)
-//                    .setTitle("Delete $numImagesToDelete Item?")
-//                    .setMessage("Are you sure to move $numImagesToDelete files to the trash bin?")
-//                    .setPositiveButton("Delete") { _, _ ->
-//                        // User clicked "Yes", proceed with deletion
-//                        // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-//                        (application as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
-//
-//
-//                        setAllVisibility()
-//
-//                        val pathsToRemove = checkBoxList.map { it.path }
-//                        removeItemsAtPosition(position, pathsToRemove)
-//                        adapter.notifyDataSetChanged()
-//
-//                    }.setNegativeButton("Cancel") { dialog, _ ->
-//                        // User clicked "No", do nothing
-//                        dialog.dismiss()
-//                    }.show()
             } else {
                 showToast(this@FolderImagesActivity, "Error: Image not found")
             }
@@ -271,6 +246,11 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
     private fun handleMoreAction() {
 
+        checkBoxList.clear()
+        checkBoxList.addAll(adapter.checkSelectedList)
+        val paths = checkBoxList.map { it.path }
+
+        showPopupForMainScreenMoreItem(bottomNavigationView, paths)
     }
 
 //    private fun setBottomNavigationItem(itemId: Int) {
@@ -387,10 +367,10 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     }
 
     override fun onBackPressed() {
-        if (updated) {
+        if (isUpdatedFolderActivity) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
-            updated = false
+            isUpdatedFolderActivity = false
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()
@@ -404,7 +384,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         itemSelected.text = "Item Selected $select"
     }
 
-    private fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
+    fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
 
         val tempFolderList = (application as AppClass).mainViewModel.folderList
         if (position >= 0 && position < tempFolderList.size) {

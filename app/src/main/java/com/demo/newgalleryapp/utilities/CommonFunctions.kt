@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.Window
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupWindow
@@ -16,10 +17,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.CopyOrMoveActivity
+import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.FolderImagesActivity
+import com.demo.newgalleryapp.activities.FolderImagesActivity.Companion.isUpdatedFolderActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationView
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationViewForLongSelect
@@ -29,6 +31,7 @@ import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.imagesSliderAdapter
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity.Companion.trashBinAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForMainText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
@@ -65,9 +68,9 @@ object CommonFunctions {
     const val REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY = 113
     const val REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY = 114
     const val REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY = 115
+    const val REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY = 116
 
     const val ERROR_TAG = "Error"
-    var FLAG_IN_FOLDER_ACTIVITY: Boolean = false
     var FLAG_FOR_CHANGES_IN_RENAME: Boolean = false
 //    var FLAG_FOR_MAIN_SCREEN_ACTIVITY: Boolean = false
 //    var FLAG_IN_MAIN_SCREEN_ACTIVITY: Int = 0
@@ -118,8 +121,7 @@ object CommonFunctions {
 
 
     fun Activity.showPopupForMainScreenMoreItem(
-        anchorView: View,
-        paths: List<String>
+        anchorView: View, paths: List<String>
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -279,46 +281,70 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
             (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
 
-
-            if (activity is FolderImagesActivity) {
-                removeItemsAtPosition(position, pathsToRemove)
-                FolderImagesActivity.adapter.notifyDataSetChanged()
-                setAllVisibility()
-            } else if (activity is MainScreenActivity) {
-
-                if (viewPager.currentItem == 0) {
-                    photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
-                } else {
-                    videosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+            when (activity) {
+                is FolderImagesActivity -> {
+                    activity.removeItemsAtPosition(position, pathsToRemove)
+//                    removeItemsAtPosition(position, pathsToRemove)
+                    FolderImagesActivity.adapter.notifyDataSetChanged()
+                    isUpdatedFolderActivity = true
+                    setAllVisibilityFolderImagesActivity()
+                    popupWindow_delete?.dismiss()
                 }
-                resetVisibilityForDeleteItem()
 
+                is FavoriteImagesActivity -> {
+                    setAllVisibilityFavoriteImagesActivity()
+                    FavoriteImagesActivity.favoriteAdapter.notifyDataSetChanged()
+                    popupWindow_delete?.dismiss()
+                }
+
+                is MainScreenActivity -> {
+                    if (viewPager.currentItem == 0) {
+                        photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+                    } else {
+                        videosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
+                    }
+                    resetVisibilityForDeleteItem()
+                }
             }
+
             popupWindow_delete?.dismiss()
         }
 
         cancelBtn.setOnClickListener {
+
+            when (activity) {
+                is FolderImagesActivity -> {
+                    setAllVisibilityFolderImagesActivity()
+                }
+
+                is FavoriteImagesActivity -> {
+                    setAllVisibilityFavoriteImagesActivity()
+                }
+
+                is MainScreenActivity -> {
+                    resetVisibilityForDeleteItem()
+                }
+            }
             popupWindow_delete?.dismiss()
-            setAllVisibility()
-            resetVisibilityForDeleteItem()
         }
+
     }
 
 
-    private fun Context.removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
-        if (position >= 0 && position < (applicationContext as AppClass).mainViewModel.folderList.size) {
-
-            val folder = (applicationContext as AppClass).mainViewModel.folderList[position]
-            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
-            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
-
-            // Update the mainViewModel.folderList
-            (applicationContext as AppClass).mainViewModel.folderList[position] = updatedFolder
-
-            // Notify the adapter about the data change
-            FolderImagesActivity.adapter.updateList(updatedList)
-        }
-    }
+//    private fun Context.removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
+//        if (position >= 0 && position < (applicationContext as AppClass).mainViewModel.folderList.size) {
+//
+//            val folder = (applicationContext as AppClass).mainViewModel.folderList[position]
+//            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
+//            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
+//
+//            // Update the mainViewModel.folderList
+//            (applicationContext as AppClass).mainViewModel.folderList[position] = updatedFolder
+//
+//            // Notify the adapter about the data change
+//            FolderImagesActivity.adapter.updateList(updatedList)
+//        }
+//    }
 
     // here move only one file in trash bin,  popup menu will show
     fun Context.showPopupForMoveToTrashBinForOpenActivityOnlyOne(
@@ -363,7 +389,9 @@ object CommonFunctions {
     }
 
     // here restore multiple popup menu will show
-    fun Context.showPopupRestoreMultiple(anchorView: View, selectedItemList: ArrayList<TrashBinAboveVersion>) {
+    fun Context.showPopupRestoreMultiple(
+        anchorView: View, selectedItemList: ArrayList<TrashBinAboveVersion>
+    ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowRestoreTrash: View = inflater.inflate(R.layout.restore_popup_menu, null)
@@ -408,7 +436,9 @@ object CommonFunctions {
         }
     }
 
-    fun Activity.showPopupRestoreOne(anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int) {
+    fun Activity.showPopupRestoreOne(
+        anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int
+    ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowRestoreOne: View = inflater.inflate(R.layout.restore_popup_menu, null)
@@ -550,11 +580,18 @@ object CommonFunctions {
         linearLayoutForMainText.visibility = View.VISIBLE
     }
 
-    private fun setAllVisibility() {
+    private fun setAllVisibilityFolderImagesActivity() {
         FolderImagesActivity.adapter.updateSelectionState(false)
         FolderImagesActivity.bottomNavigationView.visibility = View.GONE
         FolderImagesActivity.unselect_top_menu_bar.visibility = View.GONE
         FolderImagesActivity.select_top_menu_bar.visibility = View.VISIBLE
+    }
+
+    private fun setAllVisibilityFavoriteImagesActivity() {
+        FavoriteImagesActivity.favoriteAdapter.updateSelectionState(false)
+        FavoriteImagesActivity.favoriteBottomNavigationView.visibility = View.GONE
+        FavoriteImagesActivity.mainLinearLayout.visibility = View.VISIBLE
+        FavoriteImagesActivity.selectedTextViewLinearLayout.visibility = View.GONE
     }
 
     private fun trashBinActivityAllVisibility() {
@@ -575,4 +612,16 @@ object CommonFunctions {
         startActivity(intent)
 //        finish()
     }
+
+    fun setNavigationColor(window: Window, color: Int) {
+        window.apply {
+            navigationBarColor = color
+            statusBarColor = color
+            val decorView = window.decorView
+            decorView.systemUiVisibility =
+                (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
+        }
+    }
+
+    ////////////////////
 }

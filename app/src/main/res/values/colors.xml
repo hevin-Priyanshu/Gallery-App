@@ -13,4 +13,6 @@
     <color name="header_background">#A1CCD1</color>
     <color name="selected_filter_color">#FF4081</color>
     <color name="icon_color">#9CA2AE</color>
+    <color name="black_alpha">#26000000</color>
+
 </resources>

@@ -7,7 +7,6 @@
 
     <style name="Theme.NewGalleryApp" parent="Base.Theme.NewGalleryApp">
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">true</item>
-
         <item name="android:statusBarColor">@color/white</item>
     </style>
 

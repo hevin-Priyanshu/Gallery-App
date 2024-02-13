@@ -14,6 +14,7 @@ import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FolderImagesActivity
 import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.models.Folder
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import java.io.File
 
 class FolderAdapter(
@@ -22,7 +23,6 @@ class FolderAdapter(
     private val listener: FolderClickListener? = null,
     private val from: String
 ) : RecyclerView.Adapter<FolderAdapter.FolderViewHolder>() {
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FolderViewHolder {
         val layout =
@@ -60,7 +60,7 @@ class FolderAdapter(
                     val intent = Intent(context, FolderImagesActivity::class.java)
                     intent.putExtra("folderPosition", position)
                     intent.putExtra("folderName", File(list[position].name).name)
-                    context.startActivityForResult(intent, 333)
+                    context.startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY)
                     context.overridePendingTransition(
                         android.R.anim.fade_in, android.R.anim.fade_out
                     )

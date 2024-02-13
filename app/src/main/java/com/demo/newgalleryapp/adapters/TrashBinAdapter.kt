@@ -66,9 +66,9 @@ class TrashBinAdapter(
         //get here height of images according to numbers of columns , by dividing them
         val imageViewWidth = screenWidth / sharedPreferencesHelper.getGridColumns()
 
-        val layoutParams =
-            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
+        val layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
         holder.image.layoutParams = layoutParams
+
 
         if (list[position].isVideo) {
             holder.imageVideoThumbnail.visibility = View.VISIBLE

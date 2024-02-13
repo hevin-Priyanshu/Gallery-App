@@ -1,4 +1,4 @@
-package com.demo.newgalleryapp;
+package com.demo.newgalleryapp.classes;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.view.ScaleGestureDetectorCompat;
 
-import com.demo.galleryapp.AutoResetMode;
+import com.demo.newgalleryapp.R;
 import com.demo.newgalleryapp.activities.OpenImageActivity;
 
 

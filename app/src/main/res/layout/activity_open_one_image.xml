@@ -4,10 +4,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.demo.newgalleryapp.ZoomageView
+    <com.demo.newgalleryapp.classes.ZoomageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:adjustViewBounds="true"
         android:src="@drawable/ic_launcher_background" />
 
     <ImageView

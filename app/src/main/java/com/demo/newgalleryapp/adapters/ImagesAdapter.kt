@@ -7,9 +7,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -17,10 +18,11 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.activities.OpenImageActivity
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
+import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
@@ -70,6 +72,8 @@ class ImagesAdapter(
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
 
+        val listPos = list[position]
+
         // Get the width of the screen in pixels
         val screenWidth = context.resources.displayMetrics.widthPixels
         sharedPreferencesHelper = SharedPreferencesHelper(context)
@@ -77,16 +81,28 @@ class ImagesAdapter(
         //get here height of images according to numbers of columns , by dividing them
         val imageViewWidth = screenWidth / sharedPreferencesHelper.getGridColumns()
 
-        val layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
+        val layoutParams =
+            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
         holder.image.layoutParams = layoutParams
 
-        if (list[position].isVideo) {
-            holder.imageVideoThumbnail.visibility = View.VISIBLE
+        if (listPos.isVideo) {
+
+            if (sharedPreferencesHelper.getGridColumns() == 5) {
+                holder.imageVideoThumbnail.visibility = View.GONE
+            } else {
+                holder.imageVideoThumbnail.visibility = View.VISIBLE
+            }
+
+            holder.imageVideo.visibility = View.VISIBLE
+            val duration =
+                (context.application as AppClass).mainViewModel.formatDuration(listPos.duration)
+            holder.imageVideoText.text = duration
         } else {
             holder.imageVideoThumbnail.visibility = View.GONE
+            holder.imageVideo.visibility = View.GONE
         }
 
-        if (checkSelectedList.map { it.path }.contains(list[position].path)) {
+        if (checkSelectedList.map { it.path }.contains(listPos.path)) {
             holder.isSelectedCheckbox.setImageResource(R.drawable.right_tick_item)
         } else {
             holder.isSelectedCheckbox.setImageResource(R.drawable.empty_select_item_blur)
@@ -96,14 +112,14 @@ class ImagesAdapter(
         holder.image.setOnClickListener {
 
             if (isSelected) {
-                if (checkSelectedList.map { it.path }.contains(list[position].path)) {
+                if (checkSelectedList.map { it.path }.contains(listPos.path)) {
                     // If image is already selected, unselect it
-                    checkSelectedList.remove(list[position])
+                    checkSelectedList.remove(listPos)
 //                    holder.isSelectedCheckbox.isChecked = false
                     holder.isSelectedCheckbox.setImageResource(R.drawable.empty_select_item_blur)
                 } else {
                     // If image is not selected, select it
-                    checkSelectedList.add(list[position])
+                    checkSelectedList.add(listPos)
 //                    holder.isSelectedCheckbox.isChecked = true
                     holder.isSelectedCheckbox.setImageResource(R.drawable.right_tick_item)
                 }
@@ -140,8 +156,8 @@ class ImagesAdapter(
         holder.image.setOnLongClickListener {
             // Automatically select the image on long-press
             isSelected = true
-            if (!checkSelectedList.map { it.path }.contains(list[position].path)) {
-                checkSelectedList.add(list[position])
+            if (!checkSelectedList.map { it.path }.contains(listPos.path)) {
+                checkSelectedList.add(listPos)
 //                holder.isSelectedCheckbox.isChecked = true
                 holder.isSelectedCheckbox.visibility = View.VISIBLE
                 listener?.onLongClick()
@@ -150,7 +166,7 @@ class ImagesAdapter(
             }
             true
         }
-        val image = list[position].path
+        val image = listPos.path
 
         Glide.with(context).load(File(image).path).placeholder(R.drawable.placeholder)
             .listener(object : RequestListener<Drawable> {
@@ -179,7 +195,9 @@ class ImagesAdapter(
     class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var image: ImageView = itemView.findViewById(R.id.image_view)
         var imageVideoThumbnail: ImageView = itemView.findViewById(R.id.imageView_video_logo)
+        var imageVideo: LinearLayout = itemView.findViewById(R.id.imageView_video_logo_image)
         var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox)
+        var imageVideoText: TextView = itemView.findViewById(R.id.videoTime)
 
         init {
             isSelectedCheckbox.visibility = View.GONE // or View.INVISIBLE

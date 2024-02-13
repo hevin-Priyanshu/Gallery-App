@@ -1,4 +1,4 @@
-package com.demo.newgalleryapp
+package com.demo.newgalleryapp.classes
 
 import android.Manifest
 import android.app.Application

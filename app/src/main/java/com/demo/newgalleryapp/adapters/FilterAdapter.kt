@@ -1,12 +1,12 @@
 package com.demo.newgalleryapp.adapters
 
+import android.app.Activity
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
@@ -17,8 +17,9 @@ import com.demo.newgalleryapp.R
 import net.alhazmy13.imagefilter.ImageFilter
 
 class FilterAdapter(
-    val context: Context,
-    private val filterList: List<ImageFilter.Filter>, private val listener: OnItemClickListener
+    val context: Activity,
+    private val filterList: List<ImageFilter.Filter>,
+    private val listener: OnItemClickListener
 ) : RecyclerView.Adapter<FilterAdapter.FilterViewHolder>() {
 
     private val filterNames = arrayOf(
@@ -50,7 +51,8 @@ class FilterAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FilterViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.image_filters, parent, false)
+        val itemView =
+            LayoutInflater.from(parent.context).inflate(R.layout.image_filters, parent, false)
         return FilterViewHolder(itemView)
     }
 
@@ -59,29 +61,26 @@ class FilterAdapter(
 
         val requestOptions = RequestOptions().fitCenter()
 
-        Glide.with(context)
-            .load(getFilterPreviewResourceId(filter)) // Replace with your image resource ID
-            .apply(requestOptions).into(holder.filterImageView)
+
+
+        Glide.with(context).load(getFilterPreviewResourceId(filter)).apply(requestOptions).into(holder.filterImageView)
 
         holder.filterNameTextView.text = getFilterName(filter)
 
-        if (position == selectedPosition) {
-            holder.filterCardView.background =
-                ContextCompat.getDrawable(context, R.drawable.cardview_selector)
+        val isSelected = selectedPosition == position
+
+        // Set background color accordingly
+        if (isSelected) {
+            holder.filterCardView.background = ContextCompat.getDrawable(context, R.drawable.cardview_selector)
         } else {
             holder.filterCardView.background = null
-//            holder.filterCardView.background = ColorDrawable(Color.TRANSPARENT)
-//            holder.filterCardView.setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
-//            holder.filterCardView.cardElevation = 4f
-//            holder.filterCardView.radius = 6f
         }
 
         holder.filterCardView.setOnClickListener {
-//            holder.filterCardView.background = ContextCompat.getDrawable(holder.itemView.context, R.drawable.cardview_selector)
-            val previousSelected = selectedPosition
-            selectedPosition = holder.absoluteAdapterPosition
-            notifyItemChanged(previousSelected)
-            notifyItemChanged(selectedPosition)
+            // Update the selected position
+            selectedPosition = holder.adapterPosition
+            // Notify adapter about the change
+            notifyDataSetChanged()
             listener.onItemClick(filter, position)
         }
     }
@@ -93,7 +92,7 @@ class FilterAdapter(
     class FilterViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val filterImageView: ImageView = itemView.findViewById(R.id.imageCrop_filter_preview)
         val filterNameTextView: TextView = itemView.findViewById(R.id.filters_text)
-        val filterCardView: CardView = itemView.findViewById(R.id.card_view_filter)
+        val filterCardView: LinearLayout = itemView.findViewById(R.id.card_view_filter)
     }
 
 

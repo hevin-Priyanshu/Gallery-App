@@ -81,9 +81,7 @@ class EditActivity : AppCompatActivity() {
             showThreeDotPopup(toolbar, "filterImage")
         }
 
-
         uriString = intent.getStringExtra("Uri")
-
 
         backBtn.setOnClickListener {
             if (anyChanges) {
@@ -126,7 +124,6 @@ class EditActivity : AppCompatActivity() {
                 showThreeDotPopup(toolbar, "original")
             }
 
-
             runOnUiThread {
                 // Initialize the originalBitmap with the loaded image
                 Glide.with(this).asBitmap().load(uriString)
@@ -144,42 +141,14 @@ class EditActivity : AppCompatActivity() {
                     })
 
                 filterAdapter = FilterAdapter(this@EditActivity,
-                    createFilterList(),
-                    object : FilterAdapter.OnItemClickListener {
-
+                    createFilterList(), object : FilterAdapter.OnItemClickListener {
                         override fun onItemClick(filter: ImageFilter.Filter, position: Int) {
                             scopeJob?.cancel()
-
-//                            Glide.with(this@EditActivity).load(uriString)
-//                                .listener(object : RequestListener<Drawable> {
-//                                    override fun onLoadFailed(
-//                                        e: GlideException?,
-//                                        model: Any?,
-//                                        target: Target<Drawable>?,
-//                                        isFirstResource: Boolean
-//                                    ): Boolean {
-//                                        return false
-//                                    }
-//
-//                                    override fun onResourceReady(
-//                                        resource: Drawable?,
-//                                        model: Any?,
-//                                        target: Target<Drawable>?,
-//                                        dataSource: DataSource?,
-//                                        isFirstResource: Boolean
-//                                    ): Boolean {
-//                                        Log.d("IA", "onResourceReady: ${model.toString()}")
-//                                        return false
-//                                    }
-//                                }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(cropView)
-
-
                             scopeJob = lifecycleScope.launch(Dispatchers.IO) {
                                 originalImageSave.visibility = View.GONE
                                 saveEditedImage.visibility = View.VISIBLE
                                 applyFilter(filter)
                             }
-                            ////////////////
                         }
                     })
                 filterRecyclerView.layoutManager =
@@ -256,7 +225,6 @@ class EditActivity : AppCompatActivity() {
     }
 
     private suspend fun applyFilter(filter: ImageFilter.Filter) {
-//        runOnUiThread {
         withContext(Dispatchers.Main) {
             editProgressBar.visibility = View.VISIBLE
         }

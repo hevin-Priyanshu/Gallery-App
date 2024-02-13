@@ -16,8 +16,18 @@
         <item name="tickVisible">true</item>
         <item name="android:fontFamily">@font/poppins_medium</item>
         <item name="android:textSize">@dimen/_10sdp</item>
-        <!--        <item name="android:iconTintMode">@null</item>-->
     </style>
+
+
+
+    <style name="ImprovedBottomNavigationView" parent="Widget.Design.BottomNavigationView">
+        <item name="tickVisible">true</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="android:textSize">@dimen/_10sdp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/icon_color</item>
+        <item name="android:itemBackground">@color/white</item>
+        <item name="android:elevation">4dp</item> </style>
 
 
     <style name="RoundedSquare">

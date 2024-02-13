@@ -23,7 +23,7 @@
     <string name="delete">Delete</string>
     <string name="more">More</string>
     <string name="favorite_images">Favorite</string>
-    <string name="no_data_found">No data Found</string>
+    <string name="no_data_found">No Data Found</string>
     <string name="file_name">File Name</string>
     <string name="path">Path</string>
     <string name="name">Name</string>
@@ -55,4 +55,7 @@
     <string name="deselect_all">Deselect All</string>
     <string name="restore">Restore</string>
     <string name="galley_allText">Gallery app is fast, light, modern and rich-feature app for organizing your photos\n</string>
+
+    <string name="share_favorites">Share Favorites</string>
+    <string name="unfavorite">Unfavorite</string>
 </resources>

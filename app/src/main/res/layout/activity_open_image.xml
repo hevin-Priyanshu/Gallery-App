@@ -168,9 +168,7 @@
         android:background="@color/white"
         app:itemIconTint="#9CA2AE"
         app:labelVisibilityMode="unlabeled"
-        app:menu="@menu/open_images_bottom_item">
-
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
+        app:menu="@menu/open_images_bottom_item" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation_trash"
@@ -181,8 +179,6 @@
         android:background="@color/white"
         android:visibility="gone"
         app:labelVisibilityMode="unlabeled"
-        app:menu="@menu/bottom_item_trash">
-
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
+        app:menu="@menu/bottom_item_trash" />
 
 </RelativeLayout>

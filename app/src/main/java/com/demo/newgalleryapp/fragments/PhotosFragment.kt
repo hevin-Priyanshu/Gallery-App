@@ -9,7 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.AppClass
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
@@ -79,13 +79,6 @@ class PhotosFragment : Fragment() {
             val groupedPhotos: List<Map.Entry<String, List<MediaModel>>> =
                 sortedPhotos.groupBy { getFormattedDate(it.date) }.entries.toList()
 
-//            for (entry in groupedPhotos) {
-//                val date = entry.key
-//                commonList.add(date)
-//                for (image in entry.value) {
-//                    commonList.add(image)
-//                }
-//            }
 
             groupedPhotos.forEach { (date, images) ->
                 commonList.add(date)

@@ -40,6 +40,7 @@
                 android:layout_marginStart="14dp"
                 android:fontFamily="@font/poppins_semibold"
                 android:text="Move to Album"
+                android:textColor="@color/black"
                 android:textSize="@dimen/_15sdp"
                 android:visibility="gone" />
 

@@ -1,28 +1,48 @@
 package com.demo.newgalleryapp.activities
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.FavoriteAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.io.File
 
-class FavoriteImagesActivity : AppCompatActivity() {
+class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var backBtn: ImageView
     private lateinit var howManyItemOn: TextView
-    private lateinit var favoriteAdapter: FavoriteAdapter
+    private lateinit var itemSelectedFavoriteTxt: TextView
+    private lateinit var selectAll: TextView
+    private lateinit var deSelectAll: TextView
+    private lateinit var closeBtnTrash: ImageView
     private lateinit var noData: LinearLayout
     private var tempFavoriteList: ArrayList<MediaModel> = ArrayList()
+    private var selectedItemList: ArrayList<MediaModel> = ArrayList()
+    lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+
+    companion object {
+        lateinit var mainLinearLayout: LinearLayout
+        lateinit var selectedTextViewLinearLayout: LinearLayout
+        lateinit var favoriteBottomNavigationView: BottomNavigationView
+        lateinit var favoriteAdapter: FavoriteAdapter
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -32,9 +52,104 @@ class FavoriteImagesActivity : AppCompatActivity() {
         backBtn = findViewById(R.id.back_btn)
         recyclerView = findViewById(R.id.recycler_view_fav)
         noData = findViewById(R.id.no_data)
+        closeBtnTrash = findViewById(R.id.closeBtn_favorite)
+        selectAll = findViewById(R.id.SelectAll_favorite)
+        deSelectAll = findViewById(R.id.DeSelectAll_favorite)
         howManyItemOn = findViewById(R.id.howManyItemOn)
+        itemSelectedFavoriteTxt = findViewById(R.id.itemSelectedFavoriteTxt)
+        mainLinearLayout = findViewById(R.id.main_linear_layout_favorite)
+        selectedTextViewLinearLayout = findViewById(R.id.selectText_linear_layout_favorite)
+        favoriteBottomNavigationView = findViewById(R.id.bottomNavigationViewFavorite)
 
 
+        closeBtnTrash.setOnClickListener {
+            setAllVisibility()
+        }
+
+        sharedPreferencesHelper = SharedPreferencesHelper(this)
+        val gridCount = sharedPreferencesHelper.getGridColumns()
+        loadFavoriteItemsFromDataBase(gridCount)
+
+        selectAll.setOnClickListener {
+            favoriteAdapter.isSelected = true
+            favoriteAdapter.updateSelectionState(true)
+            favoriteAdapter.checkSelectedList.clear()
+            favoriteAdapter.checkSelectedList.addAll(tempFavoriteList)
+            counter(favoriteAdapter.checkSelectedList.size)
+            selectAll.visibility = View.GONE
+            deSelectAll.visibility = View.VISIBLE
+        }
+
+        deSelectAll.setOnClickListener {
+            favoriteAdapter.isSelected = false
+            favoriteAdapter.updateSelectionState(false)
+            favoriteAdapter.checkSelectedList.clear()
+            counter(favoriteAdapter.checkSelectedList.size)
+            deSelectAll.visibility = View.GONE
+            selectAll.visibility = View.VISIBLE
+        }
+
+        val menuItemMore = favoriteBottomNavigationView.menu.findItem(R.id.moreItem)
+        val menuItemDeleteItem = favoriteBottomNavigationView.menu.findItem(R.id.deleteItem)
+
+        menuItemMore.isVisible = false
+        menuItemDeleteItem.isVisible = false
+
+        favoriteBottomNavigationView.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.shareItem -> shareSelectedImages()
+                R.id.favoriteItem -> handleFavoriteAction()
+            }
+            true
+        }
+        // here handling the back press btn
+        backBtn.setOnClickListener {
+            finish()
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+    }
+
+    private fun handleFavoriteAction() {
+        //        val model = models[viewPager.currentItem]
+        selectedItemList = favoriteAdapter.checkSelectedList
+        selectedItemList.map {
+            val paths = it.path
+
+            val favoriteImageDao = ImagesDatabase.getDatabase(this).favoriteImageDao()
+
+            val roomModel = favoriteImageDao.getModelByFile(paths)
+
+            if (roomModel != null) {
+                favoriteImageDao.deleteFavorite(roomModel)
+            }
+        }
+        showToast(this, "Item Remove")
+        setAllVisibility()
+    }
+
+    private fun shareSelectedImages() {
+
+        selectedItemList = favoriteAdapter.checkSelectedList
+        val paths = selectedItemList.map { it.path }
+
+        if (paths.isNotEmpty()) {
+            val uris = ArrayList<Uri>()
+
+            // Convert file paths to Uri using FileProvider
+            for (file in paths) {
+                val uri = FileProvider.getUriForFile(
+                    this, "com.demo.newgalleryapp.fileprovider", File(file)
+                )
+                uris.add(uri)
+            }
+            // Handle share item
+            (application as AppClass).mainViewModel.shareMultipleImages(uris, this)
+        } else {
+            showToast(this, "No images selected to share")
+        }
+    }
+
+    private fun loadFavoriteItemsFromDataBase(gridCount: Int) {
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllFavorites()
             .observe(this, Observer { favorites ->
 
@@ -43,18 +158,14 @@ class FavoriteImagesActivity : AppCompatActivity() {
 
                 recyclerIsEmptyOrNot(tempFavoriteList)
 
-                recyclerView.layoutManager = GridLayoutManager(this, 4, LinearLayoutManager.VERTICAL, false)
-                favoriteAdapter = FavoriteAdapter(this@FavoriteImagesActivity, tempFavoriteList)
+                recyclerView.layoutManager =
+                    GridLayoutManager(this, gridCount, LinearLayoutManager.VERTICAL, false)
+                favoriteAdapter = FavoriteAdapter(
+                    this@FavoriteImagesActivity, tempFavoriteList, this@FavoriteImagesActivity
+                )
                 recyclerView.adapter = favoriteAdapter
                 howManyItemOn.text = favoriteAdapter.itemCount.toString()
             })
-
-
-        // here handling the back press btn
-        backBtn.setOnClickListener {
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }
     }
 
     private fun recyclerIsEmptyOrNot(tempFavoriteList: ArrayList<MediaModel>) {
@@ -67,4 +178,25 @@ class FavoriteImagesActivity : AppCompatActivity() {
         }
 
     }
+
+    override fun onLongClick() {
+        favoriteBottomNavigationView.visibility = View.VISIBLE
+        mainLinearLayout.visibility = View.GONE
+        selectedTextViewLinearLayout.visibility = View.VISIBLE
+    }
+
+    override fun counter(select: Int) {
+        if (select == 0) {
+            setAllVisibility()
+        }
+        itemSelectedFavoriteTxt.text = "Item Selected $select"
+    }
+
+    private fun setAllVisibility() {
+        favoriteAdapter.updateSelectionState(false)
+        favoriteBottomNavigationView.visibility = View.GONE
+        mainLinearLayout.visibility = View.VISIBLE
+        selectedTextViewLinearLayout.visibility = View.GONE
+    }
+
 }

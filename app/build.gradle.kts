@@ -34,6 +34,11 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    buildFeatures{
+        viewBinding = true
+    }
+
 }
 
 dependencies {
@@ -87,10 +92,20 @@ dependencies {
 
     val media3_version = "1.2.0"
     // For media playback using ExoPlayer
-    implementation("androidx.media3:media3-exoplayer:$media3_version")
-    implementation ("androidx.media3:media3-ui:$media3_version")
-    implementation ("androidx.media3:media3-exoplayer-dash:$media3_version")
+//    implementation("androidx.media3:media3-exoplayer:$media3_version")
+//    implementation ("androidx.media3:media3-ui:$media3_version")
+//    implementation ("androidx.media3:media3-exoplayer-dash:$media3_version")
 
+
+    //audio render library
+    implementation ("androidx.media2:media2-session:1.2.0")
+
+
+    //exoPlayer library
+    implementation ("com.google.android.exoplayer:exoplayer:2.18.7")
+
+
+    // Dimen library for dp and sp
     implementation ("com.intuit.sdp:sdp-android:1.1.0")
     implementation ("com.intuit.ssp:ssp-android:1.1.0")
 

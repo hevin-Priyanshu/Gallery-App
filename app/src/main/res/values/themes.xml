@@ -9,7 +9,16 @@
 
     <style name="Theme.NewGalleryApp" parent="Base.Theme.NewGalleryApp">
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">true</item>
-
         <item name="android:statusBarColor">@color/white</item>
+<!--        <item name="android:windowTranslucentNavigation">true</item>-->
+<!--        <item name="android:windowTranslucentStatus">true</item>-->
+
     </style>
+
+    <style name="ExoStyledControls.Button.Center.PlayPause">
+        <item name="android:contentDescription">@string/exo_controls_play_description</item>
+        <item name="android:padding">@dimen/_5sdp</item>
+        <item name="colorControlActivated">@color/color_main</item>
+    </style>
+
 </resources>

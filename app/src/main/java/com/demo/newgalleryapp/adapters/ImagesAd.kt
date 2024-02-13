@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -16,6 +17,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
@@ -114,7 +116,12 @@ class ImagesAd(
             val imageModel = dataList[position] as MediaModel
 
             if (imageModel.isVideo) {
+
                 holder.imageVideoThumbnail.visibility = View.VISIBLE
+                val duration =
+                    (context.application as AppClass).mainViewModel.formatDuration(imageModel.duration)
+                holder.imageVideoTextView.text = duration
+
             } else {
                 holder.imageVideoThumbnail.visibility = View.GONE
             }
@@ -230,7 +237,9 @@ class ImagesAd(
 
     class InnerImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var imageView: ImageView = itemView.findViewById(R.id.image_view_new)
-        var imageVideoThumbnail: ImageView = itemView.findViewById(R.id.imageView_video_logo)
+        var imageVideoTextView: TextView = itemView.findViewById(R.id.videoTime_inner_item)
+        var imageVideoThumbnail: LinearLayout =
+            itemView.findViewById(R.id.imageView_video_logo_inner_item)
         var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox)
 
         init {

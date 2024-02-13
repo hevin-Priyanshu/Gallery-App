@@ -1,5 +1,6 @@
 package com.demo.newgalleryapp.activities
 
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
@@ -13,11 +14,12 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.AppClass
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.OpenImageActivity.Companion.models
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.utilities.CommonFunctions.setNavigationColor
 
 class SlideShowActivity : AppCompatActivity() {
 
@@ -31,6 +33,8 @@ class SlideShowActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_slide_show)
+
+        setNavigationColor(window, Color.BLACK)
 
         slideShow = findViewById(R.id.slideShowImage)
         viewPager = findViewById(R.id.viewPager_slideShow)
@@ -94,8 +98,8 @@ class SlideShowActivity : AppCompatActivity() {
 
     private fun startSlideshow(currentIndex: Int, models: List<MediaModel>) {
 
-        // Define the interval for changing images (3 seconds in this case)
-        val slideshowInterval = 3000L
+        // Define the interval for changing images (2 seconds in this case)
+        val slideshowInterval = 2000L
 
         val runnable = object : Runnable {
             override fun run() {

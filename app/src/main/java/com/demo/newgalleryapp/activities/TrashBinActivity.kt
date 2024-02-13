@@ -3,23 +3,27 @@ package com.demo.newgalleryapp.activities
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.TypefaceSpan
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.AppClass
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.FolderImagesActivity.Companion.adapter
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.TrashBinAdapter
@@ -113,6 +117,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         progressBar.visibility = View.VISIBLE
 
         itemSelectedAllTrashBinTxt.setOnClickListener {
+
             trashBinAdapter.isSelected = true
             trashBinAdapter.updateSelectionState(true)
             trashBinAdapter.checkTrashSelectedList.clear()
@@ -165,6 +170,16 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
             setBottomNavigationViewForTrashBin(menuItem.itemId)
             true
         }
+
+        val menu = bottomNavigationView.menu
+        for (i in 0 until menu.size()) {
+            val item = menu.getItem(i)
+            val spannableString = SpannableString(item.title)
+            val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
+            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            item.title = spannableString
+        }
+
     }
 
 

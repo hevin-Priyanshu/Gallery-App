@@ -24,11 +24,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.FolderAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
@@ -106,7 +106,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                     }
                 }
 
-
             } catch (e: Exception) {
                 e.printStackTrace()
                 // Handle the exception, e.g., show an error message
@@ -153,8 +152,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                 moveText.visibility = View.VISIBLE
             }
         }
-
-
 
         closeBtn.setOnClickListener {
             if (anyupdated) {
@@ -223,11 +220,12 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                 } else {
                     showToast(this, "No Item Selected to Modify")
                 }
+
             } else {
                 if (intent.hasExtra("copySelectedMainScreenActivity")) {
-                    copyOrMoveImages(objectList, folderPath, false)
+                    showCopyOrMove(recyclerViewCopyOrMove, objectList, folderPath, false, "Copy")
                 } else {
-                    copyOrMoveImages(objectList, folderPath, true)
+                    showCopyOrMove(recyclerViewCopyOrMove, objectList, folderPath, true, "Move")
                 }
             }
             ////////////////////
@@ -277,9 +275,13 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             // for below android 10 versions
             else {
                 if (intent.hasExtra("copyImagePath")) {
-                    showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Copy")
+                    showCopyOrMovePopupmenu(
+                        recyclerViewCopyOrMove, "Copy", sourceFile, destinationFile
+                    )
                 } else {
-                    showCopyOrMovePopupmenu(recyclerViewCopyOrMove, "Move")
+                    showCopyOrMovePopupmenu(
+                        recyclerViewCopyOrMove, "Move", sourceFile, destinationFile
+                    )
                 }
             }
             /////////////////
@@ -291,21 +293,22 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
     private fun copyOrMoveImages(
         imagePaths: ArrayList<String>, destinationFolder: String, move: Boolean
     ) {
-        for (imagePath in imagePaths) {
-            val sourcePath = File(imagePath)
-            val imageName = sourcePath.name
-            val destinationFile = File(destinationFolder, imageName)
+        lifecycleScope.launch(Dispatchers.IO) {
+            for (imagePath in imagePaths) {
+                val sourcePath = File(imagePath)
+                val imageName = sourcePath.name
+                val destinationFile = File(destinationFolder, imageName)
 
-            if (move) {
-                // Move the file
-                moveFile(sourcePath, destinationFile)
-//                sourcePath.renameTo(destinationFile)
-            } else {
-                // Copy the file
-                copyImage(sourcePath, destinationFile)
-//                sourcePath.copyTo(destinationFile, true)
+                if (move) {
+                    // Move the file
+                    moveFile(sourcePath, destinationFile)
+                } else {
+                    // Copy the file
+                    copyImage(sourcePath, destinationFile)
+                }
             }
         }
+        ////////////
     }
 
     override fun onBackPressed() {
@@ -390,7 +393,9 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         ////////////////////
     }
 
-    private fun showCopyOrMovePopupmenu(anchorView: View, setTitle: String) {
+    private fun showCopyOrMovePopupmenu(
+        anchorView: View, setTitle: String, srcFile: File, desFile: File
+    ) {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowRestoreOne: View = inflater.inflate(R.layout.copy_or_move_popup_menu, null)
 
@@ -412,20 +417,76 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         val howManyItems = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_text)
 
         mainText.text = "$setTitle Item ?"
-        howManyItems.text =
-            "Are you sure to $setTitle these image on ${destinationFile.parentFile} ?"
+        howManyItems.text = "Are you sure to $setTitle these image on ${desFile.parentFile} ?"
 
         copyMoveSaveBtn.text = setTitle
 
         copyMoveSaveBtn.setOnClickListener {
             if (setTitle == "Copy") {
-                copyImage(sourceFile, destinationFile)
+                copyImage(srcFile, desFile)
                 anyupdated = true
             } else if (setTitle == "Move") {
-                moveFile(sourceFile, destinationFile)
+                moveFile(srcFile, desFile)
                 anyupdated = true
             }
 
+            popupWindow?.dismiss()
+        }
+
+        cancelBtn.setOnClickListener {
+            popupWindow?.dismiss()
+        }
+    }
+
+    private fun showCopyOrMove(
+        anchorView: View,
+        imagePaths: ArrayList<String>,
+        folderPath: String,
+        isMove: Boolean,
+        setTitle: String,
+    ) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupWindowRestoreOne: View = inflater.inflate(R.layout.copy_or_move_popup_menu, null)
+
+        popupWindow = PopupWindow(
+            popupWindowRestoreOne,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            Toolbar.LayoutParams.MATCH_PARENT,
+            true
+        )
+
+        popupWindow?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+        val copyMoveSaveBtn = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_save_btn)
+        val cancelBtn = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_cancel_btn)
+
+        val mainText = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_main_text)
+        val howManyItems = popupWindowRestoreOne.findViewById<TextView>(R.id.copy_move_text)
+
+        mainText.text = "$setTitle Item ?"
+        howManyItems.text = "Are you sure to $setTitle these image on ${folderPath} ?"
+
+        copyMoveSaveBtn.text = setTitle
+
+        copyMoveSaveBtn.setOnClickListener {
+            copyOrMoveImages(imagePaths, folderPath, isMove)
+
+//                for (imagePath in imagePaths) {
+//                    val sourcePath = File(imagePath)
+//                    val imageName = sourcePath.name
+//                    val destinationFile = File(folderPath, imageName)
+//
+//                    if (isMove) {
+//                        // Move the file
+//                        moveFile(sourcePath, destinationFile)
+//                    } else {
+//                        // Copy the file
+//                        copyImage(sourcePath, destinationFile)
+//                    }
+//                }
+            /////////////////
             popupWindow?.dismiss()
         }
 

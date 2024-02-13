@@ -25,7 +25,7 @@
                 android:layout_gravity="center"
                 android:src="@drawable/back_icon" />
 
-<!--                android:id="@+id/trash_open_textView"-->
+            <!--                android:id="@+id/trash_open_textView"-->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -33,9 +33,9 @@
                 android:layout_marginStart="14dp"
                 android:fontFamily="@font/montserrat_semibold"
                 android:marqueeRepeatLimit="marquee_forever"
-                android:textColor="@color/black"
                 android:text="Restore or Delete"
-                android:textSize="12sp" />
+                android:textColor="@color/black"
+                android:textSize="@dimen/_13sdp" />
 
         </LinearLayout>
 
@@ -55,18 +55,16 @@
         android:layout_above="@+id/bottomNavigation_trash"
         android:layout_below="@+id/toolBar" />
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation_trash"
-        style="@style/BottomNavigationView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@color/white"
-        app:itemIconTint="@color/icon_color"
-        app:itemTextAppearanceActive="@style/BottomNavigationView"
-        app:itemTextColor="@color/icon_color"
-        app:menu="@menu/bottom_item_trash">
 
-    </com.google.android.material.bottomnavigation.BottomNavigationView>
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNavigation_trash"
+            style="@style/BottomNavigationView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@color/white"
+            app:itemIconTint="@color/icon_color"
+            app:itemTextColor="@color/icon_color"
+            app:menu="@menu/bottom_item_trash"/>
 
 </RelativeLayout>

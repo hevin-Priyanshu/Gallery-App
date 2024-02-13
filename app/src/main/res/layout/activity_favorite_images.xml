@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:background="@color/white"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:fitsSystemWindows="true">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolBar"
@@ -11,6 +13,7 @@
 
         <!--Favorite Main Text layout with icon START HERE-->
         <LinearLayout
+            android:id="@+id/main_linear_layout_favorite"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
@@ -24,7 +27,7 @@
                 android:src="@drawable/back_icon" />
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1">
 
@@ -56,16 +59,7 @@
                         android:textColor="#8A8A8A"
                         android:textSize="@dimen/_11sdp" />
 
-
                 </LinearLayout>
-
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
 
 
             </LinearLayout>
@@ -73,71 +67,69 @@
         </LinearLayout>
         <!--Favorite Main Text layout with icon END HERE-->
 
-        <!--Select Text layout with icon START HERE-->
         <LinearLayout
+            android:id="@+id/selectText_linear_layout_favorite"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
             android:visibility="gone"
             android:weightSum="2">
 
-            <ImageView
-                android:id="@+id/close_btn"
-                android:layout_width="@dimen/_23sdp"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:src="@drawable/close_icon_new" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1">
+                android:layout_gravity="center"
+                android:layout_weight="0.6"
+                android:orientation="horizontal">
 
-                <LinearLayout
+                <ImageView
+                    android:id="@+id/closeBtn_favorite"
+                    android:layout_width="@dimen/_20sdp"
+                    android:layout_height="@dimen/_20sdp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/close_icon_new" />
+
+                <TextView
+                    android:id="@+id/itemSelectedFavoriteTxt"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginTop="@dimen/_10sdp"
-                    android:layout_marginBottom="@dimen/_10sdp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginStart="@dimen/_12sdp"
-                        android:fontFamily="@font/poppins_semibold"
-                        android:gravity="center_vertical"
-                        android:text="Select Items"
-                        android:textColor="@color/black"
-                        android:textSize="@dimen/_16sdp" />
-
-                </LinearLayout>
-
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="20dp"
+                    android:fontFamily="@font/poppins_semibold"
+                    android:text="Select Items"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/_15ssp" />
 
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1">
+                android:layout_weight="1.5"
+                android:gravity="end"
+                android:orientation="horizontal">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginTop="@dimen/_14sdp"
-                    android:layout_marginBottom="@dimen/_14sdp"
-                    android:gravity="end"
-                    android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/SelectAll_favorite"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="@string/select_all"
+                    android:textColor="#007AFF"
+                    android:textSize="@dimen/_12ssp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:layout_marginEnd="@dimen/_10sdp"
-                        android:fontFamily="@font/poppins_medium"
-                        android:text="Select All"
-                        android:textColor="@color/color_main"
-                        android:textSize="@dimen/_14sdp" />
 
-                </LinearLayout>
+                <TextView
+                    android:id="@+id/DeSelectAll_favorite"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:fontFamily="@font/poppins_medium"
+                    android:text="@string/deselect_all"
+                    android:textColor="#007AFF"
+                    android:textSize="@dimen/_12ssp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
@@ -157,19 +149,18 @@
         android:visibility="gone">
 
         <ImageView
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:src="@drawable/no_connection" />
-        <!--android:alpha="0.6"-->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:fontFamily="@font/montserrat_semibold"
+            android:fontFamily="@font/poppins_medium"
             android:gravity="center"
-            android:text="@string/no_data_found" />
-
+            android:text="@string/no_data_found"
+            android:textColor="@color/icon_color"
+            android:textSize="@dimen/_15sdp" />
 
     </LinearLayout>
 
@@ -178,7 +169,21 @@
         android:id="@+id/recycler_view_fav"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNavigationViewFavorite"
         android:layout_below="@+id/toolBar"
         android:padding="@dimen/_6sdp" />
+
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationViewFavorite"
+        style="@style/BottomNavigationViewStyle"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        android:visibility="gone"
+        app:itemIconTint="@color/icon_color"
+        app:labelVisibilityMode="unlabeled"
+        app:menu="@menu/bottom_nav_for_select_items" />
 
 </RelativeLayout>
