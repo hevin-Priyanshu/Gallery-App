@@ -1,6 +1,7 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
@@ -11,17 +12,19 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.lifecycleScope
@@ -37,7 +40,8 @@ import com.bumptech.glide.request.target.Target
 import com.bumptech.glide.request.transition.Transition
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.FilterAdapter
-import com.demo.newgalleryapp.utilities.CommonFunctions
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -64,6 +68,17 @@ class EditActivity : AppCompatActivity() {
     private var anyChanges: Boolean = false
     private var popupWindow: PopupWindow? = null
     private var scopeJob: Job? = null
+    private var handler: Handler? = null
+
+    private lateinit var dialogBinding: DialogLoadingBinding
+    private val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +91,8 @@ class EditActivity : AppCompatActivity() {
         saveEditedImage = findViewById(R.id.image_filter_save_btn)
         editProgressBar = findViewById(R.id.edit_progressBar)
         toolbar = findViewById(R.id.toolBar_edit)
+
+        handler = Handler(Looper.getMainLooper())
 
         saveEditedImage.setOnClickListener {
             showThreeDotPopup(toolbar, "filterImage")
@@ -141,12 +158,16 @@ class EditActivity : AppCompatActivity() {
                     })
 
                 filterAdapter = FilterAdapter(this@EditActivity,
-                    createFilterList(), object : FilterAdapter.OnItemClickListener {
+                    createFilterList(),
+                    object : FilterAdapter.OnItemClickListener {
                         override fun onItemClick(filter: ImageFilter.Filter, position: Int) {
                             scopeJob?.cancel()
                             scopeJob = lifecycleScope.launch(Dispatchers.IO) {
-                                originalImageSave.visibility = View.GONE
-                                saveEditedImage.visibility = View.VISIBLE
+
+                                withContext(Dispatchers.Main) {
+                                    originalImageSave.visibility = View.GONE
+                                    saveEditedImage.visibility = View.VISIBLE
+                                }
                                 applyFilter(filter)
                             }
                         }
@@ -191,17 +212,28 @@ class EditActivity : AppCompatActivity() {
 
             if (onclickText == "original") {
                 val noneImageFilter = uriStringToBitmap(uriString!!)
+
+                progressDialogFragment.show()
                 saveBitmapToInternalStorage(noneImageFilter!!)
                 anyChanges = true
-                CommonFunctions.showToast(this, "Image Save Successfully!!")
-                popupWindow?.dismiss()
-            } else if(onclickText == "filterImage") {
+                handler?.postDelayed({
+                    showToast(this, "Image Saved Successfully!!")
+                    progressDialogFragment.cancel()
+                    onBackPressed()
+                }, 1000)
+
+            } else if (onclickText == "filterImage") {
+
+                progressDialogFragment.show()
                 saveBitmapToInternalStorage(filteredBitmap)
                 anyChanges = true
-                CommonFunctions.showToast(this, "Image Save Successfully!!")
-                popupWindow?.dismiss()
-                scopeJob?.cancel()
+                handler?.postDelayed({
+                    showToast(this, "Image Saved Successfully!!")
+                    progressDialogFragment.cancel()
+                    onBackPressed()
+                }, 1000)
             }
+            popupWindow?.dismiss()
         }
 
         popupTextCancel.setOnClickListener {
@@ -241,8 +273,6 @@ class EditActivity : AppCompatActivity() {
 
     private fun saveBitmapToInternalStorage(bitmap: Bitmap) {
 
-        val arrayList: ArrayList<Uri> = ArrayList()
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // Use MediaStore API for Android 11 and above
             val contentValues = ContentValues().apply {
@@ -254,8 +284,7 @@ class EditActivity : AppCompatActivity() {
             }
 
             val resolver = contentResolver
-            val imageUri: Uri? =
-                resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            val imageUri: Uri? = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
             imageUri?.let {
                 try {
@@ -308,6 +337,18 @@ class EditActivity : AppCompatActivity() {
             e.printStackTrace()
         }
         return null
+    }
+
+
+    override fun onDestroy() {
+        handler?.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onStop() {
+        // Remove the callbacks to stop the slideshow when the activity is not visible
+        handler?.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 
     /////////////////////////

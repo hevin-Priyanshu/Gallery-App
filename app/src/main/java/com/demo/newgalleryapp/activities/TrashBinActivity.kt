@@ -1,38 +1,46 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.SpannableString
 import android.text.Spanned
-import android.text.style.TypefaceSpan
 import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.ProgressBar
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.activities.FolderImagesActivity.Companion.adapter
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.TrashBinAdapter
+import com.demo.newgalleryapp.classes.AppClass
+import com.demo.newgalleryapp.classes.CustomTypefaceSpan
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
-import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_RESTORE_PERMISSION_IN_TRASH_BIN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForDeletePermanently
@@ -44,6 +52,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
     private lateinit var recyclerViewTrash: RecyclerView
     private lateinit var backBtn: ImageView
+    private lateinit var threeDot: ImageView
     private lateinit var closeBtnTrash: ImageView
     private var selectedItemList: ArrayList<TrashBinAboveVersion> = ArrayList()
     private lateinit var noData: LinearLayout
@@ -57,6 +66,20 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
     private var count: Int = 0
     private var updated: Boolean = false
     private var newTrashList: ArrayList<TrashBinAboveVersion> = ArrayList()
+    var handler: Handler? = null
+    private var popupWindow: PopupWindow? = null
+
+    private lateinit var dialogBinding: DialogLoadingBinding
+
+    val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
+
 
     companion object {
         lateinit var trashBinAdapter: TrashBinAdapter
@@ -69,6 +92,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK) {
+
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             (application as AppClass).mainViewModel.queryTrashedMediaOnDevice()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -76,21 +100,26 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
         } else if ((requestCode == REQ_CODE_FOR_RESTORE_PERMISSION_IN_TRASH_BIN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                progressDialogFragment.show()
+
                 updated = true
                 (application as AppClass).mainViewModel.queryTrashedMediaOnDevice()
                 (application as AppClass).mainViewModel.getMediaFromInternalStorage()
                 loadAllTrashData()
-                showToast(this, "Restore Successfully.")
+
+                handler?.postDelayed({
+                    showToast(this, "Restore Successfully!!")
+                    progressDialogFragment.cancel()
+                    onBackPressed()
+                }, 1000)
             }
         } else if ((requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 updated = true
                 (application as AppClass).mainViewModel.queryTrashedMediaOnDevice()
                 loadAllTrashData()
-                showToast(this, "Delete Successfully.")
+                showToast(this, "Deleted Successfully.")
             }
-        } else if ((requestCode == 999 && resultCode == Activity.RESULT_OK)) {
-            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
         }
     }
 
@@ -98,7 +127,10 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trash_bin)
 
+        handler = Handler(Looper.getMainLooper())
+
         backBtn = findViewById(R.id.trashBin_back_btn)
+        threeDot = findViewById(R.id.three_dot_item_trash)
         closeBtnTrash = findViewById(R.id.close_btn_trash)
         recyclerViewTrash = findViewById(R.id.trashBin_recycler_view)
         noData = findViewById(R.id.no_data)
@@ -115,6 +147,23 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         progressBar = findViewById(R.id.progressBar_trash)
 
         progressBar.visibility = View.VISIBLE
+
+        // here handling the back press btn
+        backBtn.setOnClickListener {
+            if (updated) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+            } else if ((applicationContext as AppClass).mainViewModel.flagForTrashBinActivity) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+            }
+            finish()
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+
+        threeDot.setOnClickListener {
+            showPopupSelect(recyclerViewTrash)
+        }
 
         itemSelectedAllTrashBinTxt.setOnClickListener {
 
@@ -150,18 +199,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
             progressBar.visibility = View.GONE
         }
 
-        // here handling the back press btn
-        backBtn.setOnClickListener {
-            if (updated) {
-                val intent = Intent()
-                setResult(Activity.RESULT_OK, intent)
-            } else if ((applicationContext as AppClass).mainViewModel.flagForTrashBinActivity) {
-                val intent = Intent()
-                setResult(REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY, intent)
-            }
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }
+
         closeBtnTrash.setOnClickListener {
             setAllVisibility()
         }
@@ -172,16 +210,30 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         }
 
         val menu = bottomNavigationView.menu
+
+//        for (i in 0 until menu.size()) {
+//            val item = menu.getItem(i)
+//            val spannableString = SpannableString(item.title)
+//            val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
+//            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+//            item.title = spannableString
+//        }
+
         for (i in 0 until menu.size()) {
             val item = menu.getItem(i)
             val spannableString = SpannableString(item.title)
             val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
-            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            spannableString.setSpan(
+                CustomTypefaceSpan(font),
+                0,
+                spannableString.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
             item.title = spannableString
         }
 
-    }
 
+    }
 
     override fun onBackPressed() {
         if (updated) {
@@ -189,7 +241,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
             setResult(Activity.RESULT_OK, intent)
         } else if ((applicationContext as AppClass).mainViewModel.flagForTrashBinActivity) {
             val intent = Intent()
-            setResult(REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY, intent)
+            setResult(Activity.RESULT_OK, intent)
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()
@@ -197,17 +249,22 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
     private fun loadAllDeletedDatabaseData() {
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages().observe(this) {
+
             newTrashList.clear()
             newTrashList.addAll(it)
 
-            recyclerIsEmptyOrNot(newTrashList)
+            val temp = arrayListOf<TrashBinAboveVersion>()
+            temp.addAll(newTrashList)
+            recyclerIsEmptyOrNot(temp)
 
             recyclerViewTrash.layoutManager =
                 GridLayoutManager(this, count, LinearLayoutManager.VERTICAL, false)
-            trashBinAdapter =
-                TrashBinAdapter(this@TrashBinActivity, newTrashList, this@TrashBinActivity)
+            trashBinAdapter = TrashBinAdapter(this@TrashBinActivity, temp, this@TrashBinActivity)
             recyclerViewTrash.adapter = trashBinAdapter
-            howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
+
+//            howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
+            val items = trashBinAdapter.itemCount.toString()
+            howManyItemInTrash.text = "$items Items"
         }
         progressBar.visibility = View.GONE
     }
@@ -218,13 +275,19 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
             newTrashList.clear()
             newTrashList.addAll(it)
 
-            recyclerIsEmptyOrNot(newTrashList)
+            val temp = arrayListOf<TrashBinAboveVersion>()
+            temp.addAll(newTrashList)
+            recyclerIsEmptyOrNot(temp)
 
             recyclerViewTrash.layoutManager =
                 GridLayoutManager(this, count, LinearLayoutManager.VERTICAL, false)
-            trashBinAdapter = TrashBinAdapter(this, newTrashList, this@TrashBinActivity)
+            trashBinAdapter = TrashBinAdapter(this, temp, this@TrashBinActivity)
             recyclerViewTrash.adapter = trashBinAdapter
-            howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
+
+//            howManyItemInTrash.text = trashBinAdapter.itemCount.toString()
+
+            val items = trashBinAdapter.itemCount.toString()
+            howManyItemInTrash.text = "$items Items"
 
         }
         progressBar.visibility = View.GONE
@@ -281,7 +344,9 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                 else {
                     //this code is for below android 10 version
                     if (selectedItemList.isNotEmpty()) {
-                        showPopupRestoreMultiple(bottomNavigationView, selectedItemList)
+                        showPopupRestoreMultiple(
+                            bottomNavigationView, selectedItemList, this@TrashBinActivity
+                        )
                     } else {
                         showToast(this@TrashBinActivity, "Error: Image not found")
                     }
@@ -334,7 +399,9 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                     setAllVisibility()
                 } else {
                     if (selectedItemList.isNotEmpty()) {
-                        showPopupForDeletePermanently(bottomNavigationView, selectedItemList)
+                        showPopupForDeletePermanently(
+                            bottomNavigationView, selectedItemList, this@TrashBinActivity
+                        )
                     } else {
                         showToast(this, "Error: Image not found")
                     }
@@ -376,5 +443,42 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         }
         itemSelectedTrashBinTxt.text = "Item Selected $select"
     }
+
+    private fun showPopupSelect(
+        anchorView: View
+    ) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupView: View = inflater.inflate(R.layout.popup_select_item, null)
+
+        popupWindow = PopupWindow(
+            popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
+        )
+
+        popupWindow?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+
+        val selectedItem = popupView.findViewById<LinearLayout>(R.id.selectedItem)
+
+        selectedItem.setOnClickListener {
+            trashBinAdapter.isSelected = true
+            onLongClick()
+            trashBinAdapter.notifyDataSetChanged()
+            popupWindow?.dismiss()
+        }
+
+
+        val popupItem = popupView.findViewById<RelativeLayout>(R.id.popupItem_select_one)
+
+        popupItem.setOnClickListener {
+            popupWindow?.dismiss()
+        }
+        // Set dismiss listener to nullify the reference
+        popupWindow?.setOnDismissListener {
+            popupWindow = null
+        }
+    }
+
 
 }

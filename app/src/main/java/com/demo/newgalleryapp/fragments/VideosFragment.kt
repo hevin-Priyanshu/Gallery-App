@@ -9,14 +9,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
 import com.demo.newgalleryapp.models.MediaModel
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -125,14 +126,30 @@ class VideosFragment : Fragment() {
         imagesAdapter?.updateData(filteredData)
     }
 
-    private fun getFormattedDate(date: Long): String {
-        val dateAddedInSeconds = date ?: 0L
+//    private fun getFormattedDate(date: Long): String {
+//        val dateAddedInSeconds = date ?: 0L
+//        val dateAddedInMillis = dateAddedInSeconds * 1000
+//
+//        val localDate =
+//            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+//
+//        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+//    }
+
+    private fun getFormattedDate(dateAdded: Long): String {
+        val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000
 
-        val localDate =
+        val addedDate =
             Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+        val currentDate = LocalDate.now()
 
-        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+        return when (addedDate) {
+            currentDate -> "Today"
+            currentDate.minusDays(1) -> "Yesterday"
+//            currentDate.plusDays(1) -> "Tomorrow"
+            else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(addedDate)
+        }
     }
 
 }

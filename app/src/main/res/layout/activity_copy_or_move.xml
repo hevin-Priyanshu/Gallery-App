@@ -16,8 +16,8 @@
 
             <ImageView
                 android:id="@+id/close_btn_copyOrMove"
-                android:layout_width="@dimen/_22sdp"
-                android:layout_height="@dimen/_22sdp"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
                 android:layout_gravity="center"
                 android:src="@drawable/close_icon_new" />
 
@@ -30,7 +30,7 @@
                 android:fontFamily="@font/poppins_semibold"
                 android:text="Copy to Album"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_14sdp" />
+                android:textSize="@dimen/_16sdp" />
 
             <TextView
                 android:id="@+id/text_move"
@@ -41,7 +41,7 @@
                 android:fontFamily="@font/poppins_semibold"
                 android:text="Move to Album"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_15sdp"
+                android:textSize="@dimen/_16sdp"
                 android:visibility="gone" />
 
         </LinearLayout>

@@ -25,8 +25,8 @@
                 android:layout_gravity="center"
                 android:src="@drawable/back_icon" />
 
-            <!--                android:id="@+id/trash_open_textView"-->
             <TextView
+                android:id="@+id/trash_open_textView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -35,7 +35,7 @@
                 android:marqueeRepeatLimit="marquee_forever"
                 android:text="Restore or Delete"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_13sdp" />
+                android:textSize="@dimen/_12sdp" />
 
         </LinearLayout>
 
@@ -56,15 +56,15 @@
         android:layout_below="@+id/toolBar" />
 
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNavigation_trash"
-            style="@style/BottomNavigationView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:background="@color/white"
-            app:itemIconTint="@color/icon_color"
-            app:itemTextColor="@color/icon_color"
-            app:menu="@menu/bottom_item_trash"/>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation_trash"
+        style="@style/BottomNavigationView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        app:itemIconTint="@color/icon_color"
+        app:itemTextColor="@color/icon_color"
+        app:menu="@menu/bottom_item_trash" />
 
 </RelativeLayout>

@@ -35,7 +35,7 @@ android {
         jvmTarget = "1.8"
     }
 
-    buildFeatures{
+    buildFeatures {
         viewBinding = true
     }
 
@@ -52,41 +52,41 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
 
-
     // images loading libraries
-    implementation ("com.squareup.picasso:picasso:2.8")
+    implementation("com.squareup.picasso:picasso:2.8")
 
     //glide
-    implementation ("com.github.bumptech.glide:glide:4.12.0")
-    annotationProcessor ("com.github.bumptech.glide:compiler:4.12.0")
+    implementation("com.github.bumptech.glide:glide:4.12.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.12.0")
 
-    implementation ("com.github.chrisbanes:PhotoView:2.3.0")
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
 
     val lifecycle_version = "2.6.2"
 
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-process:2.4.0")
 
     //ROOM DATABASE LIBRARY
-    implementation ("androidx.room:room-runtime:2.4.0")
-    kapt ("androidx.room:room-compiler:2.4.0")
+    implementation("androidx.room:room-runtime:2.4.0")
+    kapt("androidx.room:room-compiler:2.4.0")
 
     implementation(kotlin("reflect"))
 
     // images edit library
-    api ("com.theartofdev.edmodo:android-image-cropper:2.8.0")
+    api("com.theartofdev.edmodo:android-image-cropper:2.8.0")
 
 //    implementation ("com.github.yalantis:ucrop:2.2.6")
 
-    implementation ("com.github.yalantis:ucrop:2.2.8-native")
+    implementation("com.github.yalantis:ucrop:2.2.8-native")
     // images filters libray
-    implementation ("net.alhazmy13.ImageFilters:library:0.1.2-beta")
+    implementation("net.alhazmy13.ImageFilters:library:0.1.2-beta")
 
     //gson // Or the latest version
-    implementation ("com.google.code.gson:gson:2.8.8")
+    implementation("com.google.code.gson:gson:2.8.8")
 
 
-    implementation ("commons-io:commons-io:2.11.0")
+    implementation("commons-io:commons-io:2.11.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
 
@@ -98,15 +98,15 @@ dependencies {
 
 
     //audio render library
-    implementation ("androidx.media2:media2-session:1.2.0")
+    implementation("androidx.media2:media2-session:1.2.0")
 
 
     //exoPlayer library
-    implementation ("com.google.android.exoplayer:exoplayer:2.18.7")
+    implementation("com.google.android.exoplayer:exoplayer:2.18.7")
 
 
     // Dimen library for dp and sp
-    implementation ("com.intuit.sdp:sdp-android:1.1.0")
-    implementation ("com.intuit.ssp:ssp-android:1.1.0")
+    implementation("com.intuit.sdp:sdp-android:1.1.0")
+    implementation("com.intuit.ssp:ssp-android:1.1.0")
 
 }

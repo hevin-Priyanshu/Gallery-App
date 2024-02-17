@@ -4,9 +4,18 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.utilities.CommonFunctions.isMainSelection
 import com.demo.newgalleryapp.viewmodel.MainViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Timer
 import java.util.TimerTask
@@ -16,11 +25,18 @@ import java.util.concurrent.TimeUnit
 class AppClass : Application() {
     lateinit var mainViewModel: MainViewModel
     private val timer: Timer = Timer()
+    private var job: Job? = null
     override fun onCreate() {
+
 
         super.onCreate()
         if (permissionCheck()) {
             mainViewModel = MainViewModel(this)
+
+
+            ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleEventObserver)
+            //videoContentObserverExample = VideoContentObserverExample(this)
+            // videoContentObserverExample.registerVideoContentObserver()
 
             Executors.newSingleThreadExecutor().execute {
                 mainViewModel.allData
@@ -47,6 +63,42 @@ class AppClass : Application() {
                 }
 
             }, 100 * 30, 10000 * 30)
+        }
+    }
+
+
+    private var lifecycleEventObserver = LifecycleEventObserver { _, event ->
+        when (event) {
+            Lifecycle.Event.ON_RESUME -> {
+                launchIfNotActive()
+            }
+
+            Lifecycle.Event.ON_START -> {
+                launchIfNotActive()
+                Log.d("TAG", "onChange: :::= ON_START")
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun launchIfNotActive() {
+
+        try {
+            if (job == null || job?.isActive == false && !isMainSelection) {
+                job = CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        mainViewModel.getMediaFromInternalStorage()
+                    } catch (e: Exception) {
+                        // Handle exception specific to fetchgroupNormal()
+                        Log.e("TAG", "Exception in fetchgroupNormal(): ${e.message}")
+                    }
+                }
+            } else {
+                Log.d("TAG", "onChange: ::: Already")
+            }
+        } catch (e: Exception) {
+            Log.e("TAG", "Exception outside coroutine: ${e.message}")
         }
     }
 

@@ -1,6 +1,7 @@
 package com.demo.newgalleryapp.fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,14 +10,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
-import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.MediaModel
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -54,7 +55,8 @@ class PhotosFragment : Fragment() {
                 count =
                     (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
                 lifecycleScope.launch {
-                    observeAllData(count)
+                    Log.e("TAG", "onCreateView: PhotosFragment" )
+                    observeAllData(count,"Photo")
                 }
             }
         }
@@ -62,14 +64,16 @@ class PhotosFragment : Fragment() {
         return view
     }
 
-    fun observeAllData(spanCount: Int) {
+    fun observeAllData(spanCount: Int, from:String) {
 
         (requireActivity().application as AppClass).mainViewModel.photosData.observe(
             viewLifecycleOwner
         ) { photosList ->
 
+            Log.e("TAG", "observeAllData:----------------- $from --- " )
             commonList.clear()
             (requireActivity().application as AppClass).mainViewModel.tempPhotoList.clear()
+
             // Sort the list of images based on date
             val sortedPhotos = photosList.sortedByDescending { it.date }
             (requireActivity().application as AppClass).mainViewModel.tempPhotoList.addAll(
@@ -112,8 +116,7 @@ class PhotosFragment : Fragment() {
     private fun loadLayout(spanCount: Int) {
         imagesAdapter = ImagesAd(requireActivity(), commonList, -1)
 
-        val gl =
-            GridLayoutManager(requireActivity(), spanCount, LinearLayoutManager.VERTICAL, false)
+        val gl = GridLayoutManager(requireActivity(), spanCount, LinearLayoutManager.VERTICAL, false)
 //            val gl = GridLayoutManager(requireActivity(), spanCount)
 
         gl.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -132,10 +135,14 @@ class PhotosFragment : Fragment() {
         recyclerView.layoutManager = gl
         recyclerView.adapter = imagesAdapter
 
-        mediaProgressBar.visibility = View.GONE
         MainScreenActivity.bottomNavigationView.visibility = View.VISIBLE
-    }
 
+        if (commonList.isNotEmpty()) {
+            MediaFragment.threeDotItem.visibility = View.VISIBLE
+            MediaFragment.openFavoriteActivity.visibility = View.VISIBLE
+        }
+
+    }
 
     fun notifyAdapter(filteredData: ArrayList<Any>) {
         if (imagesAdapter != null) {
@@ -143,23 +150,31 @@ class PhotosFragment : Fragment() {
         }
     }
 
-    private fun getFormattedDate(dateAdded: Long): String {
-////        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-//        val formatter = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-//        return formatter.format(Date(date * 1000))
+//    private fun getFormattedDate(dateAdded: Long): String {
 //
 //        val dateAddedInSeconds = dateAdded ?: 0L
 //        val dateAddedInMillis = dateAddedInSeconds * 1000
-//        val date = Date(dateAddedInMillis)
-//        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-//        return dateFormat.format(date)
+//
+//        val localDate =
+//            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+//
+//        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+//    }
 
+    private fun getFormattedDate(dateAdded: Long): String {
         val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000
 
-        val localDate = Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+        val addedDate =
+            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+        val currentDate = LocalDate.now()
 
-        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+        return when (addedDate) {
+            currentDate -> "Today"
+//            currentDate.plusDays(1) -> "Tomorrow"
+            currentDate.minusDays(1) -> "Yesterday"
+            else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(addedDate)
+        }
     }
 
 }

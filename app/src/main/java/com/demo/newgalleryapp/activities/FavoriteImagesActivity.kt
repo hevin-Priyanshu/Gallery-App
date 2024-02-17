@@ -2,11 +2,16 @@ package com.demo.newgalleryapp.activities
 
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
@@ -32,10 +37,12 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var selectAll: TextView
     private lateinit var deSelectAll: TextView
     private lateinit var closeBtnTrash: ImageView
+    private lateinit var threeDot: ImageView
     private lateinit var noData: LinearLayout
     private var tempFavoriteList: ArrayList<MediaModel> = ArrayList()
     private var selectedItemList: ArrayList<MediaModel> = ArrayList()
     lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    private var popupWindow: PopupWindow? = null
 
     companion object {
         lateinit var mainLinearLayout: LinearLayout
@@ -53,6 +60,7 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
         recyclerView = findViewById(R.id.recycler_view_fav)
         noData = findViewById(R.id.no_data)
         closeBtnTrash = findViewById(R.id.closeBtn_favorite)
+        threeDot = findViewById(R.id.three_dot_item_favorite)
         selectAll = findViewById(R.id.SelectAll_favorite)
         deSelectAll = findViewById(R.id.DeSelectAll_favorite)
         howManyItemOn = findViewById(R.id.howManyItemOn)
@@ -64,6 +72,10 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
 
         closeBtnTrash.setOnClickListener {
             setAllVisibility()
+        }
+
+        threeDot.setOnClickListener {
+            showPopupSelect(recyclerView)
         }
 
         sharedPreferencesHelper = SharedPreferencesHelper(this)
@@ -123,7 +135,7 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
                 favoriteImageDao.deleteFavorite(roomModel)
             }
         }
-        showToast(this, "Item Remove")
+//        showToast(this, "Item Remove")
         setAllVisibility()
     }
 
@@ -164,7 +176,9 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
                     this@FavoriteImagesActivity, tempFavoriteList, this@FavoriteImagesActivity
                 )
                 recyclerView.adapter = favoriteAdapter
-                howManyItemOn.text = favoriteAdapter.itemCount.toString()
+//                howManyItemOn.text = favoriteAdapter.itemCount.toString()
+                val items = favoriteAdapter.itemCount.toString()
+                howManyItemOn.text = "$items Items"
             })
     }
 
@@ -198,5 +212,42 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
         mainLinearLayout.visibility = View.VISIBLE
         selectedTextViewLinearLayout.visibility = View.GONE
     }
+
+    private fun showPopupSelect(
+        anchorView: View
+    ) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupView: View = inflater.inflate(R.layout.popup_select_item, null)
+
+        popupWindow = PopupWindow(
+            popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
+        )
+
+        popupWindow?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+
+        val selectedItem = popupView.findViewById<LinearLayout>(R.id.selectedItem)
+
+        selectedItem.setOnClickListener {
+            favoriteAdapter.isSelected = true
+            onLongClick()
+            favoriteAdapter.notifyDataSetChanged()
+            popupWindow?.dismiss()
+        }
+
+
+        val popupItem = popupView.findViewById<RelativeLayout>(R.id.popupItem_select_one)
+
+        popupItem.setOnClickListener {
+            popupWindow?.dismiss()
+        }
+        // Set dismiss listener to nullify the reference
+        popupWindow?.setOnDismissListener {
+            popupWindow = null
+        }
+    }
+
 
 }

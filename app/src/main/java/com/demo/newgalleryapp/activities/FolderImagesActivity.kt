@@ -1,33 +1,43 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.albumsFragment
 import com.demo.newgalleryapp.adapters.ImagesAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.interfaces.ImageClickListener
-import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
@@ -40,7 +50,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var recyclerView: RecyclerView
     private lateinit var viewPager: ViewPager
     private lateinit var backBtn: ImageView
+    private lateinit var favoriteClick: ImageView
     private lateinit var closeBtn: ImageView
+    private lateinit var threeDot: ImageView
     private lateinit var itemSelected: TextView
     private lateinit var setTextAccToData: TextView
     private lateinit var albumFolderSize: TextView
@@ -50,6 +62,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private var newList: ArrayList<MediaModel> = ArrayList()
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     var position: Int = 0
+    private var popupWindow: PopupWindow? = null
 
     companion object {
         var isUpdatedFolderActivity: Boolean = false
@@ -57,24 +70,40 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         lateinit var bottomNavigationView: BottomNavigationView
         lateinit var select_top_menu_bar: LinearLayout
         lateinit var unselect_top_menu_bar: LinearLayout
-
     }
+
+
+    private lateinit var dialogBinding: DialogLoadingBinding
+
+    val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 11 && resultCode == Activity.RESULT_OK) {
+        if ((requestCode == REQ_CODE && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             if (intent.hasExtra("folderPosition")) {
                 val pathsToRemove = checkBoxList.map { it.path }
                 removeItemsAtPosition(position, pathsToRemove)
-                adapter.notifyDataSetChanged()
                 isUpdatedFolderActivity = true
+                (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                adapter.remove(position)
+                albumsFragment.folderAdapter?.notifyDataSetChanged()
+                adapter.notifyDataSetChanged()
+
             }
-        } else if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
+        } else if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             isUpdatedFolderActivity = true
             val pathsToRemove = checkBoxList.map { it.path }
             removeItemsAtPosition(position, pathsToRemove)
-            adapter.notifyDataSetChanged()
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            adapter.notifyDataSetChanged()
             setAllVisibility()
         }
     }
@@ -83,37 +112,51 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_folder_images)
 
-        viewPager = findViewById(R.id.viewPager_slider_album)
-        recyclerView = findViewById(R.id.recycler_view_album_activity)
-        backBtn = findViewById(R.id.back_btn_album)
-        closeBtn = findViewById(R.id.close_btn_album)
-        setTextAccToData = findViewById(R.id.open_text_view_album)
-        bottomNavigationView = findViewById(R.id.bottomNavigation_folder_images)
-        itemSelected = findViewById(R.id.on_item_select)
-        albumFolderSize = findViewById(R.id.album_folder_size)
-        select_top_menu_bar = findViewById(R.id.select_top_menu_bar)
-        unselect_top_menu_bar = findViewById(R.id.unselect_top_menu_bar)
+        initView()
 
-        selectAll = findViewById(R.id.folder_selectAll_textView)
-        deSelectAll = findViewById(R.id.folder_DeselectAll_textView)
+        if (intent.hasExtra("folderName")) {
+            val name = intent.getStringExtra("folderName")
+            setTextAccToData.text = name
+        }
 
-        backBtn.setOnClickListener {
-            if (isUpdatedFolderActivity) {
-                val intent = Intent()
-                setResult(Activity.RESULT_OK, intent)
-                isUpdatedFolderActivity = false
+        // IF USER SLIDE THE SCREEN ON FOLDER THEN THE BELOW CODE GIVES THE FOLDER LIST OF IMAGES
+        if (intent.hasExtra("folderPosition")) {
+
+            position = intent.getIntExtra("folderPosition", 0)
+            if (position >= 0 && position < (application as AppClass).mainViewModel.folderList.size) {
+
+                newList = (application as AppClass).mainViewModel.folderList[position].models
+                albumFolderSize.text = newList.size.toString()
+                if (newList.isNotEmpty()) {
+                    loadRecyclerViewNew(newList, position)
+                } else {
+                    finish()
+                }
             }
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+
+
+        threeDot.setOnClickListener {
+            showPopupSelect(recyclerView)
+        }
+
+        favoriteClick.setOnClickListener {
+            val intent = Intent(this, FavoriteImagesActivity::class.java)
+            startActivity(intent)
         }
 
         closeBtn.setOnClickListener {
             setAllVisibility()
         }
 
-        if (intent.hasExtra("folderName")) {
-            val name = intent.getStringExtra("folderName")
-            setTextAccToData.text = name
+        backBtn.setOnClickListener {
+            if (isUpdatedFolderActivity) {
+                val intent = Intent()
+                setResult(Activity.RESULT_OK, intent)
+            }
+            isUpdatedFolderActivity = false
+            finish()
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
         bottomNavigationView.setOnItemSelectedListener { menuItem ->
@@ -125,7 +168,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             }
             true
         }
-
 
         selectAll.setOnClickListener {
 
@@ -139,7 +181,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             deSelectAll.visibility = View.VISIBLE
         }
 
-
         deSelectAll.setOnClickListener {
 
             adapter.isSelected = false
@@ -151,21 +192,28 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             deSelectAll.visibility = View.GONE
             selectAll.visibility = View.VISIBLE
         }
-
-        // IF USER SLIDE THE SCREEN ON FOLDER THEN THE BELOW CODE GIVES THE FOLDER LIST OF IMAGES
-        if (intent.hasExtra("folderPosition")) {
-
-            position = intent.getIntExtra("folderPosition", 0)
-            if (position >= 0 && position < (application as AppClass).mainViewModel.folderList.size) {
-
-                newList = (application as AppClass).mainViewModel.folderList[position].models
-                albumFolderSize.text = newList.size.toString()
-                if (newList.isNotEmpty()) {
-                    loadRecyclerViewNew(newList, position)
-                }
-            }
-        }
         //  end
+    }
+
+    private fun initView() {
+
+        viewPager = findViewById(R.id.viewPager_slider_album)
+        recyclerView = findViewById(R.id.recycler_view_album_activity)
+        backBtn = findViewById(R.id.back_btn_album)
+        closeBtn = findViewById(R.id.close_btn_album)
+        favoriteClick = findViewById(R.id.favorites_folder)
+        setTextAccToData = findViewById(R.id.open_text_view_album)
+        bottomNavigationView = findViewById(R.id.bottomNavigation_folder_images)
+        itemSelected = findViewById(R.id.on_item_select)
+        threeDot = findViewById(R.id.three_dot_item_folder)
+        albumFolderSize = findViewById(R.id.album_folder_size)
+        select_top_menu_bar = findViewById(R.id.select_top_menu_bar)
+        unselect_top_menu_bar = findViewById(R.id.unselect_top_menu_bar)
+        selectAll = findViewById(R.id.folder_selectAll_textView)
+        deSelectAll = findViewById(R.id.folder_DeselectAll_textView)
+
+        // Enable marquee effect
+        setTextAccToData.isSelected = true
     }
 
     private fun handleShareAction() {
@@ -200,7 +248,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 ImagesDatabase.getDatabase(this@FolderImagesActivity).favoriteImageDao()
                     .insertFavorite(addFavorite)
             }
-            showToast(this, "Favorite Added")
+//            showToast(this, "Favorite Added")
             setAllVisibility()
         }
     }
@@ -238,6 +286,11 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 showPopupForMoveToTrashBin(
                     bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position
                 )
+                Handler().postDelayed(Runnable {
+                    progressDialogFragment.cancel()
+                    showToast(this, "Deleted Successfully!!")
+                }, 1000)
+
             } else {
                 showToast(this@FolderImagesActivity, "Error: Image not found")
             }
@@ -370,8 +423,8 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         if (isUpdatedFolderActivity) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
-            isUpdatedFolderActivity = false
         }
+        isUpdatedFolderActivity = false
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()
     }
@@ -384,22 +437,84 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         itemSelected.text = "Item Selected $select"
     }
 
+
+    private fun showPopupSelect(
+        anchorView: View
+    ) {
+        val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+        val popupView: View = inflater.inflate(R.layout.popup_select_item, null)
+
+        popupWindow = PopupWindow(
+            popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
+        )
+
+        popupWindow?.showAtLocation(
+            anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
+        )
+
+
+        val selectedItem = popupView.findViewById<LinearLayout>(R.id.selectedItem)
+
+        selectedItem.setOnClickListener {
+            adapter.isSelected = true
+            onLongClick()
+            adapter.notifyDataSetChanged()
+            popupWindow?.dismiss()
+        }
+
+
+        val popupItem = popupView.findViewById<RelativeLayout>(R.id.popupItem_select_one)
+
+        popupItem.setOnClickListener {
+            popupWindow?.dismiss()
+        }
+        // Set dismiss listener to nullify the reference
+        popupWindow?.setOnDismissListener {
+            popupWindow = null
+        }
+    }
+
+//    fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
+//
+//        val tempFolderList = (application as AppClass).mainViewModel.folderList
+//        if (position >= 0 && position < tempFolderList.size) {
+//
+//            val folder = tempFolderList[position]
+//            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
+//            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
+//
+//            // Update the mainViewModel.folderList
+//            (application as AppClass).mainViewModel.folderList[position] = updatedFolder
+//
+//            // Notify the adapter about the data change
+//            adapter.updateList(updatedList)
+//        }
+//    }
+
+
     fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
 
         val tempFolderList = (application as AppClass).mainViewModel.folderList
+
         if (position >= 0 && position < tempFolderList.size) {
 
-            val folder = (application as AppClass).mainViewModel.folderList[position]
+            val folder = tempFolderList[position]
             val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
-            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
 
-            // Update the mainViewModel.folderList
-            (application as AppClass).mainViewModel.folderList[position] = updatedFolder
+            if (updatedList.isEmpty()) {
+                // If the folder becomes empty after removing the item, finish the activity
+                finish()
+                return
+            }
+            // Update the models list of the existing folder
+            folder.models.clear()
+            folder.models.addAll(updatedList)
 
             // Notify the adapter about the data change
             adapter.updateList(updatedList)
         }
     }
+
 
     private fun setAllVisibility() {
         adapter.updateSelectionState(false)

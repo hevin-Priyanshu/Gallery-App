@@ -1,5 +1,6 @@
 package com.demo.newgalleryapp.fragments
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,8 +12,10 @@ import androidx.fragment.app.Fragment
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 
 class SettingFragment : Fragment() {
 
@@ -24,12 +27,23 @@ class SettingFragment : Fragment() {
     private lateinit var shareApp: LinearLayout
     lateinit var sharedPreferencesHelper: SharedPreferencesHelper
 
+
     companion object {
         fun newInstance(): SettingFragment {
             val fragment = SettingFragment()
             val args = Bundle()
             fragment.arguments = args
             return fragment
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if ((requestCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+            (requireActivity().application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            (requireActivity().application as AppClass).mainViewModel.flagForTrashBinActivity =
+                false
         }
     }
 
@@ -64,11 +78,11 @@ class SettingFragment : Fragment() {
 
 
         privacyPolicy.setOnClickListener {
-
+            showToast(requireContext(), "Privacy Policy")
         }
 
         rateUs.setOnClickListener {
-
+            showToast(requireContext(), "Rate us")
         }
 
         shareApp.setOnClickListener {

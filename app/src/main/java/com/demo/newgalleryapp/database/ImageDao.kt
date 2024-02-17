@@ -7,12 +7,11 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.demo.newgalleryapp.models.MediaModel
-import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 
 @Dao
 interface ImageDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertFavorite(mediaModel: MediaModel)
 
     @Delete
@@ -32,10 +31,10 @@ interface ImageDao {
 
 
     ///  TRASH BIN WORK
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertDeleteImage(trashBin: TrashBinAboveVersion)
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertDeleteMultipleImage(trashBin: ArrayList<TrashBinAboveVersion>)
 
     @Query("SELECT * FROM trashBin")

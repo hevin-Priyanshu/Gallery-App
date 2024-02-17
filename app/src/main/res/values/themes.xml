@@ -10,8 +10,9 @@
     <style name="Theme.NewGalleryApp" parent="Base.Theme.NewGalleryApp">
         <item name="android:windowLightStatusBar" tools:ignore="NewApi">true</item>
         <item name="android:statusBarColor">@color/white</item>
-<!--        <item name="android:windowTranslucentNavigation">true</item>-->
-<!--        <item name="android:windowTranslucentStatus">true</item>-->
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <!--        <item name="android:windowTranslucentNavigation">true</item>-->
+        <!--        <item name="android:windowTranslucentStatus">true</item>-->
 
     </style>
 
@@ -19,6 +20,20 @@
         <item name="android:contentDescription">@string/exo_controls_play_description</item>
         <item name="android:padding">@dimen/_5sdp</item>
         <item name="colorControlActivated">@color/color_main</item>
+    </style>
+
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Other theme attributes -->
+        <item name="colorAccent">@color/icon_color</item>
+    </style>
+
+    <!--    <style name="CustomProgressBar" parent="Widget.AppCompat.ProgressBar.Horizontal">-->
+    <!--        <item name="colorControlNormal">@color/color_main</item>-->
+    <!--    </style>-->
+
+    <style name="CustomProgressBar" parent="Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="colorControlNormal">@color/color_main</item>
     </style>
 
 </resources>

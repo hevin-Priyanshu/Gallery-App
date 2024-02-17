@@ -35,19 +35,20 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_marginStart="@dimen/_12sdp"
-                    android:layout_marginTop="@dimen/_6sdp"
-                    android:layout_marginBottom="@dimen/_6sdp"
+                    android:layout_marginTop="@dimen/_3sdp"
+                    android:layout_marginBottom="@dimen/_3sdp"
                     android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/open_text_view"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="-4dp"
                         android:fontFamily="@font/poppins_semibold"
                         android:gravity="center_vertical"
                         android:text="@string/favorite_images"
                         android:textColor="@color/black"
-                        android:textSize="@dimen/_13sdp" />
+                        android:textSize="@dimen/_16sdp" />
 
                     <TextView
                         android:id="@+id/howManyItemOn"
@@ -57,10 +58,32 @@
                         android:gravity="center_vertical"
                         android:text="5 Items"
                         android:textColor="#8A8A8A"
-                        android:textSize="@dimen/_11sdp" />
+                        android:textSize="@dimen/_13sdp" />
 
                 </LinearLayout>
 
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="@dimen/_16sdp"
+                    android:layout_marginBottom="@dimen/_16sdp"
+                    android:gravity="end"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:id="@+id/three_dot_item_favorite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:src="@drawable/three_dot_new" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -79,13 +102,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
-                android:layout_weight="0.6"
+                android:layout_weight="0.7"
                 android:orientation="horizontal">
 
                 <ImageView
                     android:id="@+id/closeBtn_favorite"
-                    android:layout_width="@dimen/_20sdp"
-                    android:layout_height="@dimen/_20sdp"
+                    android:layout_width="@dimen/_22sdp"
+                    android:layout_height="@dimen/_22sdp"
                     android:layout_gravity="center"
                     android:src="@drawable/close_icon_new" />
 
@@ -94,42 +117,52 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:layout_marginStart="20dp"
+                    android:layout_marginStart="@dimen/_8sdp"
                     android:fontFamily="@font/poppins_semibold"
                     android:text="Select Items"
                     android:textColor="@color/black"
-                    android:textSize="@dimen/_15ssp" />
+                    android:textSize="@dimen/_17ssp" />
 
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1.5"
-                android:gravity="end"
-                android:orientation="horizontal">
+                android:layout_weight="1.3">
 
-                <TextView
-                    android:id="@+id/SelectAll_favorite"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:fontFamily="@font/poppins_medium"
-                    android:text="@string/select_all"
-                    android:textColor="#007AFF"
-                    android:textSize="@dimen/_12ssp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="@dimen/_14sdp"
+                    android:layout_marginBottom="@dimen/_14sdp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/SelectAll_favorite"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:gravity="center"
+                        android:text="Select All"
+                        android:textColor="@color/color_main"
+                        android:textSize="@dimen/_13sdp" />
 
 
-                <TextView
-                    android:id="@+id/DeSelectAll_favorite"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:fontFamily="@font/poppins_medium"
-                    android:text="@string/deselect_all"
-                    android:textColor="#007AFF"
-                    android:textSize="@dimen/_12ssp"
-                    android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/DeSelectAll_favorite"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/_10sdp"
+                        android:fontFamily="@font/poppins_medium"
+                        android:gravity="center"
+                        android:text="DeSelect All"
+                        android:textColor="@color/color_main"
+                        android:textSize="@dimen/_13sdp"
+                        android:visibility="gone" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

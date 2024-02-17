@@ -12,8 +12,8 @@ import android.text.Spanned
 import android.text.style.TypefaceSpan
 import android.util.Log
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
@@ -21,6 +21,7 @@ import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
 import com.demo.newgalleryapp.classes.AppClass
+import com.demo.newgalleryapp.classes.CustomTypefaceSpan
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
@@ -30,11 +31,13 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForDeletePerman
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupRestoreOne
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.io.File
 
 class OpenTrashImageActivity : AppCompatActivity() {
 
     private lateinit var viewPager: ViewPager
     private lateinit var backBtn: ImageView
+    lateinit var trashOpenTextView: TextView
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var toolbar: Toolbar
     private var models: ArrayList<MediaModel> = ArrayList()
@@ -73,6 +76,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
         backBtn = findViewById(R.id.back_btn_trash_open)
         bottomNavigationView = findViewById(R.id.bottomNavigation_trash)
         toolbar = findViewById(R.id.toolBar)
+        trashOpenTextView = findViewById(R.id.trash_open_textView)
 
         backBtn.setOnClickListener {
             if (updated) {
@@ -89,11 +93,12 @@ class OpenTrashImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.tempAllTrashData.observe(this) {
                 tempList.addAll(it)
 
-                val trash =
-                    it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
+                val trash = it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
                 models.addAll(trash)
                 setViewPagerAdapter(models)
                 viewPagerDataSetter()
+
+
             }
 
 //            (application as AppClass).mainViewModel.allTrashData.observe(this, Observer {
@@ -117,13 +122,23 @@ class OpenTrashImageActivity : AppCompatActivity() {
         bottomNavigationViewItemSetter()
 
         val menu = bottomNavigationView.menu
+
+//        for (i in 0 until menu.size()) {
+//            val item = menu.getItem(i)
+//            val spannableString = SpannableString(item.title)
+//            val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
+//            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+//            item.title = spannableString
+//        }
+
         for (i in 0 until menu.size()) {
             val item = menu.getItem(i)
             val spannableString = SpannableString(item.title)
             val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
-            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            spannableString.setSpan(CustomTypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             item.title = spannableString
         }
+
     }
 
     override fun onBackPressed() {
@@ -141,7 +156,8 @@ class OpenTrashImageActivity : AppCompatActivity() {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
-//                textView.text = models[position].path
+                val name = File(models[position].path).name
+                trashOpenTextView.text = name
             }
 
             override fun onPageSelected(position: Int) {

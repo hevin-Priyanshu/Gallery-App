@@ -1,6 +1,7 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -9,12 +10,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.method.LinkMovementMethod
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
@@ -26,11 +29,10 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY
@@ -59,14 +61,26 @@ class OpenImageActivity : AppCompatActivity() {
     private var tempList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var fabCount = 0
-    private var anyChanges: Boolean = false
+    private var handler: Handler? = null
 
+    //lateinit var models: List<MediaModel>
     companion object {
-        lateinit var models: List<MediaModel>
+        var anyChanges: Boolean = false
+        var models: List<MediaModel> = arrayListOf()
         lateinit var imagesSliderAdapter: ImageSliderAdapter
     }
 
-    private val handler = Handler()
+    private lateinit var dialogBinding: DialogLoadingBinding
+
+    val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
+
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
@@ -74,21 +88,32 @@ class OpenImageActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
-            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            anyChanges = true
 
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             val imageToDelete = models[viewPager.currentItem].path
+
             ImagesDatabase.getDatabase(this@OpenImageActivity).favoriteImageDao()
                 .deleteFavorites(imageToDelete)
 
             imagesSliderAdapter.remove(viewPager.currentItem)
             imagesSliderAdapter.notifyDataSetChanged()
-            showToast(this, "Delete Success.")
+            showToast(this, "Deleted Successfully!!")
 
-        } else if ((requestCode == REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        } else if ((requestCode == REQ_CODE_FOR_CHANGES_IN_EDIT_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+            Log.d("true", "onActivityResult: true")
+            // Changes In Edit Activity ,For adding new filter images
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            photosFragment.imagesAdapter?.notifyDataSetChanged()
-            videosFragment.imagesAdapter?.notifyDataSetChanged()
+//            imagesSliderAdapter.notifyDataSetChanged()
+//            photosFragment.imagesAdapter?.notifyDataSetChanged()
+//            videosFragment.imagesAdapter?.notifyDataSetChanged()
 
+        } else if ((requestCode == REQ_CODE_FOR_UPDATES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+            // Changes In Copy or Move
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+//            imagesSliderAdapter.notifyDataSetChanged()
+//            photosFragment.imagesAdapter?.notifyDataSetChanged()
+//            videosFragment.imagesAdapter?.notifyDataSetChanged()
         } else if (requestCode == REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
             popupWindow?.dismiss()
             val selectedImagePath = models[viewPager.currentItem].path
@@ -119,10 +144,10 @@ class OpenImageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_open_image)
 
         initView()
+        handler = Handler(Looper.getMainLooper())
 
         val isFolder = intent.hasExtra("folderPosition")
         fabCount = intent.getIntExtra("selectedImagePosition", 0)
-
         if (isFolder) {
             // Here passing the folder list to viewpager , if isFolder is true (i.e Albums folder)
             models = (application as AppClass).mainViewModel.folderList[intent.getIntExtra(
@@ -130,8 +155,6 @@ class OpenImageActivity : AppCompatActivity() {
             )].models
             setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
         } else {
-
-
             val menuItem = bottomNavigationView.menu.findItem(R.id.editItem)
             when (intent.getIntExtra("currentState", 0)) {
                 1 -> {
@@ -147,6 +170,7 @@ class OpenImageActivity : AppCompatActivity() {
                     } else {
                         fabCount = (application as AppClass).mainViewModel.tempVideoList.indexOf(sM)
                         models = (application as AppClass).mainViewModel.tempVideoList
+                        Log.e("TAG", "onCreate: " + fabCount)
                         setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
 
                         // Here hiding edit button for videos
@@ -165,12 +189,12 @@ class OpenImageActivity : AppCompatActivity() {
         bottomNavigationViewItemSetter()
         viewPagerDataSetter()
 
-
         // This will do when, if you want to apply any other icon drawable for menu item
         bottomNavigationView.itemIconTintList = null
     }
 
     private fun initView() {
+
         viewPager = findViewById(R.id.viewPager_slider)
         textView = findViewById(R.id.open_text_view_image_activity)
         backBtn = findViewById(R.id.back_btn)
@@ -199,16 +223,11 @@ class OpenImageActivity : AppCompatActivity() {
             }
 
             override fun onPageScrollStateChanged(state: Int) {
-
             }
         })
     }
 
     private fun setViewPagerAdapter(model: ArrayList<MediaModel>, currentPosition: Int) {
-        models = model
-        imagesSliderAdapter = ImageSliderAdapter(this@OpenImageActivity, model)
-        viewPager.adapter = imagesSliderAdapter
-        viewPager.setCurrentItem(currentPosition, false)
 
         if (model.size == 0) {
             if (anyChanges) {
@@ -218,6 +237,13 @@ class OpenImageActivity : AppCompatActivity() {
             }
             finish()
         }
+        models = model
+        val temp = arrayListOf<MediaModel>()
+        temp.addAll(model)
+        imagesSliderAdapter = ImageSliderAdapter(this@OpenImageActivity, temp)
+        viewPager.adapter = imagesSliderAdapter
+        viewPager.setCurrentItem(currentPosition, false)
+
     }
 
     private fun sendFavoriteListToViewPager() {
@@ -288,7 +314,6 @@ class OpenImageActivity : AppCompatActivity() {
                     Log.e("TAG", "000AAA: $e")
                 }
             }
-            (application as AppClass).mainViewModel.flag = true
         } else {
             if (imageToDelete.isNotEmpty()) {
                 showPopupForMoveToTrashBinForOpenActivityOnlyOne(
@@ -297,7 +322,6 @@ class OpenImageActivity : AppCompatActivity() {
                     currentPosition,
                     models[currentPosition].isVideo
                 )
-                anyChanges = true
             } else {
                 showToast(this, "Error: Image not found")
             }
@@ -313,7 +337,7 @@ class OpenImageActivity : AppCompatActivity() {
 
         if (roomModel == null) {
             favoriteImageDao.insertFavorite(model)
-            showToast(this, "Favorite Added")
+//            showToast(this, "Favorite Added")
         } else {
             favoriteImageDao.deleteFavorite(roomModel)
         }
@@ -419,6 +443,7 @@ class OpenImageActivity : AppCompatActivity() {
                     showToast(this, "Error: Image not found!!!")
                 }
             } else {
+
                 showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
                 popupWindow?.dismiss()
             }
@@ -468,7 +493,7 @@ class OpenImageActivity : AppCompatActivity() {
     private fun showDetails(anchorView: View) {
         val inflater: LayoutInflater =
             getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-        val popupView: View = inflater.inflate(R.layout.popup_three_dot, null)
+        val popupView: View = inflater.inflate(R.layout.popup_menu_details, null)
 
         popupWindow = PopupWindow(
             popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
@@ -520,9 +545,9 @@ class OpenImageActivity : AppCompatActivity() {
         if (anyChanges) {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
-            anyChanges = false
         }
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        anyChanges = false
         super.onBackPressed()
     }
 
@@ -532,9 +557,9 @@ class OpenImageActivity : AppCompatActivity() {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
             }
-            finish()
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
             anyChanges = false
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+            finish()
         }
     }
 
@@ -562,13 +587,13 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null)
+        handler?.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 
     override fun onStop() {
         // Remove the callbacks to stop the slideshow when the activity is not visible
-        handler.removeCallbacksAndMessages(null)
+        handler?.removeCallbacksAndMessages(null)
         super.onStop()
     }
 

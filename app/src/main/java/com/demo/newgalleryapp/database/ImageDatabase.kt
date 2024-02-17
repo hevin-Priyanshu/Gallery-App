@@ -6,7 +6,6 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.demo.newgalleryapp.models.MediaModel
-import com.demo.newgalleryapp.models.TrashBin
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.models.UriConverter
 

@@ -3,43 +3,43 @@
     android:id="@+id/popupItem"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:background="#A5000000">
+    android:background="#A5000000"
+    android:gravity="center">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_22sdp"
+        android:layout_marginEnd="@dimen/_22sdp"
         android:background="@drawable/more_item_round_shape"
         android:orientation="vertical"
-        android:layout_marginStart="20dp"
-        android:padding="@dimen/_6sdp"
-        android:layout_marginEnd="20dp">
+        android:padding="@dimen/_6sdp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="@dimen/_6sdp"
             android:fontFamily="@font/poppins_medium"
             android:text="@string/details"
-            android:layout_margin="@dimen/_6sdp"
             android:textColor="@color/black"
             android:textSize="@dimen/_16sdp" />
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:weightSum="3"
             android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_margin="@dimen/_8sdp"
-            android:layout_height="match_parent">
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/file_name"
                 android:gravity="center_vertical"
+                android:text="@string/file_name"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_12sdp" />
+                android:textSize="@dimen/_13sdp" />
 
             <TextView
                 android:id="@+id/image_name_popup"
@@ -47,30 +47,30 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/name"
                 android:gravity="center_vertical"
+                android:text="@string/name"
                 android:textColor="#8A8A8A"
-                android:textSize="@dimen/_11sdp" />
+                android:textSize="@dimen/_12sdp" />
 
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_margin="@dimen/_8sdp"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/_8sdp"
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/time"
                 android:gravity="center_vertical"
+                android:text="@string/time"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_12sdp" />
+                android:textSize="@dimen/_13sdp" />
 
             <TextView
                 android:id="@+id/time_popup"
@@ -78,30 +78,30 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/name"
                 android:gravity="center_vertical"
+                android:text="@string/name"
                 android:textColor="#8A8A8A"
-                android:textSize="@dimen/_11sdp" />
+                android:textSize="@dimen/_12sdp" />
 
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:layout_margin="@dimen/_8sdp"
-            android:weightSum="3"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/_8sdp"
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/size"
                 android:gravity="center_vertical"
+                android:text="@string/size"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_12sdp" />
+                android:textSize="@dimen/_13sdp" />
 
             <TextView
                 android:id="@+id/size_popup"
@@ -109,30 +109,30 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/name"
                 android:gravity="center_vertical"
+                android:text="@string/name"
                 android:textColor="#8A8A8A"
-                android:textSize="@dimen/_11sdp" />
+                android:textSize="@dimen/_12sdp" />
 
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_margin="@dimen/_8sdp"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/_8sdp"
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/date"
                 android:gravity="center_vertical"
+                android:text="@string/date"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_12sdp" />
+                android:textSize="@dimen/_13sdp" />
 
             <TextView
                 android:id="@+id/date_popup"
@@ -140,30 +140,30 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/name"
                 android:gravity="center_vertical"
+                android:text="@string/name"
                 android:textColor="#8A8A8A"
-                android:textSize="@dimen/_11sdp" />
+                android:textSize="@dimen/_12sdp" />
 
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:layout_margin="@dimen/_8sdp"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_margin="@dimen/_8sdp"
+            android:orientation="horizontal"
+            android:weightSum="3">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/path"
                 android:gravity="center_vertical"
+                android:text="@string/path"
                 android:textColor="@color/black"
-                android:textSize="@dimen/_12sdp" />
+                android:textSize="@dimen/_13sdp" />
 
             <TextView
                 android:id="@+id/path_popup"
@@ -171,11 +171,11 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:fontFamily="@font/poppins_medium"
-                android:text="@string/name"
                 android:gravity="center_vertical"
                 android:maxLines="3"
+                android:text="@string/name"
                 android:textColor="#8A8A8A"
-                android:textSize="@dimen/_11sdp" />
+                android:textSize="@dimen/_12sdp" />
 
         </LinearLayout>
 

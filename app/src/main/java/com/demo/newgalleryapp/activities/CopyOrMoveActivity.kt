@@ -1,17 +1,21 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
@@ -20,27 +24,19 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.FolderAdapter
 import com.demo.newgalleryapp.classes.AppClass
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.interfaces.FolderClickListener
 import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 
 class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
@@ -54,8 +50,20 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
     private lateinit var sourceFile: File
     private lateinit var destinationFile: File
     private lateinit var folderPath: String
+    private lateinit var dialogBinding: DialogLoadingBinding
     private var anyupdated: Boolean = false
     private var popupWindow: PopupWindow? = null
+    private var tempList: ArrayList<Folder> = ArrayList()
+    private var handler: Handler? = null
+
+    private val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -69,40 +77,53 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
                     val objectList = intent.getSerializableExtra("pathsList") as ArrayList<String>
                     if (intent.hasExtra("copySelectedMainScreenActivity")) {
-                        recyclerViewCopyOrMove.visibility = View.GONE
-                        horizontalProgress.visibility = View.VISIBLE
+                        progressDialogFragment.show()
                         copyOrMoveImages(objectList, folderPath, false)
                         anyupdated = true
+
+                        Handler().postDelayed(Runnable {
+                            progressDialogFragment.cancel()
+                            onBackPressed()
+                        }, 1000)
                     } else {
-                        recyclerViewCopyOrMove.visibility = View.GONE
-                        horizontalProgress.visibility = View.VISIBLE
+
+                        progressDialogFragment.show()
                         copyOrMoveImages(objectList, folderPath, true)
                         anyupdated = true
+                        Handler().postDelayed(Runnable {
+                            progressDialogFragment.cancel()
+                            onBackPressed()
+                        }, 1000)
                     }
                 } else {
                     // check its from copy image path or click
                     if (intent.hasExtra("copyImagePath")) {
-//                    if (destinationFile.exists()) {
-//                        // If it exists, delete it before copying
-//                        destinationFile.delete()
-//                    }
-//                    sourceFile.copyTo(destinationFile)
-                        recyclerViewCopyOrMove.visibility = View.GONE
-                        horizontalProgress.visibility = View.VISIBLE
-                        copyImage(sourceFile, destinationFile)
-                        anyupdated = true
 
-                    } else {
-//                    if (destinationFile.exists()) {
-//                        // If it exists, delete it before copying
-//                        destinationFile.delete()
-//                    }
-//                    sourceFile.copyTo(destinationFile)
-//                    sourceFile.delete()
-                        recyclerViewCopyOrMove.visibility = View.GONE
-                        horizontalProgress.visibility = View.VISIBLE
-                        moveFile(sourceFile, destinationFile)
+                        progressDialogFragment.show()
+                        (application as AppClass).mainViewModel.copyImage(
+                            sourceFile, destinationFile
+                        )
                         anyupdated = true
+                        Handler().postDelayed(Runnable {
+                            progressDialogFragment.cancel()
+                            showToast(this, "Item copied successfully!!")
+                            onBackPressed()
+                        }, 1000)
+
+//                        copyImage(sourceFile, destinationFile)
+                    } else {
+
+                        progressDialogFragment.show()
+                        (application as AppClass).mainViewModel.moveFile(
+                            sourceFile, destinationFile
+                        )
+                        anyupdated = true
+                        Handler().postDelayed(Runnable {
+                            progressDialogFragment.cancel()
+                            showToast(this, "Item moved successfully!!")
+                            onBackPressed()
+                        }, 1000)
+//                        moveFile(sourceFile, destinationFile)
                     }
                 }
 
@@ -112,12 +133,17 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
                 Toast.makeText(this, "Failed to copy image.", Toast.LENGTH_SHORT).show()
                 Log.e("error12", "onActivityResult: ${e.message}")
             }
-
-            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            photosFragment.imagesAdapter?.notifyDataSetChanged()
-            videosFragment.imagesAdapter?.notifyDataSetChanged()
-
         }
+    }
+
+    private fun hideProgressBar() {
+        horizontalProgress.visibility = View.GONE
+        recyclerViewCopyOrMove.visibility = View.VISIBLE
+    }
+
+    private fun showProgressBar() {
+        recyclerViewCopyOrMove.visibility = View.GONE
+        horizontalProgress.visibility = View.VISIBLE
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,6 +156,8 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         closeBtn = findViewById(R.id.close_btn_copyOrMove)
         noDataImage = findViewById(R.id.no_data_image)
         horizontalProgress = findViewById(R.id.horizontalProgress)
+
+        handler = Handler(Looper.getMainLooper())
 
         observeAllData()
 
@@ -170,14 +198,20 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             val folders: List<Folder> = it.groupBy { File(it.path).parent }.map { (path, models) ->
                 Folder(path!!, models as ArrayList<MediaModel>)
             }
+
+            (application as AppClass).mainViewModel.folderList.clear()
             (application as AppClass).mainViewModel.folderList.addAll(folders)
+
+            tempList.addAll((application as AppClass).mainViewModel.folderList)
+
             recyclerViewCopyOrMove.layoutManager =
                 GridLayoutManager(this@CopyOrMoveActivity, 3, LinearLayoutManager.VERTICAL, false)
+
+            val newFolder = Folder("New Album", ArrayList())
+            tempList.add(0, newFolder)
+
             folderAdapter = FolderAdapter(
-                this@CopyOrMoveActivity,
-                folders as ArrayList<Folder>,
-                this@CopyOrMoveActivity,
-                "move"
+                this@CopyOrMoveActivity, tempList, this@CopyOrMoveActivity, "FromCopyMove"
             )
             recyclerViewCopyOrMove.adapter = folderAdapter
         }
@@ -241,7 +275,8 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             }
 
             val name = sourceFile.name
-            destinationFile = File(folderPath, name)
+            destinationFile = File(folderPath, "copy_${name}")
+
 
             // for android 11 and above
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -275,9 +310,11 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             // for below android 10 versions
             else {
                 if (intent.hasExtra("copyImagePath")) {
+
                     showCopyOrMovePopupmenu(
                         recyclerViewCopyOrMove, "Copy", sourceFile, destinationFile
                     )
+
                 } else {
                     showCopyOrMovePopupmenu(
                         recyclerViewCopyOrMove, "Move", sourceFile, destinationFile
@@ -293,21 +330,27 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
     private fun copyOrMoveImages(
         imagePaths: ArrayList<String>, destinationFolder: String, move: Boolean
     ) {
-        lifecycleScope.launch(Dispatchers.IO) {
-            for (imagePath in imagePaths) {
-                val sourcePath = File(imagePath)
-                val imageName = sourcePath.name
-                val destinationFile = File(destinationFolder, imageName)
+        for (imagePath in imagePaths) {
+            val sourcePath = File(imagePath)
+            val imageName = sourcePath.name
+            val destinationFile = File(destinationFolder, "copy_${imageName}")
 
-                if (move) {
-                    // Move the file
-                    moveFile(sourcePath, destinationFile)
-                } else {
-                    // Copy the file
-                    copyImage(sourcePath, destinationFile)
-                }
+            if (move) {
+                // Move the file
+                (application as AppClass).mainViewModel.moveFile(sourcePath, destinationFile)
+
+            } else {
+                // Copy the file
+                (application as AppClass).mainViewModel.copyImage(sourcePath, destinationFile)
             }
         }
+
+        if (move) {
+            showToast(this, "Item moved successfully!!")
+        } else {
+            showToast(this, "Item copied successfully!!")
+        }
+
         ////////////
     }
 
@@ -320,78 +363,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         super.onBackPressed()
     }
 
-    private fun copyImage(sourcePath: File, destinationPath: File) {
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                if (destinationPath.exists()) {
-                    withContext(Dispatchers.Main) {
-                        showToast(this@CopyOrMoveActivity, "Item already exists!!")
-                        return@withContext
-                    }
-                    finish()
-                } else {
-                    sourcePath.copyTo(destinationPath)
-                    (application as AppClass).mainViewModel.scanFile(
-                        this@CopyOrMoveActivity, destinationPath
-                    )
-                    (application as AppClass).mainViewModel.scanFile(
-                        this@CopyOrMoveActivity, sourcePath
-                    )
-
-                    withContext(Dispatchers.Main) {
-                        horizontalProgress.visibility = View.GONE
-                        recyclerViewCopyOrMove.visibility = View.VISIBLE
-                        showToast(this@CopyOrMoveActivity, "Item copy successfully!!")
-                    }
-                }
-            } catch (e: IOException) {
-                Log.e("CopyImage", "Error copying image: ${e.message}", e)
-            }
-        }
-        ////////////
-    }
-
-    private fun moveFile(sourcePath: File, destinationPath: File) {
-
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                if (destinationPath.exists()) {
-                    withContext(Dispatchers.Main) {
-                        showToast(this@CopyOrMoveActivity, "Item already exists!!")
-                        return@withContext
-                    }
-                    finish()
-                } else {
-                    try {
-                        Files.move(
-                            sourcePath.toPath(),
-                            destinationPath.toPath(),
-                            StandardCopyOption.REPLACE_EXISTING
-                        )
-
-                        (application as AppClass).mainViewModel.scanFile(
-                            this@CopyOrMoveActivity, destinationPath
-                        )
-                        (application as AppClass).mainViewModel.scanFile(
-                            this@CopyOrMoveActivity, sourcePath
-                        )
-
-                        withContext(Dispatchers.Main) {
-                            horizontalProgress.visibility = View.GONE
-                            recyclerViewCopyOrMove.visibility = View.VISIBLE
-                            showToast(this@CopyOrMoveActivity, "Item move successfully!!")
-                        }
-                    } catch (e: java.lang.Exception) {
-                        Log.e("tagDelete", e.message!!)
-                    }
-                }
-            } catch (e: java.lang.Exception) {
-                Log.e("tagDelete", e.message!!)
-            }
-        }
-        ////////////////////
-    }
 
     private fun showCopyOrMovePopupmenu(
         anchorView: View, setTitle: String, srcFile: File, desFile: File
@@ -423,11 +394,27 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
         copyMoveSaveBtn.setOnClickListener {
             if (setTitle == "Copy") {
-                copyImage(srcFile, desFile)
+
+                progressDialogFragment.show()
+                (application as AppClass).mainViewModel.copyImage(srcFile, desFile)
                 anyupdated = true
+
+                handler?.postDelayed({
+                    progressDialogFragment.cancel()
+                    onBackPressed()
+                    showToast(this, "Item copied successfully!!")
+                }, 1000)
+
             } else if (setTitle == "Move") {
-                moveFile(srcFile, desFile)
+
+                progressDialogFragment.show()
+                (application as AppClass).mainViewModel.moveFile(srcFile, desFile)
                 anyupdated = true
+                handler?.postDelayed({
+                    progressDialogFragment.cancel()
+                    onBackPressed()
+                    showToast(this, "Item moved successfully!!")
+                }, 1000)
             }
 
             popupWindow?.dismiss()
@@ -471,27 +458,32 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         copyMoveSaveBtn.text = setTitle
 
         copyMoveSaveBtn.setOnClickListener {
+            progressDialogFragment.show()
             copyOrMoveImages(imagePaths, folderPath, isMove)
+            anyupdated = true
 
-//                for (imagePath in imagePaths) {
-//                    val sourcePath = File(imagePath)
-//                    val imageName = sourcePath.name
-//                    val destinationFile = File(folderPath, imageName)
-//
-//                    if (isMove) {
-//                        // Move the file
-//                        moveFile(sourcePath, destinationFile)
-//                    } else {
-//                        // Copy the file
-//                        copyImage(sourcePath, destinationFile)
-//                    }
-//                }
-            /////////////////
+            handler?.postDelayed({
+                progressDialogFragment.cancel()
+                onBackPressed()
+            }, 1000)
+
             popupWindow?.dismiss()
         }
 
         cancelBtn.setOnClickListener {
             popupWindow?.dismiss()
         }
+    }
+
+
+    override fun onDestroy() {
+        handler?.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onStop() {
+        // Remove the callbacks to stop the slideshow when the activity is not visible
+        handler?.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 }

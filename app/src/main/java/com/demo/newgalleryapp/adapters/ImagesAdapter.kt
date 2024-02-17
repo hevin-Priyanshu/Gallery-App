@@ -18,15 +18,17 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
+import com.demo.newgalleryapp.activities.FolderImagesActivity.Companion.isUpdatedFolderActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE
 import java.io.File
 
 class ImagesAdapter(
@@ -67,6 +69,16 @@ class ImagesAdapter(
         if (position >= 0 && position < list.size) {
             list.removeAt(position)
             notifyItemChanged(position)
+            notifyDataSetChanged()
+        }
+
+        if (list.isEmpty()) {
+            isUpdatedFolderActivity = true
+            val intent = Intent()
+            context.setResult(Activity.RESULT_OK, intent)
+            isUpdatedFolderActivity = false
+            (context.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            context.finish()
         }
     }
 
@@ -147,7 +159,7 @@ class ImagesAdapter(
                     }
                 }
                 intent.putExtra("currentState", state)
-                context.startActivityForResult(intent, 11)
+                context.startActivityForResult(intent, REQ_CODE)
             }
         }
 

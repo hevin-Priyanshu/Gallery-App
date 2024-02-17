@@ -37,6 +37,7 @@ class WallpaperActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var selectedImageUri: Uri
     private var popupWindow: PopupWindow? = null
+    lateinit var backBtn: ImageView
     private var scopeJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +47,11 @@ class WallpaperActivity : AppCompatActivity() {
         wallpaperImageView = findViewById(R.id.wallpaperImageView)
         wallpaperText = findViewById(R.id.wallpaper_card_view_text)
         progressBar = findViewById(R.id.wallpaper_progress_bar)
+        backBtn = findViewById(R.id.back_btn_wallpaper)
+
+        backBtn.setOnClickListener {
+            finish()
+        }
 
         val getWallpaperUri = intent.getStringExtra("wallpaperUri")
 
@@ -92,7 +98,10 @@ class WallpaperActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     CommonFunctions.showToast(this@WallpaperActivity, "Wallpaper set successfully!")
                     progressBar.visibility = View.GONE
+                    wallpaperText.visibility = View.VISIBLE
                 }
+
+                finish()
             } catch (e: Exception) {
 
                 withContext(Dispatchers.Main) {

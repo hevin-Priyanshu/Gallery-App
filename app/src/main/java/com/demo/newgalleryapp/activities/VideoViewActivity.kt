@@ -17,12 +17,16 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ScaleGestureDetector
 import android.view.View
+import android.view.Window
 import android.widget.ImageView
 import android.widget.PopupWindow
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.classes.AppClass
+import com.demo.newgalleryapp.classes.StyledPlayerViewLatest
 import com.demo.newgalleryapp.databinding.ActivityVideoViewBinding
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions.setNavigationColor
@@ -31,7 +35,7 @@ import com.google.android.exoplayer2.PlaybackException
 import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 
-class VideoViewActivity : AppCompatActivity() {
+class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.ControllerVisibilityListener {
 
     private lateinit var binding: ActivityVideoViewBinding
     private var exoPlayer: SimpleExoPlayer? = null
@@ -59,8 +63,10 @@ class VideoViewActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         myPosition = intent.getIntExtra("currentVideoPosition", 0)
-        val modelList: List<MediaModel> =
-            intent.getSerializableExtra("modelList") as? List<MediaModel> ?: emptyList()
+//        val modelList: List<MediaModel> = intent.getSerializableExtra("modelList") as? List<MediaModel> ?: emptyList()
+        val modelList: List<MediaModel> = (application as AppClass).mainViewModel.tempVideoList
+
+//        (application as AppClass).mainViewModel.videosData
 //        val videoPath = intent.getStringExtra("path")
         mList.addAll(modelList)
 
@@ -165,14 +171,16 @@ class VideoViewActivity : AppCompatActivity() {
 //        }
 
         imgRotate.setOnClickListener {
+
             requestedOrientation =
                 if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                     ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 } else {
                     ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }
-        }
 
+            adjustLayoutForFullScreen()
+        }
 
         exoLock.setOnClickListener {
             binding.playerView.useController = false
@@ -199,6 +207,28 @@ class VideoViewActivity : AppCompatActivity() {
         }
         register()
     }
+
+
+    private fun hideSystemUI() {
+        window.decorView.apply {
+            // Hide both the navigation bar and the status bar.
+            systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                    // Set the content to appear under the system bars so that the
+                    // content doesn't resize when the system bars hide and show.
+                    or View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    // Hide the nav bar and status bar
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        }
+    }
+
+    private fun adjustLayoutForFullScreen() {
+        // Update your video player layout to match the new screen dimensions
+        val layoutParams = binding.playerView.layoutParams as RelativeLayout.LayoutParams
+        layoutParams.width = RelativeLayout.LayoutParams.MATCH_PARENT
+        layoutParams.height = RelativeLayout.LayoutParams.MATCH_PARENT
+        binding.playerView.layoutParams = layoutParams
+    }
+
 
     private fun showPopup(anchorView: View) {
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -325,6 +355,7 @@ class VideoViewActivity : AppCompatActivity() {
     private fun initPlayer() {
         exoPlayer = SimpleExoPlayer.Builder(this).build()
         binding.playerView.player = exoPlayer
+        binding.playerView.setControllerVisibilityListener(this)
         exoPlayer?.playWhenReady = true
         binding.playerView.showController()
 
@@ -409,6 +440,15 @@ class VideoViewActivity : AppCompatActivity() {
         binding.relTop.visibility = View.VISIBLE
     }
 
+    private fun hideMenu() {
+        val window: Window = window
+        // window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LOW_PROFILE or View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_IMMERSIVE
+        binding.relTop.visibility = View.GONE
+        popupWindow?.dismiss()
+    }
+
     override fun onResume() {
         super.onResume()
         if (!isPlayingInPiP) {
@@ -478,4 +518,11 @@ class VideoViewActivity : AppCompatActivity() {
     }
 
     private fun getVideoPath() = mList[myPosition].path
+    override fun onVisibilityChanged(visibility: Int) {
+        if (visibility === View.VISIBLE) {
+            showMenu()
+        } else {
+            hideMenu()
+        }
+    }
 }

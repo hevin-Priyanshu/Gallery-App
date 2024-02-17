@@ -1,6 +1,7 @@
 package com.demo.newgalleryapp.fragments
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -8,6 +9,8 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
@@ -15,7 +18,10 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.FolderAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.Folder
@@ -26,10 +32,11 @@ import java.io.File
 class AlbumsFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private var folderAdapter: FolderAdapter? = null
+    var folderAdapter: FolderAdapter? = null
     private lateinit var searchEditTextAlbum: EditText
     private lateinit var searchCloseBtn: ImageView
     private var tempFolderList: ArrayList<Folder> = ArrayList()
+    private lateinit var openFavoriteActivity: ImageView
 
     companion object {
         fun newInstance(): AlbumsFragment {
@@ -37,14 +44,6 @@ class AlbumsFragment : Fragment() {
             val args = Bundle()
             fragment.arguments = args
             return fragment
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
-            (requireActivity().application as AppClass).mainViewModel.getMediaFromInternalStorage()
         }
     }
 
@@ -58,11 +57,32 @@ class AlbumsFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recycler_view_album)
         searchEditTextAlbum = view.findViewById(R.id.searchEditText_album)
         searchCloseBtn = view.findViewById(R.id.search_close_btn_album)
+        openFavoriteActivity = view.findViewById(R.id.favorites_album)
+
+
+        openFavoriteActivity.setOnClickListener {
+            val intent = Intent(requireContext(), FavoriteImagesActivity::class.java)
+            startActivity(intent)
+        }
 
 
         searchCloseBtn.setOnClickListener {
             searchEditTextAlbum.text.clear()
+            hideKeyboard()
             observeAllData()
+        }
+
+
+
+        searchEditTextAlbum.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                // Hide the keyboard
+                hideKeyboard()
+                // Perform your search logic here
+                // You can access the text entered in the EditText using searchEvent.text.toString()
+                return@setOnEditorActionListener true
+            }
+            return@setOnEditorActionListener false
         }
 
         searchEditTextAlbum.addTextChangedListener(object : TextWatcher {
@@ -82,6 +102,7 @@ class AlbumsFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
                     searchCloseBtn.visibility = View.GONE
+                    hideKeyboard()
                     observeAllData()
                 }
             }
@@ -92,6 +113,12 @@ class AlbumsFragment : Fragment() {
         return view
     }
 
+
+    private fun hideKeyboard() {
+        val imm =
+            requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchEditTextAlbum.windowToken, 0)
+    }
 
     private fun filterData(query: String) {
         val filteredList = if (query.isNotEmpty()) {
@@ -117,13 +144,12 @@ class AlbumsFragment : Fragment() {
             (requireActivity().application as AppClass).mainViewModel.folderList.clear()
             (requireActivity().application as AppClass).mainViewModel.folderList.addAll(folders)
 
-            recyclerView.layoutManager =
-                GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
+            recyclerView.layoutManager = GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
             folderAdapter = FolderAdapter(
                 requireActivity(),
                 folders as ArrayList<Folder>,
                 requireActivity() as MainScreenActivity,
-                "normal"
+                "FromFolder"
             )
             recyclerView.adapter = folderAdapter
         }

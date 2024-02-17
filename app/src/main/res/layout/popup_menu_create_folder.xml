@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/popupItem_rename"
+    android:id="@+id/popupItem_create"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#77000000"
@@ -20,14 +20,15 @@
             android:layout_margin="@dimen/_6sdp"
             android:fontFamily="@font/poppins_medium"
             android:gravity="center"
-            android:text="@string/rename"
+            android:text="Create New Album"
             android:textColor="@color/black"
-            android:textSize="@dimen/_20sdp" />
+            android:textSize="@dimen/_17sdp" />
 
         <EditText
-            android:id="@+id/rename_searchEditText"
+            android:id="@+id/create_folder_searchEditText"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/_6sdp"
             android:layout_marginBottom="@dimen/_12sdp"
             android:background="@drawable/cancel_btn_rounded_border_shape"
             android:fontFamily="@font/poppins_medium"
@@ -46,7 +47,7 @@
             android:weightSum="2">
 
             <TextView
-                android:id="@+id/rename_chancel"
+                android:id="@+id/create_folder_chancel"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_8sdp"
@@ -61,7 +62,7 @@
                 android:textSize="@dimen/_13sdp" />
 
             <TextView
-                android:id="@+id/rename_save"
+                android:id="@+id/create_folder_save"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"

@@ -1,5 +1,6 @@
 package com.demo.newgalleryapp.fragments
 
+import android.content.Context
 import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.content.Intent
 import android.os.Bundle
@@ -10,6 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -23,6 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationView
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationViewForLongSelect
@@ -50,7 +54,6 @@ class MediaFragment : Fragment(), ImageClickListener {
     private lateinit var textVideo: TextView
     private lateinit var selectItem: TextView
     private lateinit var searchEvent: EditText
-    private lateinit var threeDotItem: ImageView
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
     private lateinit var toolbar: Toolbar
@@ -60,7 +63,9 @@ class MediaFragment : Fragment(), ImageClickListener {
 
     companion object {
 
+        lateinit var openFavoriteActivity: ImageView
         lateinit var viewPager: ViewPager
+        lateinit var threeDotItem: ImageView
         lateinit var textViewSelectAllMedia: TextView
         lateinit var textViewDeSelectAllMedia: TextView
         lateinit var linearLayoutForMainText: LinearLayout
@@ -81,17 +86,37 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         val view: View = inflater.inflate(R.layout.fragment_media, container, false)
 
+        photosFragment = PhotosFragment.newInstance(0)
+        videosFragment = VideosFragment.newInstance(1)
+
         initializeViews(view)
         setupViewPager()
+        mediaProgressBar.visibility = View.VISIBLE
+
+        openFavoriteActivity.setOnClickListener {
+            val intent = Intent(requireContext(), FavoriteImagesActivity::class.java)
+            startActivity(intent)
+        }
 
         closeBtnMedia.setOnClickListener {
             setAllVisibility()
         }
 
-        mediaProgressBar.visibility = View.VISIBLE
-
         searchCloseBtn.setOnClickListener {
             searchEvent.text.clear()
+            threeDotItem.visibility = View.VISIBLE
+            hideKeyboard()
+        }
+
+        searchEvent.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                // Hide the keyboard
+                hideKeyboard()
+                // Perform your search logic here
+                // You can access the text entered in the EditText using searchEvent.text.toString()
+                return@setOnEditorActionListener true
+            }
+            return@setOnEditorActionListener false
         }
 
         textViewSelectAllMedia.setOnClickListener {
@@ -118,6 +143,8 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+                threeDotItem.visibility = View.GONE
                 viewPager.visibility = View.GONE
                 searchCloseBtn.visibility = View.VISIBLE
 
@@ -131,6 +158,8 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
                     searchCloseBtn.visibility = View.GONE
+                    threeDotItem.visibility = View.VISIBLE
+                    hideKeyboard()
                 }
             }
         })
@@ -155,12 +184,14 @@ class MediaFragment : Fragment(), ImageClickListener {
                 if (position == 0) {
                     textPhoto.setTextColor(whiteTextColor)
                     textVideo.setTextColor(blueTextColor)
-                    textPhoto.background = requireContext().getDrawable(R.drawable.text_photo_background_view)
+                    textPhoto.background =
+                        requireContext().getDrawable(R.drawable.text_photo_background_view)
                     textVideo.background = null
                 } else {
                     textPhoto.setTextColor(blueTextColor)
                     textVideo.setTextColor(whiteTextColor)
-                    textVideo.background = requireContext().getDrawable(R.drawable.text_video_background_view)
+                    textVideo.background =
+                        requireContext().getDrawable(R.drawable.text_video_background_view)
                     textPhoto.background = null
 
                 }
@@ -170,6 +201,12 @@ class MediaFragment : Fragment(), ImageClickListener {
         })
 
         return view
+    }
+
+    private fun hideKeyboard() {
+        val imm =
+            requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(searchEvent.windowToken, 0)
     }
 
     private fun handleDeselectAllMedia() {
@@ -216,6 +253,8 @@ class MediaFragment : Fragment(), ImageClickListener {
         adapter.addFragment(photosFragment)
         adapter.addFragment(videosFragment)
         viewPager.adapter = adapter
+        adapter.notifyDataSetChanged()
+        mediaProgressBar.visibility = View.GONE
     }
 
     private fun initializeViews(view: View) {
@@ -229,6 +268,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         closeBtnMedia = view.findViewById(R.id.closeBtn_media)
         searchCloseBtn = view.findViewById(R.id.search_close_btn)
         mediaProgressBar = view.findViewById(R.id.media_progress_bar)
+        openFavoriteActivity = view.findViewById(R.id.favorites_media)
 
         textViewSelectAllMedia = view.findViewById(R.id.textView_selectAll_media)
         textViewDeSelectAllMedia = view.findViewById(R.id.textView_removeAll_media)
@@ -280,7 +320,7 @@ class MediaFragment : Fragment(), ImageClickListener {
 //                    photosFragment.notifyAdapter(commonList)
                 } else {
                     videosFragment.imagesAdapter?.updateData(commonList)
-                    videosFragment.notifyAdapter(commonList)
+//                    videosFragment.notifyAdapter(commonList)
                 }
 
                 viewPager.visibility = View.VISIBLE
@@ -311,11 +351,11 @@ class MediaFragment : Fragment(), ImageClickListener {
         popupTextSelectCheckBox.setOnClickListener {
             selectItem.text = "Item Selected 0"
 
-            if(viewPager.currentItem == 0){
+            if (viewPager.currentItem == 0) {
                 photosFragment.imagesAdapter?.isSelected = true
                 onLongClick()
                 photosFragment.imagesAdapter?.notifyDataSetChanged()
-            }else{
+            } else {
                 videosFragment.imagesAdapter?.isSelected = true
                 onLongClick()
                 videosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -470,7 +510,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.saveGridColumns(
             tempColumn
         )
-        photosFragment.observeAllData(tempColumn)
+        photosFragment.observeAllData(tempColumn,"Media")
         videosFragment.observeAllData(tempColumn)
         photosFragment.imagesAdapter?.notifyDataSetChanged()
         videosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -491,7 +531,10 @@ class MediaFragment : Fragment(), ImageClickListener {
         if (select == 0) {
             setAllVisibility()
         }
-        selectItem.text = "Item Selected $select"
+        if (selectItem != null) {
+            selectItem.text = "Item Selected $select"
+        }
+
     }
 
     override fun onLongClick() {

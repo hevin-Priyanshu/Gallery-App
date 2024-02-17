@@ -1,8 +1,10 @@
 package com.demo.newgalleryapp.activities
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,19 +12,21 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
-import android.view.View
-import android.widget.ProgressBar
+import android.view.Window
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.fragments.AlbumsFragment
 import com.demo.newgalleryapp.fragments.MediaFragment
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
@@ -34,9 +38,9 @@ import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.FLAG_FOR_CHANGES_IN_RENAME
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
-import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_PERMISSION
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.resetVisibilityForDeleteItem
@@ -54,14 +58,26 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     private lateinit var settingFragment: SettingFragment
     private lateinit var service: ExecutorService
-    private lateinit var progressBar: ProgressBar
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
     lateinit var mediaFragment: MediaFragment
-    private lateinit var albumsFragment: AlbumsFragment
     private var currentFragment: Fragment? = null
     lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+    var handler: Handler? = null
+
+    private lateinit var dialogBinding: DialogLoadingBinding
+
+    val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
+
 
     companion object {
+        lateinit var albumsFragment: AlbumsFragment
         lateinit var bottomNavigationViewForLongSelect: BottomNavigationView
         lateinit var bottomNavigationView: BottomNavigationView
         lateinit var photosFragment: PhotosFragment
@@ -84,12 +100,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)
-            || (resultCode == REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY) ||
-            (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK)
-            || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+
+            progressDialogFragment.show()
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            
+
             // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
             if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
                 checkBoxList.map {
@@ -98,12 +113,21 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                     ImagesDatabase.getDatabase(this).favoriteImageDao().deleteFavorites(it)
                 }
             }
-
             photosFragment.imagesAdapter?.notifyDataSetChanged()
             videosFragment.imagesAdapter?.notifyDataSetChanged()
             FLAG_FOR_CHANGES_IN_RENAME = false
+
+            handler?.postDelayed({
+                progressDialogFragment.cancel()
+            }, 1000)
+        } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            albumsFragment.folderAdapter?.notifyDataSetChanged()
+            photosFragment.imagesAdapter?.notifyDataSetChanged()
+            videosFragment.imagesAdapter?.notifyDataSetChanged()
         }
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,12 +135,13 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         setContentView(R.layout.activity_main_screen)
         bottomNavigationView = findViewById(R.id.bottomNavigationDefault)
         bottomNavigationViewForLongSelect = findViewById(R.id.bottomNavigationSelect)
-        progressBar = findViewById(R.id.progressBar)
+//        progressBar = findViewById(R.id.progressBar)
 
+        handler = Handler(Looper.getMainLooper())
         service = Executors.newSingleThreadExecutor()
         sharedPreferencesHelper = SharedPreferencesHelper(this)
 
-        progressBar.visibility = View.VISIBLE
+//        progressBar.visibility = View.VISIBLE
         if (permissionCheck()) {
             service.execute {
                 loadMediaData()
@@ -152,10 +177,9 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         (application as AppClass).mainViewModel = MainViewModel(application)
 
         mediaFragment = MediaFragment.newInstance()
+
         albumsFragment = AlbumsFragment.newInstance()
         settingFragment = SettingFragment.newInstance()
-        photosFragment = PhotosFragment.newInstance(0)
-        videosFragment = VideosFragment.newInstance(1)
 
         loadData()
     }
@@ -163,8 +187,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     private fun loadData() {
 
         runOnUiThread {
-            progressBar.visibility = View.GONE
-
+//            progressBar.visibility = View.GONE
 //            setupFragments()
             bottomNavigationView.setOnItemSelectedListener { menuItem ->
                 when (menuItem.itemId) {
@@ -182,9 +205,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                 }
                 true
             }
-
             bottomNavigationView.selectedItemId = R.id.mediaItem
-
         }
 
         bottomNavigationViewForLongSelect.setOnItemSelectedListener { menuItem ->
@@ -200,6 +221,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     }
 
     private fun setupFragments() {
+
         val fragmentTag = mediaFragment.javaClass.simpleName
         val existingFragment = supportFragmentManager.findFragmentByTag(fragmentTag)
 
@@ -208,9 +230,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                 .add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
         }
         currentFragment = mediaFragment
+
+        bottomNavigationView.selectedItemId = R.id.mediaItem
     }
 
-     private fun handleMoreAction() {
+    private fun handleMoreAction() {
 
         checkBoxList.clear()
 
@@ -228,7 +252,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         showPopupForMainScreenMoreItem(bottomNavigationViewForLongSelect, paths)
     }
 
-     private fun handleDeleteAction() {
+    private fun handleDeleteAction() {
         checkBoxList.clear()
 
         val fragmentList = if (viewPager.currentItem == 0) {
@@ -302,7 +326,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                 ImagesDatabase.getDatabase(this@MainScreenActivity).favoriteImageDao()
                     .insertFavorite(addFavorite)
             }
-            showToast(this, "Favorite Added")
+            showToast(this, "Favorites Added")
             resetVisibilityForDeleteItem()
         }
     }
@@ -404,12 +428,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 //        fragmentTransaction.commit()
 //    }
 
-
-    override fun onBackPressed() {
-        finish()
-        super.onBackPressed()
-    }
-
     private fun loadFragment(fragment: Fragment) {
 
         val transaction = supportFragmentManager.beginTransaction()
@@ -445,5 +463,26 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     override fun counter(select: Int) {
     }
 
+    @SuppressLint("MissingSuperCall")
+    override fun onBackPressed() {
+        if (currentFragment == mediaFragment) {
+            finish()
+        } else {
+            loadFragment(mediaFragment)
+            bottomNavigationView.selectedItemId = R.id.mediaItem
+        }
+    }
+
+
+    override fun onDestroy() {
+        handler?.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onStop() {
+        // Remove the callbacks to stop the slideshow when the activity is not visible
+        handler?.removeCallbacksAndMessages(null)
+        super.onStop()
+    }
 
 }

@@ -16,14 +16,17 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.classes.ZoomageView
 import com.demo.newgalleryapp.R
+import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.VideoViewActivity
+import com.demo.newgalleryapp.classes.AppClass
+import com.demo.newgalleryapp.classes.ZoomageView
 import com.demo.newgalleryapp.interfaces.SetCropImages
 import com.demo.newgalleryapp.models.MediaModel
 
-class ImageSliderAdapter(private val context: Activity, private var modelList: ArrayList<MediaModel>) : PagerAdapter(),
-    SetCropImages {
+class ImageSliderAdapter(
+    private val context: Activity, private var modelList: ArrayList<MediaModel>
+) : PagerAdapter(), SetCropImages {
 
     private lateinit var imageViewForSlider: ZoomageView
     private lateinit var imageVideo: ImageView
@@ -32,7 +35,8 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
 
         currentPosition = position
-        val view = LayoutInflater.from(context).inflate(R.layout.activity_open_one_image, container, false)
+        val view =
+            LayoutInflater.from(context).inflate(R.layout.activity_open_one_image, container, false)
 
         imageViewForSlider = view.findViewById(R.id.imageView)
 
@@ -45,7 +49,7 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
                 val videoPath = modelList[position].path
                 val intent = Intent(context, VideoViewActivity::class.java)
                 intent.putExtra("currentVideoPosition", position)
-                intent.putExtra("modelList",  ArrayList(modelList))
+//                intent.putExtra("modelList", ArrayList(modelList))
                 context.startActivity(intent)
             }
         }
@@ -65,10 +69,24 @@ class ImageSliderAdapter(private val context: Activity, private var modelList: A
             modelList.removeAt(position)
             notifyDataSetChanged()
         }
+
+        if (modelList.isEmpty()) {
+            OpenImageActivity.anyChanges = true
+            val intent = Intent()
+            context.setResult(Activity.RESULT_OK, intent)
+            OpenImageActivity.anyChanges = false
+            (context.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            context.finish()
+        }
     }
 
     override fun getCount(): Int {
         return modelList.size
+    }
+
+    fun setList(model: ArrayList<MediaModel>) {
+        this.modelList = arrayListOf()
+        this.modelList.addAll(model)
     }
 
     override fun isViewFromObject(view: View, `object`: Any): Boolean {

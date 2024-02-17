@@ -8,6 +8,7 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
@@ -22,10 +23,15 @@ import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
+import com.demo.newgalleryapp.utilities.CommonFunctions
 import com.demo.newgalleryapp.utilities.CommonFunctions.ERROR_TAG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -51,7 +57,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         allMediaList = getMediaFromInternalStorage()
     }
 
-    var flag: Boolean = false
     var flagForTrashBinActivity: Boolean = false
 
     fun getMediaFromInternalStorage(): ArrayList<MediaModel> {
@@ -106,7 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val videoList = ArrayList<MediaModel>()
             queryMediaStore(uriForVideos, projection, null, null, sortOrder, videoList, true)
 //        allVideosSize = videoList.size
-            _videosData.postValue(videoList) 
+            _videosData.postValue(videoList)
 
             mediaList.addAll(imageList)
             mediaList.addAll(videoList)
@@ -153,6 +158,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val dateAdded =
                     c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED))
 
+                // Discard invalid images that might exist on the device
+                if (size == null) {
+                    continue
+                }
                 // Create a MediaModel object and add it to the list
                 val mediaModel =
                     MediaModel(id, displayName, data, mimeType, duration, size, dateAdded, isVideo)
@@ -160,6 +169,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+
+        cursor?.close()
     }
 
     fun moveImageInTrashBin(imagePathToDelete: String, isVideoOrNot: Boolean) {
@@ -176,35 +187,60 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (imagePath.exists()) {
 
-                val destinationImage = File(trashDirectory, imagePath.name)
+                val destinationFileName = "${imagePath.name}.trash"
+                val destinationImage = File(trashDirectory, destinationFileName)
+
+//                val destinationImage = File(trashDirectory, imagePath.name)
 
                 if (destinationImage.exists()) {
-                    destinationImage.delete()
+                    destinationImage.deleteRecursively()
                 }
-                imagePath.copyTo(destinationImage)
+                imagePath.copyTo(destinationImage, overwrite = true)
                 val deletionTimestamp = System.currentTimeMillis()// current time in millisec
 
 
+                // After moving the image to the trash
                 val trashBinModel = TrashBinAboveVersion(
-                    0,
-                    destinationImage.toUri(),
-                    imagePath.toString(),
-                    imagePath.name,
-                    "",
-                    deletionTimestamp.toString(),
-                    isVideoOrNot
+                    0, // Assuming the ID is auto-generated
+                    destinationImage.toUri(), // URI of the trashed image
+                    imagePath.absolutePath, // Path of the trashed image
+                    destinationFileName, // Name of the trashed image
+                    "", // You might want to add additional information such as description or metadata
+                    deletionTimestamp.toString(), isVideoOrNot
                 )
+
+//                val trashBinModel = TrashBinAboveVersion(
+//                    0,
+//                    destinationImage.toUri(),
+//                    imagePath.toString(),
+//                    imagePath.name,
+//                    "",
+//                    deletionTimestamp.toString(),
+//                    isVideoOrNot
+//                )
+
+                ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(trashBinModel)
 
                 // Here adding current and destination path in database , for showing item in trash bin
                 ImagesDatabase.getDatabase(context).favoriteImageDao()
                     .insertDeleteImage(trashBinModel)
 
                 // Here Deleting favorite items that was present in favorite activity , because we removing files on trash...
-//                deleteFavoriteItems(context, imagePathToDelete)
                 ImagesDatabase.getDatabase(context).favoriteImageDao()
                     .deleteFavorites(imagePathToDelete)
 
-                imagePath.deleteRecursively()
+//                imagePath.deleteRecursively()
+
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
+                    imagePath.delete()
+                    context.sendBroadcast(
+                        Intent(
+                            Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(imagePath)
+                        )
+                    )
+                } else {
+                    imagePath.deleteRecursively()
+                }
                 scanFile(context, imagePath)
 
                 val updatedPhotoList = _photosData.value?.toMutableList()
@@ -246,25 +282,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val imagePath = File(imagePathToDelete)
 
                 if (imagePath.exists()) {
-                    val destinationImage = File(trashDirectory, imagePath.name)
+
+                    val destinationFileName = "${imagePath.name}.trash"
+                    val destinationImage = File(trashDirectory, destinationFileName)
+//                    val destinationImage = File(trashDirectory, imagePath.name)
 
                     if (destinationImage.exists()) {
-                        destinationImage.delete()
+                        destinationImage.deleteRecursively()
                     }
 
                     imagePath.copyTo(destinationImage)
 
                     val deletionTimestamp = System.currentTimeMillis() // current time in millisec
 
+//                    val trashBinModel = TrashBinAboveVersion(
+//                        0,
+//                        destinationImage.toUri(),
+//                        imagePath.toString(),
+//                        imagePath.name,
+//                        "",
+//                        deletionTimestamp.toString(),
+//                        false
+//                    )
+
                     val trashBinModel = TrashBinAboveVersion(
-                        0,
-                        destinationImage.toUri(),
-                        imagePath.toString(),
-                        imagePath.name,
-                        "",
-                        deletionTimestamp.toString(),
-                        false
+                        0, // Assuming the ID is auto-generated
+                        destinationImage.toUri(), // URI of the trashed image
+                        imagePath.absolutePath, // Path of the trashed image
+                        destinationFileName, // Name of the trashed image
+                        "", // You might want to add additional information such as description or metadata
+                        deletionTimestamp.toString(), false
                     )
+
+                    ImagesDatabase.getDatabase(context).favoriteImageDao()
+                        .deleteImages(trashBinModel)
 
                     ImagesDatabase.getDatabase(context).favoriteImageDao()
                         .insertDeleteImage(trashBinModel)
@@ -335,33 +386,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
 
-            // Get the deleted image information from the database
-            val deletedImage = File(trashBinModel.uri.path!!)
-            val originalImagePath = File(trashBinModel.path)
+            try {
+                // Get the deleted image information from the database
 
-            if (deletedImage.exists()) {
-                deletedImage.copyTo(originalImagePath, overwrite = true)
-//          org.apache.commons.io.FileUtils.copyFile(deletedImage, originalImagePath)
+                val deletedImage = File(trashBinModel.uri.path ?: "")
+                val originalImagePath = File(trashBinModel.path)
 
-                deletedImage.deleteRecursively()
 
-                scanFile(context, originalImagePath)
-                // Delete the entry from the database
-                ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(trashBinModel)
+//                val deletedImage = File(trashBinModel.uri.path!!)
+//                val originalImagePath = File(trashBinModel.path)
 
-                // Notify observers about the restoration
-                val updatedList = _allData.value?.toMutableList()
-                updatedList?.add(
-                    MediaModel(
-                        0, originalImagePath.toString(), deletedImage.toString(), "", 0, 0, 0, false
+                if (deletedImage.exists()) {
+                    deletedImage.copyTo(originalImagePath, overwrite = true)
+
+                    deletedImage.deleteRecursively()
+                    scanFile(context, originalImagePath)
+                    // Delete the entry from the database
+                    ImagesDatabase.getDatabase(context).favoriteImageDao()
+                        .deleteImages(trashBinModel)
+
+                    // Notify observers about the restoration
+                    val updatedList = _allData.value?.toMutableList()
+                    updatedList?.add(
+                        MediaModel(
+                            0,
+                            originalImagePath.toString(),
+                            deletedImage.toString(),
+                            "",
+                            0,
+                            0,
+                            0,
+                            false
+                        )
                     )
-                )
-                // Add the restored image to the list
-                _allData.postValue(updatedList)
-            } else {
-                Log.e("error", "restoreImage: Error restoring file. File not found in trash!!")
-            }
+                    // Add the restored image to the list
+                    _allData.postValue(updatedList)
+                } else {
+                    Log.e("error", "restoreImage: Error restoring file. File not found in trash!!")
+                }
 
+            } catch (e: Exception) {
+                Log.e("RestoreImage", "Error restoring file: ${e.message}")
+            }
+            //////////////
         }
     }
 
@@ -426,14 +493,85 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
+    fun copyImage(sourcePath: File, destinationPath: File) {
+        val context: Context = getApplication()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (destinationPath.exists()) {
+                    withContext(Dispatchers.Main) {
+                        CommonFunctions.showToast(context, "Item already exists!!")
+                        return@withContext
+                    }
+                } else {
+                    sourcePath.copyTo(destinationPath)
+
+                    scanFile(context, destinationPath)
+                    scanFile(context, sourcePath)
+
+                    getMediaFromInternalStorage()
+
+                    withContext(Dispatchers.Main) {
+//                        horizontalProgress.visibility = View.GONE
+//                        recyclerViewCopyOrMove.visibility = View.VISIBLE
+//                        CommonFunctions.showToast(context, "Item copied successfully!!")
+                    }
+                }
+            } catch (e: IOException) {
+                Log.e("CopyImage", "Error copying image: ${e.message}", e)
+            }
+        }
+        ////////////
+    }
+
+    fun moveFile(sourcePath: File, destinationPath: File) {
+        val context: Context = getApplication()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (destinationPath.exists()) {
+                    withContext(Dispatchers.Main) {
+                        CommonFunctions.showToast(context, "Item already exists!!")
+                        return@withContext
+                    }
+                } else {
+                    try {
+                        Files.move(
+                            sourcePath.toPath(),
+                            destinationPath.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING
+                        )
+
+                        scanFile(context, destinationPath)
+                        scanFile(context, sourcePath)
+
+                        getMediaFromInternalStorage()
+
+                        withContext(Dispatchers.Main) {
+//                            horizontalProgress.visibility = View.GONE
+//                            recyclerViewCopyOrMove.visibility = View.VISIBLE
+//                            CommonFunctions.showToast(context, "Item moved successfully!!")
+                        }
+                    } catch (e: java.lang.Exception) {
+                        Log.e("tagDelete", e.message!!)
+                    }
+                }
+            } catch (e: java.lang.Exception) {
+                Log.e("tagDelete", e.message!!)
+            }
+        }
+        ////////////////////
+    }
+
     fun scanFile(context: Context, file: File) {
         MediaScannerConnection.scanFile(context, arrayOf(file.toString()), null, null)
     }
 
     // This function create new folder in directory to store the images
     private fun createTrashDirectory(): File {
-        val trashDirectory =
-            File(getApplication<Application>().getExternalFilesDir(null), ".TrashBin")
+//        val trashDirectory = File(getApplication<Application>().getExternalFilesDir(null), ".TrashBin")
+        val trashDirectory = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), ".trashBin"
+        )
         if (!trashDirectory.exists()) {
             trashDirectory.mkdirs()
         }
@@ -519,6 +657,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return trashItemsList
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     private fun queryMediaStoreForAPI(
         collectionOfImages: Uri,
         projection: Array<String>,

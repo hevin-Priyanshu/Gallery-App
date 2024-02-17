@@ -1,10 +1,13 @@
 package com.demo.newgalleryapp.activities
 
+//import com.demo.newgalleryapp.activities.OpenImageActivity.Companion.models
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
@@ -14,10 +17,10 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.OpenImageActivity.Companion.models
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter
+import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions.setNavigationColor
 
@@ -29,6 +32,9 @@ class SlideShowActivity : AppCompatActivity() {
     private val handler = Handler()
     private lateinit var imagesSliderAdapter: ImageSliderAdapter
     private var currentImageIndex = 0
+    //TODO need to remove below line
+//        lateinit var models: List<MediaModel>
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,29 +97,82 @@ class SlideShowActivity : AppCompatActivity() {
             startSlideshow(currentImageIndex, models)
         }
 
-//        }
-
-
     }
+
+//    private fun startSlideshow(currentIndex: Int, models: List<MediaModel>) {
+//
+//        // Define the interval for changing images (2 seconds in this case)
+//        val slideshowInterval = 2000L
+//
+//        val runnable = object : Runnable {
+//            override fun run() {
+//                // here checking the currentImageIndex is equal to size of all media list then , reset currentImageIndex to 0
+//                if (currentIndex == models.size) {
+//                    return
+//                }
+//                // Increment the index for the next image
+//                viewPager.setCurrentItem(this@SlideShowActivity.currentImageIndex++, true)
+//                // Schedule the next image change after the interval
+//                handler.postDelayed(this, slideshowInterval)
+//            }
+//        }
+//        // Start the initial image change
+//        handler.postDelayed(runnable, slideshowInterval)
+//    }
+
 
     private fun startSlideshow(currentIndex: Int, models: List<MediaModel>) {
 
         // Define the interval for changing images (2 seconds in this case)
         val slideshowInterval = 2000L
+        var currentImageIndex = currentIndex // Initialize the current image index
 
         val runnable = object : Runnable {
             override fun run() {
-                // here checking the currentImageIndex is equal to size of all media list then , reset currentImageIndex to 0
-                if (currentIndex == models.size) {
-                    return
+                // Check if the current index is within the bounds of the list
+                if (currentImageIndex < models.size) {
+                    // Increment the index for the next image
+                    viewPager.setCurrentItem(currentImageIndex++, true)
+                    // Schedule the next image change after the interval
+                    handler.postDelayed(this, slideshowInterval)
                 }
-                // Increment the index for the next image
-                viewPager.setCurrentItem(this@SlideShowActivity.currentImageIndex++, true)
-                // Schedule the next image change after the interval
-                handler.postDelayed(this, slideshowInterval)
             }
         }
+
         // Start the initial image change
         handler.postDelayed(runnable, slideshowInterval)
+
+        // Set up GestureDetector to detect touch events on the ViewPager
+        val gestureDetector =
+            GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent): Boolean {
+                    // Return true to indicate that the touch event is handled
+                    return true
+                }
+
+                override fun onSingleTapUp(e: MotionEvent): Boolean {
+                    // Stop the slideshow when the user taps on the ViewPager
+                    handler.removeCallbacks(runnable)
+                    return true
+                }
+            })
+
+        // Attach the GestureDetector to the ViewPager
+        viewPager.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    // Stop auto-scrolling when the user touches the ViewPager
+                    handler.removeCallbacks(runnable)
+                }
+
+                MotionEvent.ACTION_UP -> {
+                    // Resume auto-scrolling when the user releases the touch
+
+                }
+            }
+            false
+        }
     }
+
+
 }

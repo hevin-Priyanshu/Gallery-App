@@ -45,22 +45,20 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginTop="@dimen/_14sdp"
-                    android:layout_marginBottom="@dimen/_14sdp"
+                    android:layout_marginTop="@dimen/_16sdp"
+                    android:layout_marginBottom="@dimen/_16sdp"
                     android:gravity="end"
                     android:orientation="horizontal">
 
-                    <!--                    <ImageView-->
-                    <!--                        android:layout_width="@dimen/_40sdp"-->
-                    <!--                        android:layout_height="match_parent"-->
-                    <!--                        android:src="@drawable/heart_icon_new" />-->
+                    <ImageView
+                        android:id="@+id/favorites_album"
+                        android:layout_width="@dimen/_25sdp"
+                        android:layout_height="match_parent"
+                        android:layout_marginEnd="@dimen/_20sdp"
+                        android:src="@drawable/heart_icon_new" />
 
-                    <!--                    <ImageView-->
-                    <!--                        android:layout_width="@dimen/_40sdp"-->
-                    <!--                        android:layout_height="match_parent"-->
-                    <!--                        android:src="@drawable/three_dot_new" />-->
+
                 </LinearLayout>
-
 
             </LinearLayout>
 
@@ -151,9 +149,9 @@
             android:hint="@string/search_for_files_or_albums"
             android:imeOptions="actionSearch"
             android:inputType="text"
-            android:textColor="@color/black"
             android:paddingHorizontal="@dimen/_40sdp"
-            android:paddingVertical="@dimen/_10sdp"
+            android:paddingVertical="@dimen/_8sdp"
+            android:textColor="@color/black"
             android:textColorHint="#ABABAB"
             android:textSize="@dimen/_10sdp" />
 

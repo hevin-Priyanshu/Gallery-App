@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
@@ -35,7 +36,6 @@ import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForMainText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
-import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import java.io.File
 import java.io.IOException
@@ -51,6 +51,7 @@ object CommonFunctions {
     private var popupWindow_restore_trash: PopupWindow? = null
     private var popupForDeletePermanently: PopupWindow? = null
     private var popupWindowMore: PopupWindow? = null
+    var isMainSelection: Boolean = false
 
     const val REQ_CODE_FOR_PERMISSION = 100
     const val REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY = 101
@@ -69,11 +70,10 @@ object CommonFunctions {
     const val REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY = 114
     const val REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY = 115
     const val REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY = 116
+    const val REQ_CODE = 117
 
     const val ERROR_TAG = "Error"
     var FLAG_FOR_CHANGES_IN_RENAME: Boolean = false
-//    var FLAG_FOR_MAIN_SCREEN_ACTIVITY: Boolean = false
-//    var FLAG_IN_MAIN_SCREEN_ACTIVITY: Int = 0
 
     fun showToast(context: Context, message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -205,10 +205,16 @@ object CommonFunctions {
         val cancelBtn = popupView.findViewById<TextView>(R.id.rename_chancel)
         val searchEditText = popupView.findViewById<EditText>(R.id.rename_searchEditText)
 
+        val imageName = File(selectedImagePath).name
+        val name = imageName.substringBeforeLast(".")
+        searchEditText.setText(name)
 
         saveBtn.setOnClickListener {
 
+            activity.progressDialogFragment.show()
+
             val newName = searchEditText.text.toString().trim()
+
             val directory = File(selectedImagePath).parent
             val originalPath = File(selectedImagePath)
             val lastText = getImageFileExtension(selectedImagePath)
@@ -221,7 +227,13 @@ object CommonFunctions {
                     (activity.application as AppClass).mainViewModel.scanFile(this, destinationPath)
                     (activity.application as AppClass).mainViewModel.scanFile(this, originalPath)
                     FLAG_FOR_CHANGES_IN_RENAME = true
-                    showToast(this, "Rename Successful!!")
+
+                    Handler().postDelayed(Runnable {
+                        activity.progressDialogFragment.cancel()
+                        showToast(this, "Rename Successfully!!")
+                        activity.finish()
+                    }, 1000)
+
                 } catch (e: IOException) {
                     Log.e("CopyOrMoveActivity", "Error creating write request", e)
                 }
@@ -283,6 +295,7 @@ object CommonFunctions {
 
             when (activity) {
                 is FolderImagesActivity -> {
+                    activity.progressDialogFragment.show()
                     activity.removeItemsAtPosition(position, pathsToRemove)
 //                    removeItemsAtPosition(position, pathsToRemove)
                     FolderImagesActivity.adapter.notifyDataSetChanged()
@@ -298,12 +311,19 @@ object CommonFunctions {
                 }
 
                 is MainScreenActivity -> {
+                    activity.progressDialogFragment.show()
                     if (viewPager.currentItem == 0) {
                         photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
                     } else {
                         videosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
                     }
                     resetVisibilityForDeleteItem()
+
+                    activity.handler?.postDelayed({
+                        activity.progressDialogFragment.cancel()
+                        (activity.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                        showToast(this, "Deleted Successfully!!")
+                    }, 1000)
                 }
             }
 
@@ -374,11 +394,11 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to move 1 file to the trash bin ?"}"
 
         saveBtn.setOnClickListener {
-            (applicationContext as AppClass).mainViewModel.flag = true
             // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
             (applicationContext as AppClass).mainViewModel.moveImageInTrashBin(path, isVideoOrNot)
 
             OpenImageActivity.imagesSliderAdapter.remove(currentPosition)
+            OpenImageActivity.anyChanges = true
             popupWindow_delete?.dismiss()
             showToast(this, "Move To Trash bin Successfully!!")
         }
@@ -390,7 +410,9 @@ object CommonFunctions {
 
     // here restore multiple popup menu will show
     fun Context.showPopupRestoreMultiple(
-        anchorView: View, selectedItemList: ArrayList<TrashBinAboveVersion>
+        anchorView: View,
+        selectedItemList: ArrayList<TrashBinAboveVersion>,
+        trashBinActivity: TrashBinActivity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -421,11 +443,18 @@ object CommonFunctions {
         restoreBtn.setOnClickListener {
 //            (anchorView.context.applicationContext as AppClass).mainViewModel.restoreMultipleImagesVideos(selectedItemList)
 
+            trashBinActivity.progressDialogFragment.show()
+
             (applicationContext as AppClass).mainViewModel.restoreMultipleImagesVideos(
                 selectedItemList
             )
             (applicationContext as AppClass).mainViewModel.flagForTrashBinActivity = true
-            showToast(this, "Restore Successful!!")
+
+            trashBinActivity.handler?.postDelayed({
+                showToast(this, "Restore Successfully!!")
+                trashBinActivity.progressDialogFragment.cancel()
+            }, 1000)
+
             popupWindow_restore_trash?.dismiss()
             trashBinActivityAllVisibility()
         }
@@ -465,6 +494,7 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to restore ${1} file from trash bin ?"}"
 
         restoreBtn.setOnClickListener {
+
             (applicationContext as AppClass).mainViewModel.restoreImage(paths)
             popupWindow_restore?.dismiss()
             imagesSliderAdapter.remove(currentPosition)
@@ -481,6 +511,7 @@ object CommonFunctions {
     fun Context.showPopupForDeletePermanently(
         anchorView: View,
         deletePaths: ArrayList<TrashBinAboveVersion>,
+        trashBinActivity: TrashBinActivity,
     ) {
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowDeletePermanently: View = inflater.inflate(R.layout.delete_popup_menu, null)
@@ -509,7 +540,14 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to delete ${deletePaths.size} files Permanently ?"}"
 
         saveBtn.setOnClickListener {
+
+            trashBinActivity.progressDialogFragment.show()
+
             (applicationContext as AppClass).mainViewModel.deleteMultiple(deletePaths)
+
+            trashBinActivity.handler?.postDelayed({
+                trashBinActivity.progressDialogFragment.cancel()
+            }, 1000)
             popupForDeletePermanently?.dismiss()
             trashBinActivityAllVisibility()
         }
@@ -622,6 +660,5 @@ object CommonFunctions {
                 (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
         }
     }
-
     ////////////////////
 }
