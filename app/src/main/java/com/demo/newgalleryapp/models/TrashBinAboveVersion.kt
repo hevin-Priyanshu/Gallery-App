@@ -13,6 +13,6 @@ data class TrashBinAboveVersion(
     val path: String,
     val name: String,
     val size: String,
-    val date: String,
+    val date: Long,
     val isVideo: Boolean
 ): Serializable

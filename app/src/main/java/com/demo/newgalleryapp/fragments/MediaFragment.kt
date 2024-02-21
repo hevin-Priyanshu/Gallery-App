@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -52,7 +53,7 @@ class MediaFragment : Fragment(), ImageClickListener {
 
     private lateinit var textPhoto: TextView
     private lateinit var textVideo: TextView
-    private lateinit var selectItem: TextView
+    private var selectItem: TextView? = null
     private lateinit var searchEvent: EditText
     private lateinit var closeBtnMedia: ImageView
     private lateinit var searchCloseBtn: ImageView
@@ -171,6 +172,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
+
             }
 
             override fun onPageSelected(position: Int) {
@@ -349,7 +351,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         // Set click listener for popup item (customize as needed)
 
         popupTextSelectCheckBox.setOnClickListener {
-            selectItem.text = "Item Selected 0"
+            selectItem?.text = "Item Selected 0"
 
             if (viewPager.currentItem == 0) {
                 photosFragment.imagesAdapter?.isSelected = true
@@ -369,14 +371,18 @@ class MediaFragment : Fragment(), ImageClickListener {
             popupWindow?.dismiss()
         }
 
-        popupTextSlideShow.setOnClickListener {
-            val intent = Intent(requireContext(), SlideShowActivity::class.java)
-            intent.putExtra("SlideImagePath", 0)
-            intent.putExtra("FromSlideShow", true)
-            intent.putExtra("SlideImagePosition", viewPager.currentItem)
-            startActivity(intent)
-            popupWindow?.dismiss()
+
+        if (viewPager.currentItem == 0) {
+            popupTextSlideShow.setOnClickListener {
+                val intent = Intent(requireContext(), SlideShowActivity::class.java)
+                intent.putExtra("FromSlideShow", true)
+                startActivity(intent)
+                popupWindow?.dismiss()
+            }
+        } else {
+            popupTextSlideShow.visibility = View.GONE
         }
+
 
         val popupItem = popupView.findViewById<RelativeLayout>(R.id.popupItem_two)
 
@@ -510,7 +516,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.saveGridColumns(
             tempColumn
         )
-        photosFragment.observeAllData(tempColumn,"Media")
+        photosFragment.observeAllData(tempColumn, "Media")
         videosFragment.observeAllData(tempColumn)
         photosFragment.imagesAdapter?.notifyDataSetChanged()
         videosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -518,13 +524,27 @@ class MediaFragment : Fragment(), ImageClickListener {
 
     private fun getFormattedDate(dateAdded: Long): String {
 
+//        val dateAddedInSeconds = dateAdded ?: 0L
+//        val dateAddedInMillis = dateAddedInSeconds * 1000
+//
+//        val localDate =
+//            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+//
+//        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+
         val dateAddedInSeconds = dateAdded ?: 0L
         val dateAddedInMillis = dateAddedInSeconds * 1000
 
-        val localDate =
+        val addedDate =
             Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
+        val currentDate = LocalDate.now()
 
-        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
+        return when (addedDate) {
+            currentDate -> "Today"
+//            currentDate.plusDays(1) -> "Tomorrow"
+            currentDate.minusDays(1) -> "Yesterday"
+            else -> DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(addedDate)
+        }
     }
 
     override fun counter(select: Int) {
@@ -532,7 +552,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             setAllVisibility()
         }
         if (selectItem != null) {
-            selectItem.text = "Item Selected $select"
+            selectItem?.text = "Item Selected $select"
         }
 
     }

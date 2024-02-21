@@ -110,7 +110,6 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                 handler?.postDelayed({
                     showToast(this, "Restore Successfully!!")
                     progressDialogFragment.cancel()
-                    onBackPressed()
                 }, 1000)
             }
         } else if ((requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
@@ -269,8 +268,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         progressBar.visibility = View.GONE
     }
 
-
-    private fun loadAllTrashData() {
+    private fun loadAllTrashData() {3
         (application as AppClass).mainViewModel.tempAllTrashData.observe(this) {
             newTrashList.clear()
             newTrashList.addAll(it)
@@ -480,5 +478,11 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         }
     }
 
+
+//    fun File.isImageFile(): Boolean {
+//        val imageExtensions =
+//            setOf("jpg", "jpeg", "png", "gif", "bmp") // Add more extensions as needed
+//        return isFile && extension.toLowerCase() in imageExtensions
+//    }
 
 }

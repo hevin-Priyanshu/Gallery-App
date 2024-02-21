@@ -18,8 +18,6 @@
         <item name="android:textSize">@dimen/_10sdp</item>
     </style>
 
-
-
     <style name="ImprovedBottomNavigationView" parent="Widget.Design.BottomNavigationView">
         <item name="tickVisible">true</item>
         <item name="android:fontFamily">@font/poppins_medium</item>

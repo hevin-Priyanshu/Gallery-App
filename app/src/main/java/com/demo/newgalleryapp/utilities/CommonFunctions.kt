@@ -29,7 +29,7 @@ import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavi
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.activities.OpenImageActivity
-import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.imagesSliderAdapter
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity.Companion.trashBinAdapter
 import com.demo.newgalleryapp.classes.AppClass
@@ -82,14 +82,6 @@ object CommonFunctions {
     fun logMessage(tag: String, message: String) {
         Log.d(tag, message)
     }
-
-//    fun formatDate(dateAdded: Long): String {
-//        val dateAddedInSeconds = dateAdded ?: 0L
-//        val dateAddedInMillis = dateAddedInSeconds * 1000
-//        val date = Date(dateAddedInMillis)
-//        val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
-//        return dateFormat.format(date)
-//    }
 
     fun formatDate(dateAdded: Long): String {
         val calendar = Calendar.getInstance()
@@ -264,7 +256,8 @@ object CommonFunctions {
         paths: List<String>,
         activity: Activity,
         pathsToRemove: List<String>,
-        position: Int
+        position: Int,
+        isVideos: List<Boolean>
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -291,7 +284,9 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to move ${paths.size} file to the trash bin ?"}"
 
         saveBtn.setOnClickListener {
-            (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(paths)
+            (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(
+                paths, isVideos
+            )
 
             when (activity) {
                 is FolderImagesActivity -> {
@@ -351,21 +346,6 @@ object CommonFunctions {
     }
 
 
-//    private fun Context.removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
-//        if (position >= 0 && position < (applicationContext as AppClass).mainViewModel.folderList.size) {
-//
-//            val folder = (applicationContext as AppClass).mainViewModel.folderList[position]
-//            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
-//            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
-//
-//            // Update the mainViewModel.folderList
-//            (applicationContext as AppClass).mainViewModel.folderList[position] = updatedFolder
-//
-//            // Notify the adapter about the data change
-//            FolderImagesActivity.adapter.updateList(updatedList)
-//        }
-//    }
-
     // here move only one file in trash bin,  popup menu will show
     fun Context.showPopupForMoveToTrashBinForOpenActivityOnlyOne(
         anchorView: View, path: String, currentPosition: Int, isVideoOrNot: Boolean
@@ -396,10 +376,12 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
             // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
             (applicationContext as AppClass).mainViewModel.moveImageInTrashBin(path, isVideoOrNot)
+//            (applicationContext as AppClass).mainViewModel.moveToTrash(Uri.parse(path))
 
             OpenImageActivity.imagesSliderAdapter.remove(currentPosition)
             OpenImageActivity.anyChanges = true
             popupWindow_delete?.dismiss()
+            (applicationContext as AppClass).mainViewModel.getMediaFromInternalStorage()
             showToast(this, "Move To Trash bin Successfully!!")
         }
 
@@ -466,7 +448,10 @@ object CommonFunctions {
     }
 
     fun Activity.showPopupRestoreOne(
-        anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int
+        anchorView: View,
+        paths: TrashBinAboveVersion,
+        currentPosition: Int,
+        openTrashImageActivity: OpenTrashImageActivity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -496,9 +481,8 @@ object CommonFunctions {
         restoreBtn.setOnClickListener {
 
             (applicationContext as AppClass).mainViewModel.restoreImage(paths)
+            openTrashImageActivity.imagesSliderAdapterTrash.remove(currentPosition)
             popupWindow_restore?.dismiss()
-            imagesSliderAdapter.remove(currentPosition)
-
             showToast(this, "Image restored successfully!!")
         }
 
@@ -560,7 +544,10 @@ object CommonFunctions {
 
     // here DeletePermanently one only items popup menu will show
     fun Context.showPopupForDeletePermanentlyForOne(
-        anchorView: View, paths: TrashBinAboveVersion, currentPosition: Int
+        anchorView: View,
+        paths: TrashBinAboveVersion,
+        currentPosition: Int,
+        openTrashImageActivity: OpenTrashImageActivity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -592,8 +579,8 @@ object CommonFunctions {
 
         saveBtn.setOnClickListener {
             (applicationContext as AppClass).mainViewModel.deleteImage(paths)
+            openTrashImageActivity.imagesSliderAdapterTrash.remove(currentPosition)
             popupForDeletePermanently?.dismiss()
-            imagesSliderAdapter.remove(currentPosition)
         }
 
         cancelBtn.setOnClickListener {
@@ -660,5 +647,6 @@ object CommonFunctions {
                 (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
         }
     }
+
     ////////////////////
 }

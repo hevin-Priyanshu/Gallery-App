@@ -80,22 +80,23 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_marginTop="@dimen/_16sdp"
-                        android:layout_marginBottom="@dimen/_16sdp"
                         android:gravity="end"
                         android:orientation="horizontal">
 
                         <ImageView
                             android:id="@+id/favorites_folder"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
+                            android:layout_width="@dimen/_22sdp"
+                            android:layout_height="@dimen/_22sdp"
+                            android:layout_gravity="center"
+                            android:layout_marginEnd="@dimen/_15sdp"
                             android:src="@drawable/heart_icon_new" />
 
                         <ImageView
                             android:id="@+id/three_dot_item_folder"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginStart="-15dp"
+                            android:layout_width="@dimen/_22sdp"
+                            android:layout_height="@dimen/_22sdp"
+                            android:layout_gravity="center"
+                            android:layout_marginEnd="@dimen/_12sdp"
                             android:src="@drawable/three_dot_new" />
                     </LinearLayout>
 
@@ -205,12 +206,12 @@
         android:layout_below="@+id/toolBar"
         android:padding="@dimen/_6sdp" />
 
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/viewPager_slider_album"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@+id/bottomNavigation_folder_images"
-        android:layout_below="@+id/toolBar" />
+<!--    <androidx.viewpager2.widget.ViewPager2-->
+<!--        android:id="@+id/viewPager_slider_album"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_above="@+id/bottomNavigation_folder_images"-->
+<!--        android:layout_below="@+id/toolBar" />-->
 
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

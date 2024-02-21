@@ -26,13 +26,13 @@ import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager.widget.ViewPager
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.albumsFragment
 import com.demo.newgalleryapp.adapters.ImagesAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.databinding.DialogLoadingBinding
+import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
@@ -48,7 +48,6 @@ import java.io.File
 class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var viewPager: ViewPager
     private lateinit var backBtn: ImageView
     private lateinit var favoriteClick: ImageView
     private lateinit var closeBtn: ImageView
@@ -93,10 +92,9 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 removeItemsAtPosition(position, pathsToRemove)
                 isUpdatedFolderActivity = true
                 (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-                adapter.remove(position)
+                adapter.remove(viewPager.currentItem)
                 albumsFragment.folderAdapter?.notifyDataSetChanged()
                 adapter.notifyDataSetChanged()
-
             }
         } else if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             isUpdatedFolderActivity = true
@@ -197,7 +195,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
     private fun initView() {
 
-        viewPager = findViewById(R.id.viewPager_slider_album)
+//        viewPager = findViewById(R.id.viewPager_slider_album)
         recyclerView = findViewById(R.id.recycler_view_album_activity)
         backBtn = findViewById(R.id.back_btn_album)
         closeBtn = findViewById(R.id.close_btn_album)
@@ -260,6 +258,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 //        val imageToDelete = models.getOrNull(currentPosition)?.path
 
         val paths = checkBoxList.map { it.path }
+        val isVideos = checkBoxList.map { it.isVideo }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val arrayList: ArrayList<Uri> = ArrayList()
@@ -284,7 +283,12 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 //                val numImagesToDelete = paths.size
                 val pathsToRemove = checkBoxList.map { it.path }
                 showPopupForMoveToTrashBin(
-                    bottomNavigationView, paths, this@FolderImagesActivity, pathsToRemove, position
+                    bottomNavigationView,
+                    paths,
+                    this@FolderImagesActivity,
+                    pathsToRemove,
+                    position,
+                    isVideos
                 )
                 Handler().postDelayed(Runnable {
                     progressDialogFragment.cancel()

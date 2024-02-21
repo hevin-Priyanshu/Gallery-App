@@ -3,12 +3,14 @@ package com.demo.newgalleryapp.adapters
 import android.app.Activity
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
@@ -18,10 +20,12 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.OpenTrashImageActivity
+import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
+import java.util.concurrent.TimeUnit
 
 class TrashBinAdapter(
     private val context: Activity,
@@ -66,8 +70,40 @@ class TrashBinAdapter(
         //get here height of images according to numbers of columns , by dividing them
         val imageViewWidth = screenWidth / sharedPreferencesHelper.getGridColumns()
 
-        val layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
+        val layoutParams =
+            RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, imageViewWidth)
         holder.image.layoutParams = layoutParams
+
+        if (list.isNotEmpty()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                holder.remainingDays.visibility = View.VISIBLE
+
+                val calculateRemainingDays =
+                    (TimeUnit.MILLISECONDS.toDays(list[position].date) - TimeUnit.MILLISECONDS.toDays(
+                        System.currentTimeMillis()
+                    )).toString()
+                holder.remainingDays.text = "${calculateRemainingDays} Days"
+
+            } else {
+                val imagesToDelete = ImagesDatabase.getDatabase(context).favoriteImageDao()
+                    .timeStamp(list[position].date)
+
+                if (imagesToDelete != null) {
+
+                    val calculateRemainingDays =
+                        (TimeUnit.MILLISECONDS.toDays(imagesToDelete.date) - TimeUnit.MILLISECONDS.toDays(
+                            System.currentTimeMillis()
+                        )).toString()
+                    holder.remainingDays.visibility = View.VISIBLE
+                    holder.remainingDays.text = "${calculateRemainingDays} Days"
+
+                } else {
+                    holder.remainingDays.visibility = View.GONE
+                    holder.remainingDays.text = ""
+                }
+            }
+        }
+
 
 
         if (list[position].isVideo) {
@@ -88,8 +124,7 @@ class TrashBinAdapter(
         holder.image.setOnClickListener {
 
             if (isSelected) {
-                if (checkTrashSelectedList.map { it.uri }
-                        .contains(list[position].uri)) {
+                if (checkTrashSelectedList.map { it.uri }.contains(list[position].uri)) {
                     // If image is already selected, unselect it
                     checkTrashSelectedList.remove(list[position])
 //                    holder.isSelectedCheckbox.isChecked = false
@@ -168,6 +203,7 @@ class TrashBinAdapter(
         var image: ImageView = itemView.findViewById(R.id.image_view)
         var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox)
         var imageVideoThumbnail: ImageView = itemView.findViewById(R.id.imageView_video_logo)
+        var remainingDays: TextView = itemView.findViewById(R.id.remaining_days)
 
         init {
             isSelectedCheckbox.visibility = View.GONE // or View.INVISIBLE

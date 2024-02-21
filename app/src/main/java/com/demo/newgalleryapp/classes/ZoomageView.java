@@ -392,10 +392,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
      */
     private void updateBounds(final float[] values) {
         if (getDrawable() != null) {
-            bounds.set(values[Matrix.MTRANS_X],
-                    values[Matrix.MTRANS_Y],
-                    getDrawable().getIntrinsicWidth() * values[Matrix.MSCALE_X] + values[Matrix.MTRANS_X],
-                    getDrawable().getIntrinsicHeight() * values[Matrix.MSCALE_Y] + values[Matrix.MTRANS_Y]);
+            bounds.set(values[Matrix.MTRANS_X], values[Matrix.MTRANS_Y], getDrawable().getIntrinsicWidth() * values[Matrix.MSCALE_X] + values[Matrix.MTRANS_X], getDrawable().getIntrinsicHeight() * values[Matrix.MSCALE_Y] + values[Matrix.MTRANS_Y]);
         }
     }
 
@@ -407,8 +404,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
     private float getCurrentDisplayedWidth() {
         if (getDrawable() != null)
             return getDrawable().getIntrinsicWidth() * matrixValues[Matrix.MSCALE_X];
-        else
-            return 0;
+        else return 0;
     }
 
     /**
@@ -419,8 +415,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
     private float getCurrentDisplayedHeight() {
         if (getDrawable() != null)
             return getDrawable().getIntrinsicHeight() * matrixValues[Matrix.MSCALE_Y];
-        else
-            return 0;
+        else return 0;
     }
 
     /**
@@ -472,8 +467,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
                 /* if the event is a down touch, or if the number of touch points changed,
                  * we should reset our start point, as event origins have likely shifted to a
                  * different part of the screen*/
-                if (event.getActionMasked() == MotionEvent.ACTION_DOWN ||
-                        currentPointerCount != previousPointerCount) {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN || currentPointerCount != previousPointerCount) {
                     last.set(scaleDetector.getFocusX(), scaleDetector.getFocusY());
 
                 } else if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
@@ -496,8 +490,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
                     last.set(focusx, focusy);
                 }
 
-                if (event.getActionMasked() == MotionEvent.ACTION_UP ||
-                        event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                if (event.getActionMasked() == MotionEvent.ACTION_UP || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
                     scaleBy = 1f;
                     resetImage();
                 }
@@ -864,9 +857,7 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
             if (e.getAction() == MotionEvent.ACTION_UP) {
                 doubleTapDetected = true;
             }
-
             singleTapDetected = false;
-
             return false;
         }
 

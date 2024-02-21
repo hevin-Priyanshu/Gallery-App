@@ -68,8 +68,8 @@ class ImagesAdapter(
     fun remove(position: Int) {
         if (position >= 0 && position < list.size) {
             list.removeAt(position)
-            notifyItemChanged(position)
-            notifyDataSetChanged()
+//            notifyDataSetChanged()
+            notifyItemRemoved(position)
         }
 
         if (list.isEmpty()) {

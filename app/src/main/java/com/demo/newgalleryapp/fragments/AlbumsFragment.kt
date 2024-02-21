@@ -145,12 +145,7 @@ class AlbumsFragment : Fragment() {
             (requireActivity().application as AppClass).mainViewModel.folderList.addAll(folders)
 
             recyclerView.layoutManager = GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
-            folderAdapter = FolderAdapter(
-                requireActivity(),
-                folders as ArrayList<Folder>,
-                requireActivity() as MainScreenActivity,
-                "FromFolder"
-            )
+            folderAdapter = FolderAdapter(requireActivity(), folders as ArrayList<Folder>, requireActivity() as MainScreenActivity, "FromFolder")
             recyclerView.adapter = folderAdapter
         }
     }

@@ -45,4 +45,11 @@ interface ImageDao {
 
     @Query("SELECT * FROM trashBin WHERE date < :timestamp")
     fun selectImages(timestamp: Long): List<TrashBinAboveVersion>
+
+    @Query("SELECT * FROM trashBin WHERE date = :timestamp")
+    fun timeStamp(timestamp: Long): TrashBinAboveVersion
+
+    @Query("SELECT * FROM trashBin WHERE path = :absolutePath")
+    fun getImageByPath(absolutePath: String): TrashBinAboveVersion
+
 }

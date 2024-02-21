@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.text.SpannableString
 import android.text.Spanned
-import android.text.style.TypefaceSpan
 import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
@@ -17,9 +16,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.Observer
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.adapters.ImageSliderAdapter
+import com.demo.newgalleryapp.adapters.ImageSliderAdapter2
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.classes.CustomTypefaceSpan
 import com.demo.newgalleryapp.database.ImagesDatabase
@@ -35,7 +34,7 @@ import java.io.File
 
 class OpenTrashImageActivity : AppCompatActivity() {
 
-    private lateinit var viewPager: ViewPager
+    private lateinit var viewPager: ViewPager2
     private lateinit var backBtn: ImageView
     lateinit var trashOpenTextView: TextView
     private lateinit var bottomNavigationView: BottomNavigationView
@@ -44,10 +43,8 @@ class OpenTrashImageActivity : AppCompatActivity() {
     private var tempList: ArrayList<TrashBinAboveVersion> = ArrayList()
     private var updated: Boolean = false
     private var currentPosition: Int = 0
+    lateinit var imagesSliderAdapterTrash: ImageSliderAdapter2
 
-    companion object {
-        lateinit var imagesSliderAdapter: ImageSliderAdapter
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -63,7 +60,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
     }
 
     private fun doChanges() {
-        imagesSliderAdapter.remove(currentPosition)
+        imagesSliderAdapterTrash.remove(currentPosition)
         tempList.removeAt(currentPosition)
         updated = true
     }
@@ -93,7 +90,8 @@ class OpenTrashImageActivity : AppCompatActivity() {
             (application as AppClass).mainViewModel.tempAllTrashData.observe(this) {
                 tempList.addAll(it)
 
-                val trash = it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
+                val trash =
+                    it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
                 models.addAll(trash)
                 setViewPagerAdapter(models)
                 viewPagerDataSetter()
@@ -135,7 +133,12 @@ class OpenTrashImageActivity : AppCompatActivity() {
             val item = menu.getItem(i)
             val spannableString = SpannableString(item.title)
             val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
-            spannableString.setSpan(CustomTypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            spannableString.setSpan(
+                CustomTypefaceSpan(font),
+                0,
+                spannableString.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
             item.title = spannableString
         }
 
@@ -152,7 +155,8 @@ class OpenTrashImageActivity : AppCompatActivity() {
     }
 
     private fun viewPagerDataSetter() {
-        viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
@@ -168,13 +172,32 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
             }
         })
+
+//        viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+//
+//            override fun onPageScrolled(
+//                position: Int, positionOffset: Float, positionOffsetPixels: Int
+//            ) {
+//                val name = File(models[position].path).name
+//                trashOpenTextView.text = name
+//            }
+//
+//            override fun onPageSelected(position: Int) {
+//
+//            }
+//
+//            override fun onPageScrollStateChanged(state: Int) {
+//
+//            }
+//
+//        })
     }
 
     private fun setViewPagerAdapter(models: ArrayList<MediaModel>) {
 
         val pos = intent.getIntExtra("trashBinPos", 0)
-        imagesSliderAdapter = ImageSliderAdapter(this, models)
-        viewPager.adapter = imagesSliderAdapter
+        imagesSliderAdapterTrash = ImageSliderAdapter2(this, models)
+        viewPager.adapter = imagesSliderAdapterTrash
         viewPager.setCurrentItem(pos, false)
 
         if (models.size == 0) {
@@ -224,7 +247,12 @@ class OpenTrashImageActivity : AppCompatActivity() {
                         val trashModel = tempList[currentPosition]
 
                         if (trashModel.path.isNotEmpty()) {
-                            showPopupRestoreOne(bottomNavigationView, trashModel, currentPosition)
+                            showPopupRestoreOne(
+                                bottomNavigationView,
+                                trashModel,
+                                currentPosition,
+                                this@OpenTrashImageActivity
+                            )
                             updated = true
                         } else {
                             Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT)
@@ -258,7 +286,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
                         if (trashModel.path.isNotEmpty()) {
                             showPopupForDeletePermanentlyForOne(
-                                bottomNavigationView, trashModel, currentPosition
+                                bottomNavigationView, trashModel, currentPosition, this@OpenTrashImageActivity
                             )
                         } else {
                             Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT)

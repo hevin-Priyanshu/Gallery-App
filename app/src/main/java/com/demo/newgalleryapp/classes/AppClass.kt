@@ -51,9 +51,7 @@ class AppClass : Application() {
                 override fun run() {
                     val timestamp = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(30)
 
-                    val imagesToDelete =
-                        ImagesDatabase.getDatabase(applicationContext).favoriteImageDao()
-                            .selectImages(timestamp)
+                    val imagesToDelete = ImagesDatabase.getDatabase(applicationContext).favoriteImageDao().selectImages(timestamp)
 
                     imagesToDelete.forEach {
                         File(it.path).deleteRecursively()

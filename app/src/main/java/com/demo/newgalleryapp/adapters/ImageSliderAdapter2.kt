@@ -9,7 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.viewpager.widget.PagerAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -24,81 +24,64 @@ import com.demo.newgalleryapp.classes.ZoomageView
 import com.demo.newgalleryapp.interfaces.SetCropImages
 import com.demo.newgalleryapp.models.MediaModel
 
-class ImageSliderAdapter(
-    private val context: Activity, private var modelList: ArrayList<MediaModel>
-) : PagerAdapter(), SetCropImages {
+class ImageSliderAdapter2(
+    private val activity: Activity, private var modelList: ArrayList<MediaModel>
+) : RecyclerView.Adapter<ImageSliderAdapter2.ImageSliderViewHolder>(), SetCropImages {
 
-    private lateinit var imageViewForSlider: ZoomageView
-    private lateinit var imageVideo: ImageView
-    private var currentPosition = 0
+    inner class ImageSliderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val imageViewForSlider: ZoomageView = itemView.findViewById(R.id.imageView)
+        val imageVideo: ImageView = itemView.findViewById(R.id.imageViewVideo)
+    }
 
-    override fun instantiateItem(container: ViewGroup, position: Int): Any {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageSliderViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.activity_open_one_image, parent, false)
+        return ImageSliderViewHolder(view)
+    }
 
-        currentPosition = position
-        val view =
-            LayoutInflater.from(context).inflate(R.layout.activity_open_one_image, container, false)
+    override fun onBindViewHolder(holder: ImageSliderViewHolder, position: Int) {
+        val model = modelList[position]
 
-        imageViewForSlider = view.findViewById(R.id.imageView)
-
-//       imageViewForSlider.setActivity(OpenImageActivity())
-        imageVideo = view.findViewById(R.id.imageViewVideo)
-
-        if (modelList[position].isVideo) {
-            imageVideo.visibility = View.VISIBLE
-            imageVideo.setOnClickListener {
-                val videoPath = modelList[position].path
-                val intent = Intent(context, VideoViewActivity::class.java)
+        if (model.isVideo) {
+            holder.imageVideo.visibility = View.VISIBLE
+            holder.imageVideo.setOnClickListener {
+                val videoPath = model.path
+                val intent = Intent(activity, VideoViewActivity::class.java)
                 intent.putExtra("currentVideoPosition", position)
-//                intent.putExtra("modelList", ArrayList(modelList))
-                context.startActivity(intent)
+                activity.startActivity(intent)
             }
         }
 
-        Glide.with(context).load(modelList[position].path).into(imageViewForSlider)
-
-        container.addView(view)
-        return view
+        Glide.with(activity).load(model.path).into(holder.imageViewForSlider)
     }
 
-    override fun getItemPosition(`object`: Any): Int {
-        return POSITION_NONE
+    override fun getItemCount(): Int {
+        return modelList.size
     }
 
     fun remove(position: Int) {
         if (position >= 0 && position < modelList.size) {
             modelList.removeAt(position)
-            notifyDataSetChanged()
+//            notifyDataSetChanged()
+            notifyItemRemoved(position)
         }
 
         if (modelList.isEmpty()) {
             OpenImageActivity.anyChanges = true
             val intent = Intent()
-            context.setResult(Activity.RESULT_OK, intent)
+            activity.setResult(Activity.RESULT_OK, intent)
             OpenImageActivity.anyChanges = false
-            (context.application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            context.finish()
+            (activity.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            activity.finish()
         }
     }
 
-    override fun getCount(): Int {
-        return modelList.size
-    }
-
     fun setList(model: ArrayList<MediaModel>) {
-        this.modelList = arrayListOf()
-        this.modelList.addAll(model)
+        this.modelList = model
+        notifyDataSetChanged()
     }
 
-    override fun isViewFromObject(view: View, `object`: Any): Boolean {
-        return view == `object`
-    }
-
-    override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
-        container.removeView(`object` as View)
-    }
-
-    override fun setImages(uri: Uri) {
-        Glide.with(context).load(uri).listener(object : RequestListener<Drawable> {
+    override fun setImages(uri: Uri, imageViewForSlider: ZoomageView) {
+        Glide.with(activity).load(uri).listener(object : RequestListener<Drawable> {
             override fun onLoadFailed(
                 e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean
             ): Boolean {
@@ -118,4 +101,3 @@ class ImageSliderAdapter(
         }).diskCacheStrategy(DiskCacheStrategy.RESOURCE).into(imageViewForSlider)
     }
 }
-

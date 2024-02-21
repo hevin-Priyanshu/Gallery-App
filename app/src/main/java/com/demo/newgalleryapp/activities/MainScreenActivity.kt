@@ -63,7 +63,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     private var currentFragment: Fragment? = null
     lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     var handler: Handler? = null
-
+    private var backPressedOnce = false
     private lateinit var dialogBinding: DialogLoadingBinding
 
     val progressDialogFragment by lazy {
@@ -74,7 +74,6 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         dialog.setContentView(dialogBinding.root)
         dialog
     }
-
 
     companion object {
         lateinit var albumsFragment: AlbumsFragment
@@ -267,6 +266,8 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         checkBoxList.addAll(fragmentList!!)
         val paths = checkBoxList.map { it.path }
 
+        val isVideos = checkBoxList.map { it.isVideo }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (paths.isNotEmpty()) {
                 val arrayList: ArrayList<Uri> = ArrayList()
@@ -297,7 +298,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             }
         } else {
             if (paths.isNotEmpty()) {
-                showDeleteConfirmationDialog(paths)
+                showDeleteConfirmationDialog(paths, isVideos)
             } else {
                 showToast(this, "No images Selected to delete")
             }
@@ -362,10 +363,11 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         }
     }
 
-    private fun showDeleteConfirmationDialog(paths: List<String>) {
+    private fun showDeleteConfirmationDialog(paths: List<String>, isVideos: List<Boolean>) {
         if (paths.isNotEmpty()) {
+
             showPopupForMoveToTrashBin(
-                bottomNavigationViewForLongSelect, paths, this@MainScreenActivity, paths, 0
+                bottomNavigationViewForLongSelect, paths, this@MainScreenActivity, paths, 0, isVideos
             )
         } else {
             showToast(this, "Error: Image not found")
@@ -463,16 +465,34 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
     override fun counter(select: Int) {
     }
 
+    //    @SuppressLint("MissingSuperCall")
+//    override fun onBackPressed() {
+//        if (currentFragment == mediaFragment) {
+//            finish()
+//        } else {
+//            loadFragment(mediaFragment)
+//            bottomNavigationView.selectedItemId = R.id.mediaItem
+//        }
+//    }
     @SuppressLint("MissingSuperCall")
     override fun onBackPressed() {
         if (currentFragment == mediaFragment) {
-            finish()
+            if (backPressedOnce) {
+                finish()
+                return
+            }
+
+            backPressedOnce = true
+            Toast.makeText(this, "Press click back again to exit", Toast.LENGTH_SHORT).show()
+
+            Handler(Looper.myLooper()!!).postDelayed({
+                backPressedOnce = false
+            }, 5000) // Reset the flag after 2 seconds
         } else {
             loadFragment(mediaFragment)
             bottomNavigationView.selectedItemId = R.id.mediaItem
         }
     }
-
 
     override fun onDestroy() {
         handler?.removeCallbacksAndMessages(null)

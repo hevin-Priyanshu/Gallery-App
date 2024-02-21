@@ -48,7 +48,7 @@
         android:layout_above="@+id/bottomNavigation_trash"
         android:layout_below="@+id/toolBar" />
 
-    <androidx.viewpager.widget.ViewPager
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager_slider_trash"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

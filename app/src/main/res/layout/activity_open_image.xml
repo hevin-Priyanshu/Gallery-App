@@ -151,8 +151,7 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-
-    <androidx.viewpager.widget.ViewPager
+    <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager_slider"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

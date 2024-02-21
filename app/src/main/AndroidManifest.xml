@@ -59,6 +59,7 @@
             android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".activities.VideoViewActivity"
+            android:configChanges="uiMode|orientation|screenSize|screenLayout"
             android:exported="false" />
         <activity
             android:name=".activities.TrashBinActivity"

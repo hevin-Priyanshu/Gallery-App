@@ -50,10 +50,12 @@
                     android:layout_toStartOf="@+id/exo_duration"
                     android:layout_toEndOf="@+id/exo_position"
                     app:animation_enabled="true"
-                    app:bar_height="@dimen/_1sdp"
+                    app:bar_height="@dimen/_2sdp"
                     app:buffered_color="@color/icon_color"
                     app:layout_constraintTop_toTopOf="parent"
                     app:played_color="@color/color_main"
+                    app:scrubber_color="@color/color_main"
+                    app:scrubber_enabled_size="@dimen/_10sdp"
                     app:unplayed_color="@color/icon_color" />
 
                 <TextView
@@ -145,6 +147,8 @@
                         android:layout_height="@dimen/_45sdp"
                         android:layout_centerInParent="true"
                         android:adjustViewBounds="true"
+                        android:clickable="true"
+                        android:focusable="true"
                         android:padding="@dimen/_5sdp"
                         android:src="@drawable/ic_play" />
                 </RelativeLayout>

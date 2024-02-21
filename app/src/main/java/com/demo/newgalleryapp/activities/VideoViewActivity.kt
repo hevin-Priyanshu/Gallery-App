@@ -18,12 +18,16 @@ import android.view.LayoutInflater
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.Window
+import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.classes.StyledPlayerViewLatest
@@ -57,10 +61,24 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+
+
         setNavigationColor(window, Color.BLACK)
 
         binding = ActivityVideoViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, binding.root).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
 
         myPosition = intent.getIntExtra("currentVideoPosition", 0)
 //        val modelList: List<MediaModel> = intent.getSerializableExtra("modelList") as? List<MediaModel> ?: emptyList()
@@ -80,7 +98,8 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
             finish()
         }
 
-        binding.playerView.controllerHideOnTouch = false
+
+        binding.playerView.controllerHideOnTouch = true
         binding.playerView.controllerAutoShow = true
         binding.playerView.controllerShowTimeoutMs = Long.MAX_VALUE.toInt()
 
@@ -136,39 +155,6 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
         videoBack.setOnClickListener {
             previousVideo()
         }
-
-//        binding.exoPip.setOnClickListener {
-//
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                val appOpsManager = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager?
-//                if (appOpsManager != null && AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(
-//                        AppOpsManager.OPSTR_PICTURE_IN_PICTURE,
-//                        android.os.Process.myUid(),
-//                        packageName
-//                    )
-//                ) {
-//                    startActivity(
-//                        Intent(
-//                            "android.settings.PICTURE_IN_PICTURE_SETTINGS",
-//                            Uri.fromParts("package", packageName, null)
-//                        )
-//                    )
-//                    return@setOnClickListener
-//                }
-//
-//                val customLayout: View = binding.playerView.findViewById(R.id.zoom_layout)
-//                customLayout.scaleX = 1.0f
-//                customLayout.scaleY = 1.0f
-//
-//                if (binding.playerView.player?.isPlaying == true) {
-//                    enterPictureInPictureMode(updatePictureInPictureParams(true))
-//                } else {
-//                    enterPictureInPictureMode(updatePictureInPictureParams(false))
-//                }
-//            } else {
-//                Toast.makeText(this, "Not support pip Mode", Toast.LENGTH_SHORT).show()
-//            }
-//        }
 
         imgRotate.setOnClickListener {
 

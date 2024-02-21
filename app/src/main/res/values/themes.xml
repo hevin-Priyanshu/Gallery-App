@@ -3,8 +3,6 @@
     <style name="Base.Theme.NewGalleryApp" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-
-
     </style>
 
     <style name="Theme.NewGalleryApp" parent="Base.Theme.NewGalleryApp">
@@ -21,6 +19,15 @@
         <item name="android:padding">@dimen/_5sdp</item>
         <item name="colorControlActivated">@color/color_main</item>
     </style>
+
+
+<!--    <style name="ExoStyledControls.Button.Center.PlayPause">-->
+<!--        &lt;!&ndash;        <item name="android:src">@drawable/exo_styled_controls_play</item>&ndash;&gt;-->
+<!--        &lt;!&ndash;        <item name="android:src">@drawable/custom_styled_control</item>&ndash;&gt;-->
+<!--        <item name="android:src">@drawable/custom_styled_control</item>-->
+<!--        <item name="android:contentDescription">@string/exo_controls_play_description</item>-->
+<!--        <item name="android:padding">@dimen/exo_icon_padding</item>-->
+<!--    </style>-->
 
 
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">

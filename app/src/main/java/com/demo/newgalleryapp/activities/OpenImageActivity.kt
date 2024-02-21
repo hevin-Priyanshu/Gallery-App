@@ -27,9 +27,9 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.DrawableCompat
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.adapters.ImageSliderAdapter
+import com.demo.newgalleryapp.adapters.ImageSliderAdapter2
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.databinding.DialogLoadingBinding
@@ -52,7 +52,7 @@ import java.io.File
 
 class OpenImageActivity : AppCompatActivity() {
 
-    private lateinit var viewPager: ViewPager
+    private lateinit var viewPager: ViewPager2
     private lateinit var textView: TextView
     private lateinit var backBtn: ImageView
     private lateinit var timeOfImage: TextView
@@ -67,7 +67,9 @@ class OpenImageActivity : AppCompatActivity() {
     companion object {
         var anyChanges: Boolean = false
         var models: List<MediaModel> = arrayListOf()
-        lateinit var imagesSliderAdapter: ImageSliderAdapter
+
+        //        lateinit var imagesSliderAdapter: ImageSliderAdapter
+        lateinit var imagesSliderAdapter: ImageSliderAdapter2
     }
 
     private lateinit var dialogBinding: DialogLoadingBinding
@@ -209,7 +211,8 @@ class OpenImageActivity : AppCompatActivity() {
     // ***************************  ALL OTHER METHODS  ************************** //
 
     private fun viewPagerDataSetter() {
-        viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
@@ -225,6 +228,23 @@ class OpenImageActivity : AppCompatActivity() {
             override fun onPageScrollStateChanged(state: Int) {
             }
         })
+
+//        viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+//            override fun onPageScrolled(
+//                position: Int, positionOffset: Float, positionOffsetPixels: Int
+//            ) {
+//                textView.text = models[position].displayName
+//                timeOfImage.text = formatTime(models[position].date)
+//                setFavoriteIcon(position)
+//                fabCount = position
+//            }
+//
+//            override fun onPageSelected(position: Int) {
+//            }
+//
+//            override fun onPageScrollStateChanged(state: Int) {
+//            }
+//        })
     }
 
     private fun setViewPagerAdapter(model: ArrayList<MediaModel>, currentPosition: Int) {
@@ -240,10 +260,9 @@ class OpenImageActivity : AppCompatActivity() {
         models = model
         val temp = arrayListOf<MediaModel>()
         temp.addAll(model)
-        imagesSliderAdapter = ImageSliderAdapter(this@OpenImageActivity, temp)
+        imagesSliderAdapter = ImageSliderAdapter2(this@OpenImageActivity, temp)
         viewPager.adapter = imagesSliderAdapter
         viewPager.setCurrentItem(currentPosition, false)
-
     }
 
     private fun sendFavoriteListToViewPager() {
@@ -273,7 +292,7 @@ class OpenImageActivity : AppCompatActivity() {
 
     private fun handleMoreItem(currentPosition: Int) {
         val isVideoOrNot = models[currentPosition].isVideo
-        moreItemClick(bottomNavigationView, isVideoOrNot)
+        moreItemClick(bottomNavigationView, isVideoOrNot, currentPosition)
     }
 
     private fun handleEditItem(currentPosition: Int) {
@@ -357,7 +376,11 @@ class OpenImageActivity : AppCompatActivity() {
         (application as AppClass).mainViewModel.shareImage(uri, this)
     }
 
-    private fun moreItemClick(bottomNavigationView: BottomNavigationView, isVideoOrNot: Boolean) {
+    private fun moreItemClick(
+        bottomNavigationView: BottomNavigationView,
+        isVideoOrNot: Boolean,
+        currentPosition: Int
+    ) {
 
         val inflater: LayoutInflater =
             getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -379,7 +402,7 @@ class OpenImageActivity : AppCompatActivity() {
         val popupTextSlideShow = popupView.findViewById<TextView>(R.id.Slideshow)
         val popupTextDetails = popupView.findViewById<TextView>(R.id.details)
 
-        val selectedImagePath = models[viewPager.currentItem].path
+        val selectedImagePath = models[currentPosition].path
 
         if (isVideoOrNot) {
             popupTextWallpaper.visibility = View.GONE
@@ -452,8 +475,7 @@ class OpenImageActivity : AppCompatActivity() {
 
         popupTextSlideShow.setOnClickListener {
             val intent = Intent(this, SlideShowActivity::class.java)
-            intent.putExtra("SlideImagePath", selectedImagePath)
-            intent.putExtra("SlideImagePosition", viewPager.currentItem)
+            intent.putExtra("SlideImagePosition", currentPosition)
             startActivity(intent)
             popupWindow?.dismiss()
         }
@@ -546,8 +568,8 @@ class OpenImageActivity : AppCompatActivity() {
             val intent = Intent()
             setResult(Activity.RESULT_OK, intent)
         }
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         anyChanges = false
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         super.onBackPressed()
     }
 

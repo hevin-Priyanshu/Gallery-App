@@ -9,7 +9,7 @@ import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.models.UriConverter
 
-@Database(entities = [MediaModel::class, TrashBinAboveVersion::class], version = 2, exportSchema = false)
+@Database(entities = [MediaModel::class, TrashBinAboveVersion::class], version = 3, exportSchema = false)
 @TypeConverters(UriConverter::class)
 abstract class ImagesDatabase : RoomDatabase() {
     abstract fun favoriteImageDao(): ImageDao
