@@ -28,6 +28,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.albumsFragment
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
+import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.ImagesAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
@@ -38,6 +40,7 @@ import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
@@ -71,7 +74,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         lateinit var unselect_top_menu_bar: LinearLayout
     }
 
-
     private lateinit var dialogBinding: DialogLoadingBinding
 
     val progressDialogFragment by lazy {
@@ -83,10 +85,11 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         dialog
     }
 
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE && resultCode == Activity.RESULT_OK) ||
+            (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)
+        ) {
             if (intent.hasExtra("folderPosition")) {
                 val pathsToRemove = checkBoxList.map { it.path }
                 removeItemsAtPosition(position, pathsToRemove)
@@ -103,6 +106,14 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             adapter.notifyDataSetChanged()
             setAllVisibility()
+        } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
+            isUpdatedFolderActivity = true
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            adapter.notifyDataSetChanged()
+            photosFragment.imagesAdapter?.notifyDataSetChanged()
+            videosFragment.imagesAdapter?.notifyDataSetChanged()
+            setAllVisibility()
+            finish()
         }
     }
 
@@ -307,7 +318,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         checkBoxList.addAll(adapter.checkSelectedList)
         val paths = checkBoxList.map { it.path }
 
-        showPopupForMainScreenMoreItem(bottomNavigationView, paths)
+        showPopupForMainScreenMoreItem(bottomNavigationView, paths, this@FolderImagesActivity)
     }
 
 //    private fun setBottomNavigationItem(itemId: Int) {
@@ -477,24 +488,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             popupWindow = null
         }
     }
-
-//    fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
-//
-//        val tempFolderList = (application as AppClass).mainViewModel.folderList
-//        if (position >= 0 && position < tempFolderList.size) {
-//
-//            val folder = tempFolderList[position]
-//            val updatedList = folder.models.filterNot { pathsToRemove.contains(it.path) }
-//            val updatedFolder = Folder(folder.models[position].path, ArrayList(updatedList))
-//
-//            // Update the mainViewModel.folderList
-//            (application as AppClass).mainViewModel.folderList[position] = updatedFolder
-//
-//            // Notify the adapter about the data change
-//            adapter.updateList(updatedList)
-//        }
-//    }
-
 
     fun removeItemsAtPosition(position: Int, pathsToRemove: List<String>) {
 

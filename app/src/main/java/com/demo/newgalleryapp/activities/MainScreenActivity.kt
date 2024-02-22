@@ -51,13 +51,12 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.demo.newgalleryapp.viewmodel.MainViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickListener {
 
     private lateinit var settingFragment: SettingFragment
-    private lateinit var service: ExecutorService
+
+    //    private lateinit var service: ExecutorService
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
     lateinit var mediaFragment: MediaFragment
     private var currentFragment: Fragment? = null
@@ -134,17 +133,14 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         setContentView(R.layout.activity_main_screen)
         bottomNavigationView = findViewById(R.id.bottomNavigationDefault)
         bottomNavigationViewForLongSelect = findViewById(R.id.bottomNavigationSelect)
-//        progressBar = findViewById(R.id.progressBar)
 
         handler = Handler(Looper.getMainLooper())
-        service = Executors.newSingleThreadExecutor()
+//        service = Executors.newSingleThreadExecutor()
         sharedPreferencesHelper = SharedPreferencesHelper(this)
 
 //        progressBar.visibility = View.VISIBLE
         if (permissionCheck()) {
-            service.execute {
-                loadMediaData()
-            }
+            loadMediaData()
         } else {
             askForPermission()
         }
@@ -176,36 +172,32 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         (application as AppClass).mainViewModel = MainViewModel(application)
 
         mediaFragment = MediaFragment.newInstance()
-
         albumsFragment = AlbumsFragment.newInstance()
         settingFragment = SettingFragment.newInstance()
 
+        setupFragments()
         loadData()
     }
 
     private fun loadData() {
-
-        runOnUiThread {
 //            progressBar.visibility = View.GONE
-//            setupFragments()
-            bottomNavigationView.setOnItemSelectedListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.mediaItem -> {
-                        loadFragment(mediaFragment)
-                    }
-
-                    R.id.albumsItem -> {
-                        loadFragment(albumsFragment)
-                    }
-
-                    R.id.settingsItem -> {
-                        loadFragment(settingFragment)
-                    }
+        bottomNavigationView.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.mediaItem -> {
+                    loadFragment(mediaFragment)
                 }
-                true
+
+                R.id.albumsItem -> {
+                    loadFragment(albumsFragment)
+                }
+
+                R.id.settingsItem -> {
+                    loadFragment(settingFragment)
+                }
             }
-            bottomNavigationView.selectedItemId = R.id.mediaItem
+            true
         }
+//        bottomNavigationView.selectedItemId = R.id.mediaItem
 
         bottomNavigationViewForLongSelect.setOnItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
@@ -248,7 +240,9 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         checkBoxList.addAll(fragmentList!!)
         val paths = checkBoxList.map { it.path }
 
-        showPopupForMainScreenMoreItem(bottomNavigationViewForLongSelect, paths)
+        showPopupForMainScreenMoreItem(
+            bottomNavigationViewForLongSelect, paths, this@MainScreenActivity
+        )
     }
 
     private fun handleDeleteAction() {
@@ -367,7 +361,12 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         if (paths.isNotEmpty()) {
 
             showPopupForMoveToTrashBin(
-                bottomNavigationViewForLongSelect, paths, this@MainScreenActivity, paths, 0, isVideos
+                bottomNavigationViewForLongSelect,
+                paths,
+                this@MainScreenActivity,
+                paths,
+                0,
+                isVideos
             )
         } else {
             showToast(this, "Error: Image not found")

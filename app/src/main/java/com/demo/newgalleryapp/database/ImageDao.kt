@@ -37,7 +37,7 @@ interface ImageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertDeleteMultipleImage(trashBin: ArrayList<TrashBinAboveVersion>)
 
-    @Query("SELECT * FROM trashBin")
+    @Query("SELECT * FROM trashBin  ORDER BY date DESC")
     fun getAllDeleteImages(): LiveData<List<TrashBinAboveVersion>>
 
     @Delete

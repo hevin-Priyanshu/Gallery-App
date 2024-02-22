@@ -113,7 +113,7 @@ object CommonFunctions {
 
 
     fun Activity.showPopupForMainScreenMoreItem(
-        anchorView: View, paths: List<String>
+        anchorView: View, paths: List<String>, activity: Activity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -154,6 +154,9 @@ object CommonFunctions {
             intent.putExtra("mainScreenActivity", true)
             startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
             popupWindowMore?.dismiss()
+//            if (activity is FolderImagesActivity) {
+//                activity.finish()
+//            }
             resetVisibilityForDeleteItem()
         }
 
@@ -531,6 +534,7 @@ object CommonFunctions {
 
             trashBinActivity.handler?.postDelayed({
                 trashBinActivity.progressDialogFragment.cancel()
+                showToast(this, "Delete Successful!!")
             }, 1000)
             popupForDeletePermanently?.dismiss()
             trashBinActivityAllVisibility()

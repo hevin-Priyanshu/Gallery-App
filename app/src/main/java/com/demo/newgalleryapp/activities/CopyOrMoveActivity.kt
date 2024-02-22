@@ -19,11 +19,11 @@ import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,12 +36,13 @@ import com.demo.newgalleryapp.models.Folder
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_WRITE_PERMISSION_IN_COPY_MOVE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
     private lateinit var recyclerViewCopyOrMove: RecyclerView
-    private lateinit var horizontalProgress: RelativeLayout
     private lateinit var copyText: TextView
     private lateinit var moveText: TextView
     private lateinit var closeBtn: ImageView
@@ -136,15 +137,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         }
     }
 
-    private fun hideProgressBar() {
-        horizontalProgress.visibility = View.GONE
-        recyclerViewCopyOrMove.visibility = View.VISIBLE
-    }
-
-    private fun showProgressBar() {
-        recyclerViewCopyOrMove.visibility = View.GONE
-        horizontalProgress.visibility = View.VISIBLE
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -155,7 +147,6 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
         moveText = findViewById(R.id.text_move)
         closeBtn = findViewById(R.id.close_btn_copyOrMove)
         noDataImage = findViewById(R.id.no_data_image)
-        horizontalProgress = findViewById(R.id.horizontalProgress)
 
         handler = Handler(Looper.getMainLooper())
 
@@ -275,8 +266,26 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
             }
 
             val name = sourceFile.name
-            destinationFile = File(folderPath, "copy_${name}")
+            var copyNumber = 1
+            val extension = name.substringAfterLast('.')
+            val fileNameWithoutExtension = name.substringBeforeLast('.')
 
+            if (fileNameWithoutExtension.startsWith("copy_")) {
+                val originalCopyNumber =
+                    fileNameWithoutExtension.substringAfterLast('(').substringBeforeLast(')')
+                        .toIntOrNull()
+                if (originalCopyNumber != null) {
+                    copyNumber = originalCopyNumber + 1
+                    val newName =
+                        fileNameWithoutExtension.substringBeforeLast('(') + "(${copyNumber})"
+                    destinationFile = File(folderPath, "$newName.$extension")
+                } else {
+                    destinationFile =
+                        File(folderPath, "${fileNameWithoutExtension}(${copyNumber}).$extension")
+                }
+            } else {
+                destinationFile = File(folderPath, "copy_${fileNameWithoutExtension}.$extension")
+            }
 
             // for android 11 and above
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -330,21 +339,49 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
     private fun copyOrMoveImages(
         imagePaths: ArrayList<String>, destinationFolder: String, move: Boolean
     ) {
-        for (imagePath in imagePaths) {
-            val sourcePath = File(imagePath)
-            val imageName = sourcePath.name
-            val destinationFile = File(destinationFolder, "copy_${imageName}")
 
-            if (move) {
-                // Move the file
-                (application as AppClass).mainViewModel.moveFile(sourcePath, destinationFile)
+        lifecycleScope.launch(Dispatchers.IO) {
 
-            } else {
-                // Copy the file
-                (application as AppClass).mainViewModel.copyImage(sourcePath, destinationFile)
+            for (imagePath in imagePaths) {
+                val sourcePath = File(imagePath)
+                val imageName = sourcePath.name
+                val destinationFile: File
+
+                var copyNumber = 1
+                val extension = imageName.substringAfterLast('.')
+                val fileNameWithoutExtension = imageName.substringBeforeLast('.')
+
+                if (fileNameWithoutExtension.startsWith("copy_")) {
+                    val originalCopyNumber =
+                        fileNameWithoutExtension.substringAfterLast('(').substringBeforeLast(')')
+                            .toIntOrNull()
+                    if (originalCopyNumber != null) {
+                        copyNumber = originalCopyNumber + 1
+                        val newName =
+                            fileNameWithoutExtension.substringBeforeLast('(') + "(${copyNumber})"
+                        destinationFile = File(destinationFolder, "$newName.$extension")
+                    } else {
+                        destinationFile = File(
+                            destinationFolder,
+                            "${fileNameWithoutExtension}(${copyNumber}).$extension"
+                        )
+                    }
+                } else {
+                    destinationFile =
+                        File(destinationFolder, "copy_${fileNameWithoutExtension}.$extension")
+                }
+
+                if (move) {
+                    // Move the file
+                    (application as AppClass).mainViewModel.moveFile(sourcePath, destinationFile)
+
+                } else {
+                    // Copy the file
+                    (application as AppClass).mainViewModel.copyImage(sourcePath, destinationFile)
+                }
             }
-        }
 
+        }
         if (move) {
             showToast(this, "Item moved successfully!!")
         } else {

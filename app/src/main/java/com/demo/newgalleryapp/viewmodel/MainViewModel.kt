@@ -457,7 +457,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // Delete the entry from the database
                 ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(delete)
                 // Notify UI about the deletion
-                Toast.makeText(getApplication(), "Delete Successful!!", Toast.LENGTH_SHORT).show()
             } else {
                 // Notify user that the file doesn't exist
                 Toast.makeText(getApplication(), "File not found!", Toast.LENGTH_SHORT).show()
