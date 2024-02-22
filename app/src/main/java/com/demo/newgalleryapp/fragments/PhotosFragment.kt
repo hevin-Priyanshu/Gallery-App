@@ -11,7 +11,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
-import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.ImagesAd
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.MediaModel
@@ -55,8 +54,8 @@ class PhotosFragment : Fragment() {
                 count =
                     (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
                 lifecycleScope.launch {
-                    Log.e("TAG", "onCreateView: PhotosFragment" )
-                    observeAllData(count,"Photo")
+                    Log.e("TAG", "onCreateView: PhotosFragment")
+                    observeAllData(count, "Photo")
                 }
             }
         }
@@ -64,13 +63,13 @@ class PhotosFragment : Fragment() {
         return view
     }
 
-    fun observeAllData(spanCount: Int, from:String) {
+    fun observeAllData(spanCount: Int, from: String) {
 
         (requireActivity().application as AppClass).mainViewModel.photosData.observe(
             viewLifecycleOwner
         ) { photosList ->
 
-            Log.e("TAG", "observeAllData:----------------- $from --- " )
+            Log.e("TAG", "observeAllData:----------------- $from --- ")
             commonList.clear()
             (requireActivity().application as AppClass).mainViewModel.tempPhotoList.clear()
 
@@ -116,7 +115,8 @@ class PhotosFragment : Fragment() {
     private fun loadLayout(spanCount: Int) {
         imagesAdapter = ImagesAd(requireActivity(), commonList, -1)
 
-        val gl = GridLayoutManager(requireActivity(), spanCount, LinearLayoutManager.VERTICAL, false)
+        val gl =
+            GridLayoutManager(requireActivity(), spanCount, LinearLayoutManager.VERTICAL, false)
 //            val gl = GridLayoutManager(requireActivity(), spanCount)
 
         gl.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
@@ -135,7 +135,7 @@ class PhotosFragment : Fragment() {
         recyclerView.layoutManager = gl
         recyclerView.adapter = imagesAdapter
 
-        MainScreenActivity.bottomNavigationView.visibility = View.VISIBLE
+        MediaFragment.mediaProgressBar.visibility = View.GONE
 
         if (commonList.isNotEmpty()) {
             MediaFragment.threeDotItem.visibility = View.VISIBLE

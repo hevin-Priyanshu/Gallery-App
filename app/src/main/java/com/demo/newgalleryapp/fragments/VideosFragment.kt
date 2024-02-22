@@ -49,7 +49,6 @@ class VideosFragment : Fragment() {
         val view: View = inflater.inflate(R.layout.fragment_videos, container, false)
 
         recyclerView = view.findViewById(R.id.recycler_view_videos)
-
         arguments?.let {
             position = it.getInt(ARG_POSITION, 0)
 
@@ -119,7 +118,6 @@ class VideosFragment : Fragment() {
         recyclerView.adapter = imagesAdapter
 
         mediaProgressBar.visibility = View.GONE
-        MainScreenActivity.bottomNavigationView.visibility = View.VISIBLE
     }
 
     fun notifyAdapter(filteredData: ArrayList<Any>) {

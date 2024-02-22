@@ -24,7 +24,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
@@ -33,7 +33,7 @@ import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavi
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.activities.SlideShowActivity
-import com.demo.newgalleryapp.adapters.ViewPagerAdapter
+import com.demo.newgalleryapp.adapters.ViewPager2Adapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
@@ -65,7 +65,7 @@ class MediaFragment : Fragment(), ImageClickListener {
     companion object {
 
         lateinit var openFavoriteActivity: ImageView
-        lateinit var viewPager: ViewPager
+        lateinit var viewPager: ViewPager2
         lateinit var threeDotItem: ImageView
         lateinit var textViewSelectAllMedia: TextView
         lateinit var textViewDeSelectAllMedia: TextView
@@ -87,11 +87,9 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         val view: View = inflater.inflate(R.layout.fragment_media, container, false)
 
-        photosFragment = PhotosFragment.newInstance(0)
-        videosFragment = VideosFragment.newInstance(1)
-
         initializeViews(view)
         setupViewPager()
+
         mediaProgressBar.visibility = View.VISIBLE
 
         openFavoriteActivity.setOnClickListener {
@@ -109,6 +107,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             hideKeyboard()
         }
 
+        searchEvent.isCursorVisible = false
         searchEvent.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 // Hide the keyboard
@@ -145,6 +144,7 @@ class MediaFragment : Fragment(), ImageClickListener {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
 
+                searchEvent.isCursorVisible = true
                 threeDotItem.visibility = View.GONE
                 viewPager.visibility = View.GONE
                 searchCloseBtn.visibility = View.VISIBLE
@@ -158,6 +158,8 @@ class MediaFragment : Fragment(), ImageClickListener {
 
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
+
+                    searchEvent.isCursorVisible = false
                     searchCloseBtn.visibility = View.GONE
                     threeDotItem.visibility = View.VISIBLE
                     hideKeyboard()
@@ -168,11 +170,11 @@ class MediaFragment : Fragment(), ImageClickListener {
         val whiteTextColor = ContextCompat.getColor(requireContext(), R.color.white)
         val blueTextColor = ContextCompat.getColor(requireContext(), R.color.color_main)
 
-        viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
-
             }
 
             override fun onPageSelected(position: Int) {
@@ -200,6 +202,7 @@ class MediaFragment : Fragment(), ImageClickListener {
             }
 
             override fun onPageScrollStateChanged(state: Int) {}
+
         })
 
         return view
@@ -251,12 +254,12 @@ class MediaFragment : Fragment(), ImageClickListener {
     }
 
     private fun setupViewPager() {
-        val adapter = ViewPagerAdapter(childFragmentManager)
-        adapter.addFragment(photosFragment)
-        adapter.addFragment(videosFragment)
+        val fragments = listOf(photosFragment, videosFragment)
+        val adapter = ViewPager2Adapter(fragments, requireActivity())
+        viewPager.offscreenPageLimit = 2
         viewPager.adapter = adapter
-        adapter.notifyDataSetChanged()
         mediaProgressBar.visibility = View.GONE
+        bottomNavigationView.visibility = View.VISIBLE
     }
 
     private fun initializeViews(view: View) {

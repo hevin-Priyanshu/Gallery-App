@@ -175,6 +175,9 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         albumsFragment = AlbumsFragment.newInstance()
         settingFragment = SettingFragment.newInstance()
 
+        photosFragment = PhotosFragment.newInstance(0)
+        videosFragment = VideosFragment.newInstance(1)
+
         setupFragments()
         loadData()
     }

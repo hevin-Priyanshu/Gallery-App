@@ -1,6 +1,5 @@
 package com.demo.newgalleryapp.fragments
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -14,19 +13,17 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
 import com.demo.newgalleryapp.activities.MainScreenActivity
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
-import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.adapters.FolderAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.Folder
-import com.demo.newgalleryapp.models.MediaModel
-import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 class AlbumsFragment : Fragment() {
@@ -65,15 +62,13 @@ class AlbumsFragment : Fragment() {
             startActivity(intent)
         }
 
-
         searchCloseBtn.setOnClickListener {
             searchEditTextAlbum.text.clear()
             hideKeyboard()
             observeAllData()
         }
 
-
-
+        searchEditTextAlbum.isCursorVisible = false
         searchEditTextAlbum.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 // Hide the keyboard
@@ -90,18 +85,20 @@ class AlbumsFragment : Fragment() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (s.isNullOrBlank()) {
+
                     searchCloseBtn.visibility = View.GONE
                     observeAllData()
-
                 } else {
                     searchCloseBtn.visibility = View.VISIBLE
                 }
+                searchEditTextAlbum.isCursorVisible = true
                 filterData(s.toString())
             }
 
             override fun afterTextChanged(s: Editable?) {
                 if (s.isNullOrBlank()) {
                     searchCloseBtn.visibility = View.GONE
+                    searchEditTextAlbum.isCursorVisible = false
                     hideKeyboard()
                     observeAllData()
                 }
@@ -136,18 +133,50 @@ class AlbumsFragment : Fragment() {
         }
     }
 
-    private fun observeAllData() {
-        (requireActivity().application as AppClass).mainViewModel.allData.observe(viewLifecycleOwner) {
-            val folders: List<Folder> = it.groupBy { File(it.path).parent }.map { (path, models) ->
-                Folder(path!!, models as ArrayList<MediaModel>)
-            }
-            (requireActivity().application as AppClass).mainViewModel.folderList.clear()
-            (requireActivity().application as AppClass).mainViewModel.folderList.addAll(folders)
+//    private fun observeAllData() {
+//        (requireActivity().application as AppClass).mainViewModel.allData.observe(viewLifecycleOwner) {
+//            val folders: List<Folder> = it.groupBy { File(it.path).parent }.map { (path, models) ->
+//                Folder(path!!, models as ArrayList<MediaModel>)
+//            }
+//
+//            lifecycleScope.launch(Dispatchers.IO) {
+//                (requireActivity().application as AppClass).mainViewModel.folderList.clear()
+//                (requireActivity().application as AppClass).mainViewModel.folderList.addAll(folders)
+//            }
+//
+//            val folderList: ArrayList<Folder> =
+//                (requireActivity().application as AppClass).mainViewModel.folderList
+//
+//            recyclerView.layoutManager = GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
+//            folderAdapter = FolderAdapter(requireActivity(), folderList, requireActivity() as MainScreenActivity, "FromFolder")
+//            recyclerView.adapter = folderAdapter
+//        }
+//    }
 
-            recyclerView.layoutManager = GridLayoutManager(requireContext(), 3, LinearLayoutManager.VERTICAL, false)
-            folderAdapter = FolderAdapter(requireActivity(), folders as ArrayList<Folder>, requireActivity() as MainScreenActivity, "FromFolder")
-            recyclerView.adapter = folderAdapter
+    private fun observeAllData() {
+        val mainViewModel = (requireActivity().application as AppClass).mainViewModel
+
+        mainViewModel.allData.observe(viewLifecycleOwner) { mediaList ->
+            val folders: List<Folder> =
+                mediaList.groupBy { File(it.path).parent }.map { (path, models) ->
+                    Folder(path ?: "", ArrayList(models))
+                }
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                mainViewModel.folderList.clear()
+                mainViewModel.folderList.addAll(folders)
+            }
+
+            setupRecyclerView(mainViewModel.folderList)
         }
+    }
+
+    private fun setupRecyclerView(folderList: ArrayList<Folder>) {
+        recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        folderAdapter = FolderAdapter(
+            requireActivity(), folderList, requireActivity() as MainScreenActivity, "FromFolder"
+        )
+        recyclerView.adapter = folderAdapter
     }
 
 }

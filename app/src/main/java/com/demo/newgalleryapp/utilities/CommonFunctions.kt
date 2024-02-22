@@ -72,6 +72,10 @@ object CommonFunctions {
     const val REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY = 116
     const val REQ_CODE = 117
 
+    private const val HIDE_DELAY = 1000L // 1 second delay
+    private val hideHandler = Handler()
+
+
     const val ERROR_TAG = "Error"
     var FLAG_FOR_CHANGES_IN_RENAME: Boolean = false
 
@@ -652,5 +656,5 @@ object CommonFunctions {
         }
     }
 
-    ////////////////////
+    /***********************************************/
 }
