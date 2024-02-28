@@ -16,53 +16,135 @@
         android:orientation="vertical"
         android:padding="@dimen/_4sdp">
 
-        <TextView
-            android:id="@+id/id1"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
             android:layout_marginTop="@dimen/_6sdp"
-            android:fontFamily="@font/poppins_medium"
-            android:padding="@dimen/_6sdp"
-            android:text="0.25X"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_14ssp" />
+            android:orientation="horizontal"
+            android:weightSum="3">
 
+            <TextView
+                android:id="@+id/id1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="@dimen/_6sdp"
+                android:text="0.25X"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp" />
 
-        <TextView
-            android:id="@+id/id2"
+            <ImageView
+                android:id="@+id/zeroTwo_image_view"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/_10sdp"
+                android:layout_marginTop="@dimen/_11sdp"
+                android:layout_weight="1"
+                android:src="@drawable/right_tick_black"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- ***************************************-->
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
-            android:fontFamily="@font/poppins_medium"
-            android:padding="@dimen/_6sdp"
-            android:text="0.5X"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_14ssp" />
+            android:orientation="horizontal"
+            android:weightSum="3">
 
+            <TextView
+                android:id="@+id/id2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="@dimen/_6sdp"
+                android:text="0.5X"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp" />
 
-        <TextView
-            android:id="@+id/id3"
+            <ImageView
+                android:id="@+id/zeroFive_image_view"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/_10sdp"
+                android:layout_marginTop="@dimen/_11sdp"
+                android:layout_weight="1"
+                android:src="@drawable/right_tick_black"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- ***************************************-->
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
-            android:fontFamily="@font/poppins_medium"
-            android:padding="@dimen/_6sdp"
-            android:text="0.75X"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_14ssp" />
+            android:orientation="horizontal"
+            android:weightSum="3">
 
-        <TextView
-            android:id="@+id/id4"
+            <TextView
+                android:id="@+id/id3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="@dimen/_6sdp"
+                android:text="0.75X"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp" />
+
+            <ImageView
+                android:id="@+id/zeroSeven_image_view"
+                android:layout_width="0dp"
+                android:layout_height="10dp"
+                android:layout_marginTop="@dimen/_11sdp"
+                android:layout_weight="1"
+                android:src="@drawable/right_tick_black"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- ***************************************-->
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginBottom="@dimen/_6sdp"
-            android:fontFamily="@font/poppins_medium"
-            android:padding="@dimen/_6sdp"
-            android:text="Normal"
-            android:textColor="@color/black"
-            android:textSize="@dimen/_14ssp" />
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <TextView
+                android:id="@+id/id4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:fontFamily="@font/poppins_medium"
+                android:padding="@dimen/_6sdp"
+                android:text="Normal"
+                android:textColor="@color/black"
+                android:textSize="@dimen/_14ssp" />
+
+            <ImageView
+                android:id="@+id/normal_image_view"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/_10sdp"
+                android:layout_marginTop="@dimen/_11sdp"
+                android:layout_weight="1"
+                android:src="@drawable/right_tick_black"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- ***************************************-->
+
 
     </LinearLayout>
 

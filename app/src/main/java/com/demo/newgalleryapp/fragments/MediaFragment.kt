@@ -32,7 +32,7 @@ import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavi
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.bottomNavigationViewForLongSelect
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFragment
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
-import com.demo.newgalleryapp.activities.SlideShowActivity
+import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.adapters.ViewPager2Adapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.interfaces.ImageClickListener
@@ -136,6 +136,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         }
 
         threeDotItem.setOnClickListener {
+            hideKeyboard()
             showThreeDotPopup(toolbar)
         }
 
@@ -263,7 +264,7 @@ class MediaFragment : Fragment(), ImageClickListener {
     }
 
     private fun initializeViews(view: View) {
-//        allMediaList = (requireActivity().application as AppClass).mainViewModel.allMediaList
+
         getPhotosList = (requireActivity().application as AppClass).mainViewModel.tempPhotoList
         getVideosList = (requireActivity().application as AppClass).mainViewModel.tempVideoList
 
@@ -377,7 +378,7 @@ class MediaFragment : Fragment(), ImageClickListener {
 
         if (viewPager.currentItem == 0) {
             popupTextSlideShow.setOnClickListener {
-                val intent = Intent(requireContext(), SlideShowActivity::class.java)
+                val intent = Intent(requireContext(), OpenImageActivity::class.java)
                 intent.putExtra("FromSlideShow", true)
                 startActivity(intent)
                 popupWindow?.dismiss()
@@ -420,6 +421,9 @@ class MediaFragment : Fragment(), ImageClickListener {
             WindowManager.LayoutParams.MATCH_PARENT,
             true
         )
+
+        popupWindow2?.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+
         val selectedColumns =
             (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
         var tempColumn = selectedColumns

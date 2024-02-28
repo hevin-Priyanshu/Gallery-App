@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.FavoriteImagesActivity
@@ -15,7 +14,11 @@ import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_TRASH_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.privacyPolicy
+import com.demo.newgalleryapp.utilities.CommonFunctions.rateUs
+import com.demo.newgalleryapp.utilities.CommonFunctions.shareApp
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
+
 
 class SettingFragment : Fragment() {
 
@@ -73,30 +76,20 @@ class SettingFragment : Fragment() {
         }
 
         language.setOnClickListener {
-            Toast.makeText(requireContext(), "Coming Soon....", Toast.LENGTH_SHORT).show()
+            showToast(requireContext(), "Coming Soon....")
         }
 
 
         privacyPolicy.setOnClickListener {
-            showToast(requireContext(), "Privacy Policy")
+            requireActivity().privacyPolicy()
         }
 
         rateUs.setOnClickListener {
-            showToast(requireContext(), "Rate us")
+            requireActivity().rateUs()
         }
 
         shareApp.setOnClickListener {
-            val appPackageName = requireContext().packageName
-            val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    "Check out this amazing app: https://play.google.com/store/apps/$appPackageName"
-                )
-                type = "text/plain"
-            }
-            val shareIntent = Intent.createChooser(sendIntent, null)
-            startActivity(shareIntent)
+            requireActivity().shareApp()
         }
         return view
     }

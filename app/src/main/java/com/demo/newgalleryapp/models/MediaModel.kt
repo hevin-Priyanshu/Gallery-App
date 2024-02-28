@@ -8,7 +8,7 @@ import java.io.Serializable
 data class MediaModel (
     @PrimaryKey(autoGenerate = true)
     val id: Long,
-    val displayName: String,
+    var displayName: String,
     val path: String,
     val mimeType: String,
     val duration: Long,

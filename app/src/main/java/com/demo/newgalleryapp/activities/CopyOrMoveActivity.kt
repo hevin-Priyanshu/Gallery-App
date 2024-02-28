@@ -59,6 +59,7 @@ class CopyOrMoveActivity : AppCompatActivity(), FolderClickListener {
 
     private val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)

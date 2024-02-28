@@ -71,15 +71,34 @@ class EditActivity : AppCompatActivity() {
     private var handler: Handler? = null
 
     private lateinit var dialogBinding: DialogLoadingBinding
+
     private val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+
+        dialog.setOnShowListener {
+            try {
+                val displayMetrics = resources.displayMetrics
+                val width = (displayMetrics.widthPixels * 0.8).toInt()
+                val height = (displayMetrics.heightPixels * 0.6).toInt()
+
+                val windowLayoutParams = dialog.window?.attributes
+                windowLayoutParams?.width = width
+                windowLayoutParams?.height = height
+                dialog.window?.attributes = windowLayoutParams
+            } catch (e: Exception) {
+                Log.e("ProgressDialog", "Error setting dialog size", e)
+            }
+
+            // Set rounded corners (using previous method)
+            dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
+        }
+
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(dialogBinding.root)
         dialog
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit)

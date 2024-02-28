@@ -82,7 +82,8 @@
                         android:layout_height="@dimen/_22sdp"
                         android:layout_gravity="center"
                         android:layout_marginEnd="@dimen/_15sdp"
-                        android:src="@drawable/three_dot_new" />
+                        android:src="@drawable/three_dot_new"
+                        android:visibility="gone" />
 
                 </LinearLayout>
 
@@ -173,16 +174,16 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <TextView
-        android:id="@+id/trash_txt"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/toolBar"
-        android:layout_margin="8dp"
-        android:gravity="center"
-        android:text="Items in Trash bin will be removed after 30 days."
-        android:textColor="@color/black"
-        android:visibility="gone" />
+    <!--    <TextView-->
+    <!--        android:id="@+id/trash_txt"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_below="@+id/toolBar"-->
+    <!--        android:layout_margin="8dp"-->
+    <!--        android:gravity="center"-->
+    <!--        android:text="Items in Trash bin will be removed after 30 days."-->
+    <!--        android:textColor="@color/black"-->
+    <!--        android:visibility="gone" />-->
 
     <ProgressBar
         android:id="@+id/progressBar_trash"
@@ -220,7 +221,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottomNavigation_trashBin"
-        android:layout_below="@+id/trash_txt"
+        android:layout_below="@+id/toolBar"
         android:padding="@dimen/_6sdp" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

@@ -1,15 +1,20 @@
 package com.demo.newgalleryapp.activities
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.SpannableString
 import android.text.Spanned
 import android.util.Log
+import android.view.Window
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -22,6 +27,7 @@ import com.demo.newgalleryapp.adapters.ImageSliderAdapter2
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.classes.CustomTypefaceSpan
 import com.demo.newgalleryapp.database.ImagesDatabase
+import com.demo.newgalleryapp.databinding.DialogLoadingBinding
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_TRASH_ACTIVITY
@@ -41,10 +47,25 @@ class OpenTrashImageActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private var models: ArrayList<MediaModel> = ArrayList()
     private var tempList: ArrayList<TrashBinAboveVersion> = ArrayList()
-    private var updated: Boolean = false
     private var currentPosition: Int = 0
-    lateinit var imagesSliderAdapterTrash: ImageSliderAdapter2
+    private lateinit var dialogBinding: DialogLoadingBinding
 
+    companion object {
+        lateinit var imagesSliderAdapterTrash: ImageSliderAdapter2
+        var updated: Boolean = false
+        var handler: Handler? = null
+
+    }
+
+    val progressDialogFragment by lazy {
+        val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.setCancelable(false)
+        dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+        dialog
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -55,14 +76,16 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
         } else if (requestCode == REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK) {
             doChanges()
-            showToast(this, "Delete Successfully.")
+            showToast(this, "Deleted Successfully!!")
         }
     }
 
     private fun doChanges() {
-        imagesSliderAdapterTrash.remove(currentPosition)
-        tempList.removeAt(currentPosition)
         updated = true
+        imagesSliderAdapterTrash.remove(currentPosition, this@OpenTrashImageActivity)
+        tempList.removeAt(currentPosition)
+        imagesSliderAdapterTrash.notifyDataSetChanged()
+        (application as AppClass).mainViewModel.getMediaFromInternalStorage()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +97,10 @@ class OpenTrashImageActivity : AppCompatActivity() {
         bottomNavigationView = findViewById(R.id.bottomNavigation_trash)
         toolbar = findViewById(R.id.toolBar)
         trashOpenTextView = findViewById(R.id.trash_open_textView)
+
+        // marquee_forever effect
+        trashOpenTextView.isSelected = true
+        handler = Handler(Looper.getMainLooper())
 
         backBtn.setOnClickListener {
             if (updated) {
@@ -88,46 +115,34 @@ class OpenTrashImageActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
             (application as AppClass).mainViewModel.tempAllTrashData.observe(this) {
+                tempList.clear()
                 tempList.addAll(it)
 
                 val trash =
-                    it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
+                    it.map { MediaModel(0, it.name, it.uri.toString(), " ", 0, 0, 0, false) }
+                models.clear()
                 models.addAll(trash)
                 setViewPagerAdapter(models)
-                viewPagerDataSetter()
-
-
             }
 
-//            (application as AppClass).mainViewModel.allTrashData.observe(this, Observer {
-//                tempList2.addAll(it)
-//                val trash = it.map { MediaModel(0, it.currentPath, it.destinationImagePath, " ", 0, 0, 0, false) }
-//                models.addAll(trash)
-//                setViewPagerAdapter(models)
-//                viewPagerDataSetter()
-//            })
         } else {
             ImagesDatabase.getDatabase(this).favoriteImageDao().getAllDeleteImages()
                 .observe(this, Observer { it ->
+                    tempList.clear()
                     tempList.addAll(it)
                     val trash =
                         it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
+
+                    models.clear()
                     models.addAll(trash)
                     setViewPagerAdapter(models)
-                    viewPagerDataSetter()
                 })
         }
+
+        viewPagerDataSetter()
         bottomNavigationViewItemSetter()
 
         val menu = bottomNavigationView.menu
-
-//        for (i in 0 until menu.size()) {
-//            val item = menu.getItem(i)
-//            val spannableString = SpannableString(item.title)
-//            val font = Typeface.createFromAsset(assets, "poppins_medium.ttf")
-//            spannableString.setSpan(TypefaceSpan(font), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-//            item.title = spannableString
-//        }
 
         for (i in 0 until menu.size()) {
             val item = menu.getItem(i)
@@ -157,50 +172,41 @@ class OpenTrashImageActivity : AppCompatActivity() {
     private fun viewPagerDataSetter() {
 
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
-                val name = File(models[position].path).name
-                trashOpenTextView.text = name
+                super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+
+                if (models.isNotEmpty() && position >= 0 && position < models.size) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val name = File(models[position].displayName)
+                        trashOpenTextView.text = name.toString()
+                    } else {
+                        val name = File(models[position].displayName).name
+                        trashOpenTextView.text = name
+                    }
+                }
             }
 
-            override fun onPageSelected(position: Int) {
 
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                currentPosition = position
+                Log.d("current", "onPageSelected: $currentPosition")
             }
 
             override fun onPageScrollStateChanged(state: Int) {
-
+                super.onPageScrollStateChanged(state)
+                Log.d("current", "onPageSelected: $currentPosition")
             }
         })
 
-//        viewPager.setOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-//
-//            override fun onPageScrolled(
-//                position: Int, positionOffset: Float, positionOffsetPixels: Int
-//            ) {
-//                val name = File(models[position].path).name
-//                trashOpenTextView.text = name
-//            }
-//
-//            override fun onPageSelected(position: Int) {
-//
-//            }
-//
-//            override fun onPageScrollStateChanged(state: Int) {
-//
-//            }
-//
-//        })
     }
 
     private fun setViewPagerAdapter(models: ArrayList<MediaModel>) {
 
-        val pos = intent.getIntExtra("trashBinPos", 0)
-        imagesSliderAdapterTrash = ImageSliderAdapter2(this, models)
-        viewPager.adapter = imagesSliderAdapterTrash
-        viewPager.setCurrentItem(pos, false)
-
-        if (models.size == 0) {
+        if (models.isEmpty()) {
             if (updated) {
                 val intent = Intent()
                 setResult(Activity.RESULT_OK, intent)
@@ -208,6 +214,16 @@ class OpenTrashImageActivity : AppCompatActivity() {
             }
             finish()
         }
+
+        val newList = ArrayList<MediaModel>()
+        newList.clear()
+        newList.addAll(models)
+
+        val pos = intent.getIntExtra("trashBinPos", 0)
+        imagesSliderAdapterTrash = ImageSliderAdapter2(this@OpenTrashImageActivity, newList, false)
+        viewPager.adapter = imagesSliderAdapterTrash
+        viewPager.setCurrentItem(pos, false)
+        currentPosition = viewPager.currentItem
     }
 
     private fun bottomNavigationViewItemSetter() {
@@ -218,13 +234,16 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
-                        currentPosition = viewPager.currentItem
+//                        currentPosition = viewPager.currentItem
                         val imageUri = tempList[currentPosition].uri
+                        val arrayList: ArrayList<Uri> = ArrayList()
 
                         if (tempList.isNotEmpty()) {
                             try {
+                                arrayList.clear()
+                                arrayList.add(imageUri)
                                 val pendingIntent: PendingIntent = MediaStore.createTrashRequest(
-                                    contentResolver, arrayListOf(imageUri), false
+                                    contentResolver, arrayList, false
                                 )
                                 startIntentSenderForResult(
                                     pendingIntent.intentSender,
@@ -243,7 +262,7 @@ class OpenTrashImageActivity : AppCompatActivity() {
                             showToast(this, "Error: Image not found!!!")
                         }
                     } else {
-                        currentPosition = viewPager.currentItem
+//                        currentPosition = viewPager.currentItem
                         val trashModel = tempList[currentPosition]
 
                         if (trashModel.path.isNotEmpty()) {
@@ -265,28 +284,47 @@ class OpenTrashImageActivity : AppCompatActivity() {
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
-                        currentPosition = viewPager.currentItem
+//                        currentPosition = viewPager.currentItem
                         val imageToDelete = tempList[currentPosition].uri
+                        val arrayList: ArrayList<Uri> = ArrayList()
 
-                        val pendingIntent: PendingIntent = MediaStore.createDeleteRequest(
-                            contentResolver, arrayListOf(imageToDelete)
-                        )
-                        startIntentSenderForResult(
-                            pendingIntent.intentSender,
-                            REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_TRASH_ACTIVITY,
-                            null,
-                            0,
-                            0,
-                            0,
-                            null
-                        )
+
+                        if (tempList.isNotEmpty()) {
+                            try {
+
+                                arrayList.clear()
+                                arrayList.add(imageToDelete)
+
+                                val pendingIntent: PendingIntent = MediaStore.createDeleteRequest(
+                                    contentResolver, arrayList
+                                )
+                                startIntentSenderForResult(
+                                    pendingIntent.intentSender,
+                                    REQ_CODE_FOR_DELETE_PERMISSION_IN_OPEN_TRASH_ACTIVITY,
+                                    null,
+                                    0,
+                                    0,
+                                    0,
+                                    null
+                                )
+
+                            } catch (e: Exception) {
+                                Log.e("TAG", "bottomNavigationViewItemSetter: $e")
+                            }
+                        } else {
+                            showToast(this, "Error: Image not found!!!")
+                        }
+
                     } else {
-                        currentPosition = viewPager.currentItem
+//                        currentPosition = viewPager.currentItem
                         val trashModel = tempList[currentPosition]
 
                         if (trashModel.path.isNotEmpty()) {
                             showPopupForDeletePermanentlyForOne(
-                                bottomNavigationView, trashModel, currentPosition, this@OpenTrashImageActivity
+                                bottomNavigationView,
+                                trashModel,
+                                currentPosition,
+                                this@OpenTrashImageActivity
                             )
                         } else {
                             Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT)
@@ -297,6 +335,17 @@ class OpenTrashImageActivity : AppCompatActivity() {
             }
             true // Return true to indicate that the item selection is handled
         }
+    }
+
+    override fun onDestroy() {
+        handler?.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onStop() {
+        // Remove the callbacks to stop the slideshow when the activity is not visible
+        handler?.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 
 }

@@ -52,4 +52,7 @@ interface ImageDao {
     @Query("SELECT * FROM trashBin WHERE path = :absolutePath")
     fun getImageByPath(absolutePath: String): TrashBinAboveVersion
 
+    @Query("SELECT * FROM trashBin WHERE path = :path LIMIT 1")
+    fun getTrashBinItemByPath(path: String): TrashBinAboveVersion
+
 }

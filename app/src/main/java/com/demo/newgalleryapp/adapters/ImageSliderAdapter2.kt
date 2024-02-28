@@ -18,6 +18,9 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.activities.OpenImageActivity
+import com.demo.newgalleryapp.activities.OpenImageActivity.Companion.anyChanges
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.updated
 import com.demo.newgalleryapp.activities.VideoViewActivity
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.classes.ZoomageView
@@ -25,7 +28,9 @@ import com.demo.newgalleryapp.interfaces.SetCropImages
 import com.demo.newgalleryapp.models.MediaModel
 
 class ImageSliderAdapter2(
-    private val activity: Activity, private var modelList: ArrayList<MediaModel>
+    private val activity: Activity,
+    private var modelList: ArrayList<MediaModel>,
+    private val isFolder: Boolean
 ) : RecyclerView.Adapter<ImageSliderAdapter2.ImageSliderViewHolder>(), SetCropImages {
 
     inner class ImageSliderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -34,21 +39,46 @@ class ImageSliderAdapter2(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageSliderViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.activity_open_one_image, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.activity_open_one_image, parent, false)
         return ImageSliderViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ImageSliderViewHolder, position: Int) {
         val model = modelList[position]
 
+        /**..Ithai OpenImage activity set karat aahe when user image var click karat ahe jeva..**/
+
+        if (activity is OpenImageActivity) {
+            holder.imageViewForSlider.setActivity(activity)
+        } else if (activity is OpenTrashImageActivity) {
+
+        }
+
         if (model.isVideo) {
+
             holder.imageVideo.visibility = View.VISIBLE
-            holder.imageVideo.setOnClickListener {
-                val videoPath = model.path
-                val intent = Intent(activity, VideoViewActivity::class.java)
-                intent.putExtra("currentVideoPosition", position)
-                activity.startActivity(intent)
+
+            /**  Ha Check aahe ki ,, jar user ha album chaya kontya folder var click karun aala tar tyat jar video present ashnar tar... **/
+            if (isFolder) {
+
+                /**  jar present asnar tar tya video cha path send karat ahe intent ni.... **/
+                holder.imageVideo.setOnClickListener {
+//                    val videoPath = model.path
+                    val intent = Intent(activity, VideoViewActivity::class.java)
+                    intent.putExtra("isFromFolderList", model)
+                    activity.startActivity(intent)
+                }
+            } else {
+
+                /**  jar nahi tar only position ....**/
+                holder.imageVideo.setOnClickListener {
+                    val intent = Intent(activity, VideoViewActivity::class.java)
+                    intent.putExtra("currentVideoPosition", position)
+                    activity.startActivity(intent)
+                }
             }
+            ////////////
         }
 
         Glide.with(activity).load(model.path).into(holder.imageViewForSlider)
@@ -58,24 +88,36 @@ class ImageSliderAdapter2(
         return modelList.size
     }
 
-    fun remove(position: Int) {
+    fun remove(position: Int, activityNew: Activity) {
         if (position >= 0 && position < modelList.size) {
             modelList.removeAt(position)
 //            notifyDataSetChanged()
             notifyItemRemoved(position)
+            setList(modelList)
         }
 
         if (modelList.isEmpty()) {
-            OpenImageActivity.anyChanges = true
-            val intent = Intent()
-            activity.setResult(Activity.RESULT_OK, intent)
-            OpenImageActivity.anyChanges = false
-            (activity.application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            activity.finish()
+
+            if (activityNew is OpenImageActivity) {
+                anyChanges = true
+                val intent = Intent()
+                activityNew.setResult(Activity.RESULT_OK, intent)
+                anyChanges = false
+                (activityNew.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                activityNew.finish()
+            } else if (activityNew is OpenTrashImageActivity) {
+                updated = true
+                val intent = Intent()
+                activityNew.setResult(Activity.RESULT_OK, intent)
+                updated = false
+                (activityNew.application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                activityNew.finish()
+            }
+
         }
     }
 
-    fun setList(model: ArrayList<MediaModel>) {
+    private fun setList(model: ArrayList<MediaModel>) {
         this.modelList = model
         notifyDataSetChanged()
     }

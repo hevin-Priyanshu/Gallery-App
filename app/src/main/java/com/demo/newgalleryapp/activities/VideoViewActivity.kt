@@ -63,7 +63,8 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
 
 
@@ -76,23 +77,34 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, binding.root).let { controller ->
             controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-
         myPosition = intent.getIntExtra("currentVideoPosition", 0)
-//        val modelList: List<MediaModel> = intent.getSerializableExtra("modelList") as? List<MediaModel> ?: emptyList()
-        val modelList: List<MediaModel> = (application as AppClass).mainViewModel.tempVideoList
 
-//        (application as AppClass).mainViewModel.videosData
-//        val videoPath = intent.getStringExtra("path")
-        mList.addAll(modelList)
+        if (intent.hasExtra("isFromFolderList")) {
+            // Retrieve the model object from the intent extras
+            val model = intent.getSerializableExtra("isFromFolderList") as MediaModel
+            val tempList = mutableListOf<MediaModel>()
+            tempList.add(model)
+            mList.addAll(tempList)
+
+            initPlayer()
+            prepare(mList[0].path)
+
+        } else {
+
+            val modelList: List<MediaModel> = (application as AppClass).mainViewModel.tempVideoList
+            mList.addAll(modelList)
+
+            initPlayer()
+            prepare(mList[myPosition].path)
+        }
 
         scaleDetector = ScaleDetector(binding)
         val scaleGestureDetector = ScaleGestureDetector(this, scaleDetector)
 
-        initPlayer()
-        prepare()
 
         binding.imgBack.setOnClickListener {
             finish()
@@ -194,7 +206,6 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
         register()
     }
 
-
     private fun hideSystemUI() {
         window.decorView.apply {
             // Hide both the navigation bar and the status bar.
@@ -231,6 +242,8 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
             anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
         )
 
+        val selectedColumns = (application as AppClass).mainViewModel.sharedPreferencesHelper.getDefaultControlLer()
+        var tempColumnVideos = selectedColumns
 
         val text025 = popupWindowRestoreOne.findViewById<TextView>(R.id.id1)
         val text05 = popupWindowRestoreOne.findViewById<TextView>(R.id.id2)
@@ -238,27 +251,93 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
         val normal = popupWindowRestoreOne.findViewById<TextView>(R.id.id4)
 
 
+        val imageView025 = popupWindowRestoreOne.findViewById<ImageView>(R.id.zeroTwo_image_view)
+        val imageView05 = popupWindowRestoreOne.findViewById<ImageView>(R.id.zeroFive_image_view)
+        val imageView075 = popupWindowRestoreOne.findViewById<ImageView>(R.id.zeroSeven_image_view)
+        val imageViewNormal = popupWindowRestoreOne.findViewById<ImageView>(R.id.normal_image_view)
+
+
+        when (selectedColumns) {
+            "normal" -> {
+                imageViewNormal.visibility = View.VISIBLE
+            }
+
+            "text025" -> {
+                imageView025.visibility = View.VISIBLE
+            }
+
+            "text05" -> {
+                imageView05.visibility = View.VISIBLE
+            }
+
+            "text075" -> {
+                imageView075.visibility = View.VISIBLE
+            }
+        }
+
         text025.setOnClickListener {
+
+            imageView05.visibility = View.GONE
+            imageView075.visibility = View.GONE
+            imageViewNormal.visibility = View.GONE
+            imageView025.visibility = View.VISIBLE
+
+            tempColumnVideos = "text025"
+            (application as AppClass).mainViewModel.sharedPreferencesHelper.saveDefaultControlLer(
+                tempColumnVideos!!
+            )
+
             exoPlayer?.setPlaybackSpeed(0.25f)
             popupWindow?.dismiss()
         }
 
         text05.setOnClickListener {
+
+            imageView075.visibility = View.GONE
+            imageViewNormal.visibility = View.GONE
+            imageView025.visibility = View.GONE
+            imageView05.visibility = View.VISIBLE
+
+            tempColumnVideos =  "text05"
+            (application as AppClass).mainViewModel.sharedPreferencesHelper.saveDefaultControlLer(
+                tempColumnVideos!!
+            )
             exoPlayer?.setPlaybackSpeed(0.5f)
             popupWindow?.dismiss()
         }
 
         text075.setOnClickListener {
+
+            imageViewNormal.visibility = View.GONE
+            imageView025.visibility = View.GONE
+            imageView05.visibility = View.GONE
+            imageView075.visibility = View.VISIBLE
+
+            tempColumnVideos = "text075"
+            (application as AppClass).mainViewModel.sharedPreferencesHelper.saveDefaultControlLer(
+                tempColumnVideos!!
+            )
             exoPlayer?.setPlaybackSpeed(0.75f)
             popupWindow?.dismiss()
         }
 
         normal.setOnClickListener {
+
+            imageView025.visibility = View.GONE
+            imageView05.visibility = View.GONE
+            imageView075.visibility = View.GONE
+            imageViewNormal.visibility = View.VISIBLE
+
+            tempColumnVideos = "normal"
+            (application as AppClass).mainViewModel.sharedPreferencesHelper.saveDefaultControlLer(
+                tempColumnVideos!!
+            )
             exoPlayer?.setPlaybackSpeed(1.0f)
             popupWindow?.dismiss()
         }
 
     }
+
 
     class ob1(var context: Context, private var binding: ActivityVideoViewBinding) :
         ContentObserver(Handler()) {
@@ -387,7 +466,7 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
 
     }
 
-    private fun prepare() {
+    private fun prepare(path: String) {
 
         if (exoPlayer == null) {
             exoPlayer = SimpleExoPlayer.Builder(this).build()
@@ -395,7 +474,7 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
             exoPlayer?.playWhenReady = true
         }
 
-        val mediaItem = MediaItem.fromUri(getVideoPath())
+        val mediaItem = MediaItem.fromUri(path)
 
         exoPlayer?.apply {
             setMediaItem(mediaItem)
@@ -410,7 +489,7 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
         super.onNewIntent(intent)
         isFromNewIntent = true
         mList.clear()
-        prepare()
+        prepare(mList[0].path)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         showMenu()
         binding.playerView.useController = true
@@ -486,7 +565,11 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
                 myPosition = 0
             }
         }
-        prepare()
+        if (intent.hasExtra("isFromFolderList")) {
+            prepare(mList[0].path)
+        } else {
+            prepare(mList[myPosition].path)
+        }
     }
 
     private fun previousVideo() {
@@ -500,10 +583,13 @@ class VideoViewActivity : AppCompatActivity(), StyledPlayerViewLatest.Controller
                 myPosition = 0
             }
         }
-        prepare()
+        if (intent.hasExtra("isFromFolderList")) {
+            prepare(mList[0].path)
+        } else {
+            prepare(mList[myPosition].path)
+        }
     }
 
-    private fun getVideoPath() = mList[myPosition].path
     override fun onVisibilityChanged(visibility: Int) {
         if (visibility === View.VISIBLE) {
             showMenu()

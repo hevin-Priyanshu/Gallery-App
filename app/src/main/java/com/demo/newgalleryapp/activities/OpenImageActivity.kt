@@ -5,6 +5,7 @@ import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -21,12 +22,14 @@ import android.view.Window
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.PopupWindow
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.view.isVisible
 import androidx.viewpager2.widget.ViewPager2
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImageSliderAdapter2
@@ -41,13 +44,20 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_UPDATES_IN_
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.formatDate
 import com.demo.newgalleryapp.utilities.CommonFunctions.formatTime
+import com.demo.newgalleryapp.utilities.CommonFunctions.inVisible
+import com.demo.newgalleryapp.utilities.CommonFunctions.isAutoSlidingEnabled
+import com.demo.newgalleryapp.utilities.CommonFunctions.positionForItem
+import com.demo.newgalleryapp.utilities.CommonFunctions.setNavigationColor
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBinForOpenActivityOnlyOne
 import com.demo.newgalleryapp.utilities.CommonFunctions.showRenamePopup
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
+import com.demo.newgalleryapp.utilities.CommonFunctions.visible
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import java.io.File
+import java.util.Timer
+import java.util.TimerTask
 
 
 class OpenImageActivity : AppCompatActivity() {
@@ -56,19 +66,21 @@ class OpenImageActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var backBtn: ImageView
     private lateinit var timeOfImage: TextView
+    private lateinit var openImageMainViewVisibility: RelativeLayout
     private lateinit var bottomNavigationView: BottomNavigationView
     private lateinit var toolbar: Toolbar
     private var tempList: ArrayList<MediaModel> = ArrayList()
     private var popupWindow: PopupWindow? = null
     private var fabCount = 0
     private var handler: Handler? = null
+    private var currentState: Int? = null
+    var modelsList: ArrayList<MediaModel> = arrayListOf()
+    private var currentImageIndex = 0
+    private var timer: Timer? = null
+    private var isSlideShow: Boolean = false
 
-    //lateinit var models: List<MediaModel>
     companion object {
         var anyChanges: Boolean = false
-        var models: List<MediaModel> = arrayListOf()
-
-        //        lateinit var imagesSliderAdapter: ImageSliderAdapter
         lateinit var imagesSliderAdapter: ImageSliderAdapter2
     }
 
@@ -76,13 +88,13 @@ class OpenImageActivity : AppCompatActivity() {
 
     val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(dialogBinding.root)
         dialog
     }
-
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
 
@@ -93,12 +105,15 @@ class OpenImageActivity : AppCompatActivity() {
             anyChanges = true
 
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-            val imageToDelete = models[viewPager.currentItem].path
+            val imageToDelete = modelsList[viewPager.currentItem].path
 
             ImagesDatabase.getDatabase(this@OpenImageActivity).favoriteImageDao()
                 .deleteFavorites(imageToDelete)
 
-            imagesSliderAdapter.remove(viewPager.currentItem)
+            imagesSliderAdapter.remove(viewPager.currentItem, this@OpenImageActivity)
+            modelsList.removeAt(viewPager.currentItem)
+
+            positionForItem = viewPager.currentItem
             imagesSliderAdapter.notifyDataSetChanged()
             showToast(this, "Deleted Successfully!!")
 
@@ -118,10 +133,12 @@ class OpenImageActivity : AppCompatActivity() {
 //            videosFragment.imagesAdapter?.notifyDataSetChanged()
         } else if (requestCode == REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) {
             popupWindow?.dismiss()
-            val selectedImagePath = models[viewPager.currentItem].path
+            val selectedImagePath = modelsList[viewPager.currentItem].path
+
             // Here rename image in android 11 and above device
             showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
-
+//            modelsList.set(viewPager.currentItem)
+//
         } else if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
 
             val result = CropImage.getActivityResult(data)
@@ -142,6 +159,7 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_open_image)
 
@@ -150,30 +168,44 @@ class OpenImageActivity : AppCompatActivity() {
 
         val isFolder = intent.hasExtra("folderPosition")
         fabCount = intent.getIntExtra("selectedImagePosition", 0)
+        currentImageIndex = intent.getIntExtra("SlideImagePosition", 0)
+        isSlideShow = intent.hasExtra("FromSlideShow")
+
+        if (isSlideShow) {
+            modelsList = (application as AppClass).mainViewModel.tempPhotoList
+            setViewPagerAdapter(modelsList, currentImageIndex, false)
+            isAutoSlidingEnabled = true
+            hideUiItem()
+            startSlideshow()
+        }
+
         if (isFolder) {
             // Here passing the folder list to viewpager , if isFolder is true (i.e Albums folder)
-            models = (application as AppClass).mainViewModel.folderList[intent.getIntExtra(
+            modelsList = (application as AppClass).mainViewModel.folderList[intent.getIntExtra(
                 "folderPosition", 0
             )].models
-            setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
+            setViewPagerAdapter(modelsList, fabCount, isFolder)
+
         } else {
             val menuItem = bottomNavigationView.menu.findItem(R.id.editItem)
-            when (intent.getIntExtra("currentState", 0)) {
+
+            currentState = intent.getIntExtra("currentState", 0)
+
+            when (currentState) {
                 1 -> {
                     val sM: MediaModel = intent.extras?.get("selectedModel") as MediaModel
 
                     if (!sM.isVideo) {
                         fabCount = (application as AppClass).mainViewModel.tempPhotoList.indexOf(sM)
-                        models = (application as AppClass).mainViewModel.tempPhotoList
-                        setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
+                        modelsList = (application as AppClass).mainViewModel.tempPhotoList
+                        setViewPagerAdapter(modelsList, fabCount, isFolder)
 
                         // Here showing edit button for images
                         menuItem.isVisible = true
                     } else {
                         fabCount = (application as AppClass).mainViewModel.tempVideoList.indexOf(sM)
-                        models = (application as AppClass).mainViewModel.tempVideoList
-                        Log.e("TAG", "onCreate: " + fabCount)
-                        setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
+                        modelsList = (application as AppClass).mainViewModel.tempVideoList
+                        setViewPagerAdapter(modelsList, fabCount, isFolder)
 
                         // Here hiding edit button for videos
                         menuItem.isVisible = false
@@ -198,6 +230,7 @@ class OpenImageActivity : AppCompatActivity() {
     private fun initView() {
 
         viewPager = findViewById(R.id.viewPager_slider)
+        openImageMainViewVisibility = findViewById(R.id.openImageMainView)
         textView = findViewById(R.id.open_text_view_image_activity)
         backBtn = findViewById(R.id.back_btn)
         toolbar = findViewById(R.id.toolBar)
@@ -216,13 +249,18 @@ class OpenImageActivity : AppCompatActivity() {
             override fun onPageScrolled(
                 position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
-                textView.text = models[position].displayName
-                timeOfImage.text = formatTime(models[position].date)
-                setFavoriteIcon(position)
-                fabCount = position
+                super.onPageScrolled(position, positionOffset, positionOffsetPixels)
+                if (modelsList.isNotEmpty() && position >= 0 && position < modelsList.size) {
+                    textView.text = modelsList[position].displayName
+                    timeOfImage.text = formatTime(modelsList[position].date)
+                    setFavoriteIcon(position)
+                }
+
             }
 
             override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                fabCount = position
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -247,7 +285,33 @@ class OpenImageActivity : AppCompatActivity() {
 //        })
     }
 
-    private fun setViewPagerAdapter(model: ArrayList<MediaModel>, currentPosition: Int) {
+    fun animation() {
+        stopSlideshow()
+        if (toolbar.isVisible) {
+            hideUiItem()
+        } else {
+            showUiItem()
+        }
+    }
+
+    private fun showUiItem() {
+        toolbar.visible()
+        bottomNavigationView.visible()
+        openImageMainViewVisibility.setBackgroundColor(getColor(R.color.white))
+        setNavigationColor(window, Color.WHITE)
+    }
+
+    private fun hideUiItem() {
+        toolbar.inVisible()
+        bottomNavigationView.inVisible()
+        setNavigationColor(window, ContextCompat.getColor(this, R.color.black))
+        openImageMainViewVisibility.setBackgroundColor(getColor(R.color.black))
+    }
+
+
+    private fun setViewPagerAdapter(
+        model: ArrayList<MediaModel>, currentPosition: Int, isFolder: Boolean
+    ) {
 
         if (model.size == 0) {
             if (anyChanges) {
@@ -257,12 +321,14 @@ class OpenImageActivity : AppCompatActivity() {
             }
             finish()
         }
-        models = model
+
+        modelsList.addAll(model)
         val temp = arrayListOf<MediaModel>()
         temp.addAll(model)
-        imagesSliderAdapter = ImageSliderAdapter2(this@OpenImageActivity, temp)
+        imagesSliderAdapter = ImageSliderAdapter2(this@OpenImageActivity, temp, isFolder)
         viewPager.adapter = imagesSliderAdapter
         viewPager.setCurrentItem(currentPosition, false)
+
     }
 
     private fun sendFavoriteListToViewPager() {
@@ -270,15 +336,16 @@ class OpenImageActivity : AppCompatActivity() {
         ImagesDatabase.getDatabase(this).favoriteImageDao().getAllFavorites().observe(this) {
             tempList.clear()
             tempList.addAll(it)
-            models = tempList
-            setViewPagerAdapter(models as ArrayList<MediaModel>, fabCount)
+            modelsList.addAll(tempList)
+
+            setViewPagerAdapter(modelsList, fabCount, false)
         }
     }
 
     private fun bottomNavigationViewItemSetter() {
 
         bottomNavigationView.setOnItemSelectedListener { menuItem ->
-            val currentPosition = viewPager.currentItem
+            val currentPosition = fabCount
             when (menuItem.itemId) {
                 R.id.shareItem -> handleShareItem(currentPosition)
                 R.id.favoriteItemUnSelect -> handleFavoriteItem(currentPosition)
@@ -291,29 +358,30 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     private fun handleMoreItem(currentPosition: Int) {
-        val isVideoOrNot = models[currentPosition].isVideo
+        val isVideoOrNot = modelsList[currentPosition].isVideo
         moreItemClick(bottomNavigationView, isVideoOrNot, currentPosition)
     }
 
     private fun handleEditItem(currentPosition: Int) {
 //        val currentPosition = viewPager.currentItem
-        val imagePath = models[currentPosition].path
+        val imagePath = modelsList[currentPosition].path
         val file = File(imagePath)
         val uri = Uri.fromFile(file)
         launchImageCrop(uri)
     }
 
     private fun handleDeleteItem(currentPosition: Int) {
-//        val currentPosition = viewPager.currentItem
-//        val imageToDelete = models.getOrNull(currentPosition)?.path
-        val imageToDelete = models[currentPosition].path
+
+        val imageToDelete = modelsList[currentPosition].path
 
         val filePath = File(imageToDelete)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
             val arrayList: ArrayList<Uri> = ArrayList()
+
             MediaScannerConnection.scanFile(this, arrayOf(filePath.path), null) { _, uri ->
+                arrayList.clear()
                 arrayList.add(uri)
                 try {
 
@@ -339,7 +407,9 @@ class OpenImageActivity : AppCompatActivity() {
                     bottomNavigationView,
                     imageToDelete,
                     currentPosition,
-                    models[currentPosition].isVideo
+                    modelsList[currentPosition].isVideo,
+                    currentState,
+                    this@OpenImageActivity
                 )
             } else {
                 showToast(this, "Error: Image not found")
@@ -349,7 +419,7 @@ class OpenImageActivity : AppCompatActivity() {
 
     private fun handleFavoriteItem(currentPosition: Int) {
 //        val model = models[viewPager.currentItem]
-        val model = models[currentPosition]
+        val model = modelsList[currentPosition]
         val favoriteImageDao = ImagesDatabase.getDatabase(this).favoriteImageDao()
 
         val roomModel = favoriteImageDao.getModelByFile(model.path)
@@ -368,8 +438,7 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     private fun handleShareItem(currentPosition: Int) {
-//        val currentPosition = viewPager.currentItem
-        val share = models[currentPosition].path
+        val share = modelsList[currentPosition].path
         val uri =
             FileProvider.getUriForFile(this, "com.demo.newgalleryapp.fileprovider", File(share))
         // Handle share item
@@ -377,9 +446,7 @@ class OpenImageActivity : AppCompatActivity() {
     }
 
     private fun moreItemClick(
-        bottomNavigationView: BottomNavigationView,
-        isVideoOrNot: Boolean,
-        currentPosition: Int
+        bottomNavigationView: BottomNavigationView, isVideoOrNot: Boolean, currentPosition: Int
     ) {
 
         val inflater: LayoutInflater =
@@ -402,7 +469,7 @@ class OpenImageActivity : AppCompatActivity() {
         val popupTextSlideShow = popupView.findViewById<TextView>(R.id.Slideshow)
         val popupTextDetails = popupView.findViewById<TextView>(R.id.details)
 
-        val selectedImagePath = models[currentPosition].path
+        val selectedImagePath = modelsList[currentPosition].path
 
         if (isVideoOrNot) {
             popupTextWallpaper.visibility = View.GONE
@@ -467,14 +534,17 @@ class OpenImageActivity : AppCompatActivity() {
                 }
             } else {
 
-                showRenamePopup(bottomNavigationView, selectedImagePath, this@OpenImageActivity)
+                showRenamePopup(
+                    bottomNavigationView, selectedImagePath, this@OpenImageActivity
+                )
                 popupWindow?.dismiss()
             }
             //////////////////
         }
 
         popupTextSlideShow.setOnClickListener {
-            val intent = Intent(this, SlideShowActivity::class.java)
+            val intent = Intent(this, OpenImageActivity::class.java)
+            intent.putExtra("FromSlideShow", true)
             intent.putExtra("SlideImagePosition", currentPosition)
             startActivity(intent)
             popupWindow?.dismiss()
@@ -499,13 +569,6 @@ class OpenImageActivity : AppCompatActivity() {
         }
 
     }
-
-//    private fun launchImageCrop(uri: Uri) {
-//        CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON)
-//            .setAspectRatio(10000, 10000).setCropShape(CropImageView.CropShape.RECTANGLE).start(this)
-//    }
-
-    ///////////////////////
 
     private fun launchImageCrop(uri: Uri) {
         CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON)
@@ -533,14 +596,14 @@ class OpenImageActivity : AppCompatActivity() {
 
         popupTextViewPath.movementMethod = LinkMovementMethod.getInstance()
 
-        val path = models[viewPager.currentItem].path
+        val path = modelsList[viewPager.currentItem].path
         popupTextViewPath.text = path
-        popupTextViewName.text = models[viewPager.currentItem].displayName
+        popupTextViewName.text = modelsList[viewPager.currentItem].displayName
 
-        val size = models[viewPager.currentItem].size
+        val size = modelsList[viewPager.currentItem].size
 
-        val date = formatDate(models[viewPager.currentItem].date)
-        val time = formatTime(models[viewPager.currentItem].date)
+        val date = formatDate(modelsList[viewPager.currentItem].date)
+        val time = formatTime(modelsList[viewPager.currentItem].date)
 
         val sizeInBytes = size ?: 0L  // Default to 0 if size is null
         val formattedSize = CommonFunctions.formatSize(sizeInBytes)
@@ -589,7 +652,7 @@ class OpenImageActivity : AppCompatActivity() {
         val favoriteMenuItem = bottomNavigationView.menu.findItem(R.id.favoriteItemUnSelect)
 
         val favoriteImageDao = ImagesDatabase.getDatabase(this).favoriteImageDao()
-        val isFavorite = favoriteImageDao.getModelByFile(models[currentItem].path) != null
+        val isFavorite = favoriteImageDao.getModelByFile(modelsList[currentItem].path) != null
 
         // Get the drawable resource based on the favorite status
         val drawableResId = if (isFavorite) R.drawable.favorite_blue_color_icon
@@ -618,5 +681,35 @@ class OpenImageActivity : AppCompatActivity() {
         handler?.removeCallbacksAndMessages(null)
         super.onStop()
     }
+
+    private fun startSlideshow() {
+
+        val handler = Handler()
+        val update = Runnable {
+            if (currentImageIndex == tempList.size - 1) {
+                currentImageIndex = 0
+            } else {
+                currentImageIndex++
+            }
+            viewPager.setCurrentItem(currentImageIndex, true)
+        }
+        timer = Timer()
+        timer?.schedule(object : TimerTask() {
+            override fun run() {
+                if (isAutoSlidingEnabled) {
+                    handler.post(update)
+                }
+            }
+        }, 1000, 3000) // Auto-slide interval (3 seconds)
+
+
+    }
+
+    private fun stopSlideshow() {
+        isSlideShow = false
+        isAutoSlidingEnabled = false
+        timer?.cancel()
+    }
+
 
 }

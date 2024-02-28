@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -34,7 +35,6 @@ import com.demo.newgalleryapp.adapters.ImagesAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
 import com.demo.newgalleryapp.databinding.DialogLoadingBinding
-import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
 import com.demo.newgalleryapp.interfaces.ImageClickListener
 import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.sharePreference.SharedPreferencesHelper
@@ -42,6 +42,7 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.positionForItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
@@ -57,7 +58,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var threeDot: ImageView
     private lateinit var itemSelected: TextView
     private lateinit var setTextAccToData: TextView
-    private lateinit var albumFolderSize: TextView
     private lateinit var selectAll: TextView
     private lateinit var deSelectAll: TextView
     private var checkBoxList: ArrayList<MediaModel> = ArrayList()
@@ -65,8 +65,10 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
     var position: Int = 0
     private var popupWindow: PopupWindow? = null
+    var handler: Handler? = null
 
     companion object {
+        lateinit var albumFolderSize: TextView
         var isUpdatedFolderActivity: Boolean = false
         lateinit var adapter: ImagesAdapter
         lateinit var bottomNavigationView: BottomNavigationView
@@ -78,6 +80,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
     val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
@@ -87,26 +90,43 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE && resultCode == Activity.RESULT_OK) ||
-            (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)
-        ) {
+        if ((requestCode == REQ_CODE && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
             if (intent.hasExtra("folderPosition")) {
+
+                progressDialogFragment.show()
                 val pathsToRemove = checkBoxList.map { it.path }
                 removeItemsAtPosition(position, pathsToRemove)
                 isUpdatedFolderActivity = true
                 (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-                adapter.remove(viewPager.currentItem)
+
+                if (positionForItem != -1) {
+                    adapter.remove(positionForItem)
+                    positionForItem = -1
+                }
+
+                setHowManyItem()
                 albumsFragment.folderAdapter?.notifyDataSetChanged()
                 adapter.notifyDataSetChanged()
+
+                handler?.postDelayed({
+                    progressDialogFragment.cancel()
+                }, 1000)
             }
         } else if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+
+            progressDialogFragment.show()
             isUpdatedFolderActivity = true
             val pathsToRemove = checkBoxList.map { it.path }
             removeItemsAtPosition(position, pathsToRemove)
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            setHowManyItem()
             adapter.notifyDataSetChanged()
             setAllVisibility()
+            handler?.postDelayed({
+                progressDialogFragment.cancel()
+            }, 1000)
         } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
+
             isUpdatedFolderActivity = true
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             adapter.notifyDataSetChanged()
@@ -114,6 +134,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             videosFragment.imagesAdapter?.notifyDataSetChanged()
             setAllVisibility()
             finish()
+
         }
     }
 
@@ -122,6 +143,8 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         setContentView(R.layout.activity_folder_images)
 
         initView()
+
+        handler = Handler(Looper.getMainLooper())
 
         if (intent.hasExtra("folderName")) {
             val name = intent.getStringExtra("folderName")
@@ -135,7 +158,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             if (position >= 0 && position < (application as AppClass).mainViewModel.folderList.size) {
 
                 newList = (application as AppClass).mainViewModel.folderList[position].models
-                albumFolderSize.text = newList.size.toString()
+
                 if (newList.isNotEmpty()) {
                     loadRecyclerViewNew(newList, position)
                 } else {
@@ -306,6 +329,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                     showToast(this, "Deleted Successfully!!")
                 }, 1000)
 
+
             } else {
                 showToast(this@FolderImagesActivity, "Error: Image not found")
             }
@@ -321,86 +345,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         showPopupForMainScreenMoreItem(bottomNavigationView, paths, this@FolderImagesActivity)
     }
 
-//    private fun setBottomNavigationItem(itemId: Int) {
-//        when (itemId) {
-//            R.id.shareItem -> {
-//                checkBoxList = this.adapter.checkSelectedList
-//
-//                val selectedImages = checkBoxList.map { it.path }
-//
-//                if (selectedImages.isNotEmpty()) {
-//                    val uris = ArrayList<Uri>()
-//
-//                    // Convert file paths to Uri using FileProvider
-//                    for (file in selectedImages) {
-//                        val uri = FileProvider.getUriForFile(
-//                            this, "com.demo.newgalleryapp.fileprovider", File(file)
-//                        )
-//                        uris.add(uri)
-//                    }
-//                    // Handle share item
-//                    (application as AppClass).mainViewModel.shareMultipleImages(uris, this)
-//                } else {
-//                    Toast.makeText(this, "No images selected to share", Toast.LENGTH_SHORT).show()
-//                }
-//            }
-//
-//            R.id.deleteItem -> {
-//
-//                checkBoxList = this.adapter.checkSelectedList
-////                val imageToDelete = models.getOrNull(currentPosition)?.path
-//
-//                val paths = checkBoxList.map {
-//                    it.path
-//                }
-//
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                    val arrayList: ArrayList<Uri> = ArrayList()
-//                    MediaScannerConnection.scanFile(this, paths.toTypedArray(), null) { _, uri ->
-//                        arrayList.add(uri)
-//                        if (arrayList.size == paths.size) {
-//                            val pendingIntent: PendingIntent =
-//                                MediaStore.createTrashRequest(contentResolver, arrayList, true)
-//                            startIntentSenderForResult(
-//                                pendingIntent.intentSender, 123, null, 0, 0, 0
-//                            )
-//                        }
-//                    }
-////                    backBtn.visibility = View.VISIBLE
-////                    setTextAccToData.visibility = View.VISIBLE
-////                    bottomNavigationView.visibility = View.GONE
-////                    closeBtn.visibility = View.GONE
-////                    itemSelected.visibility = View.GONE
-//                } else {
-//                    if (paths.isNotEmpty()) {
-//                        val numImagesToDelete = paths.size
-//
-//                        androidx.appcompat.app.AlertDialog.Builder(this)
-//                            .setTitle("Delete $numImagesToDelete Item?")
-//                            .setMessage("Are you sure to move $numImagesToDelete files to the trash bin?")
-//                            .setPositiveButton("Delete") { _, _ ->
-//                                // User clicked "Yes", proceed with deletion
-//                                // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
-//                                (application as AppClass).mainViewModel.moveMultipleImagesInTrashBin(
-//                                    paths
-//                                )
-//                                backBtn.visibility = View.VISIBLE
-//                                setTextAccToData.visibility = View.VISIBLE
-//                                bottomNavigationView.visibility = View.GONE
-////                                closeBtn.visibility = View.GONE
-//                                itemSelected.visibility = View.GONE
-//
-//                            }.setNegativeButton("Cancel") { dialog, _ ->
-//                                // User clicked "No", do nothing
-//                                dialog.dismiss()
-//                            }.show()
-//                    } else {
-//                        Toast.makeText(this, "Error: Image not found", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//            }
-
-    private fun loadRecyclerViewNew(list: ArrayList<MediaModel>, position: Int) {
+    private fun loadRecyclerViewNew(folderItemList: ArrayList<MediaModel>, position: Int) {
         val screenWidth = resources.displayMetrics.widthPixels
         sharedPreferencesHelper = SharedPreferencesHelper(this)
 
@@ -420,13 +365,18 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         recyclerView.layoutManager = gridLayoutManager
 
         // Create and set the adapter for the RecyclerView
-        adapter = ImagesAdapter(this, list, position, this@FolderImagesActivity)
+        adapter = ImagesAdapter(this, folderItemList, position, this@FolderImagesActivity)
         recyclerView.adapter = adapter
 
         // Ensure RecyclerView is visible
         recyclerView.visibility = View.VISIBLE
-    }
 
+
+        // set the album folder item count
+        val items = adapter.itemCount.toString()
+        albumFolderSize.text = items
+
+    }
 
     override fun onLongClick() {
         bottomNavigationView.visibility = View.VISIBLE
@@ -452,6 +402,11 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         itemSelected.text = "Item Selected $select"
     }
 
+
+    fun setHowManyItem() {
+        val items = adapter.itemCount.toString()
+        albumFolderSize.text = items
+    }
 
     private fun showPopupSelect(
         anchorView: View
@@ -506,17 +461,27 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             // Update the models list of the existing folder
             folder.models.clear()
             folder.models.addAll(updatedList)
-
             // Notify the adapter about the data change
             adapter.updateList(updatedList)
+
         }
     }
-
 
     private fun setAllVisibility() {
         adapter.updateSelectionState(false)
         bottomNavigationView.visibility = View.GONE
         unselect_top_menu_bar.visibility = View.GONE
         select_top_menu_bar.visibility = View.VISIBLE
+    }
+
+    override fun onDestroy() {
+        handler?.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    override fun onStop() {
+        // Remove the callbacks to stop the slideshow when the activity is not visible
+        handler?.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 }

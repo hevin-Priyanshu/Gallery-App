@@ -118,8 +118,7 @@ class ImagesAd(
             if (imageModel.isVideo) {
 
                 holder.imageVideoThumbnail.visibility = View.VISIBLE
-                val duration =
-                    (context.application as AppClass).mainViewModel.formatDuration(imageModel.duration)
+                val duration = (context.application as AppClass).mainViewModel.formatDuration(imageModel.duration)
                 holder.imageVideoTextView.text = duration
 
             } else {
@@ -160,7 +159,6 @@ class ImagesAd(
                     intent.putExtra("selectedModel", imageModel)
                     when (context) {
                         is MainScreenActivity -> {
-
                             state = 1
                         }
 

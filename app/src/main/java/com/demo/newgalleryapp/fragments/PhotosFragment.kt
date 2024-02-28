@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,6 +15,8 @@ import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.adapters.ImagesAd
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.viewmodel.MainViewModel
+import com.demo.newgalleryapp.viewmodel.MainViewModelFactory
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -88,27 +91,6 @@ class PhotosFragment : Fragment() {
                 commonList.addAll(images)
             }
             loadLayout(spanCount)
-
-//            imagesAdapter = ImagesAd(requireActivity(), commonList, -1)
-//
-//            val gl = GridLayoutManager(requireActivity(), spanCount, LinearLayoutManager.VERTICAL, false)
-////            val gl = GridLayoutManager(requireActivity(), spanCount)
-//
-//            gl.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-//                override fun getSpanSize(position: Int): Int {
-//                    // Assuming your adapter has a method getItemViewType(position) to get the item type
-//                    // Set span count based on item type
-//                    return when (imagesAdapter!!.getItemViewType(position)) {
-//                        101 -> spanCount
-//                        100 -> 1
-//                        // Add more cases as needed
-//                        else -> 1
-//                    }
-//                }
-//            }
-//
-//            recyclerView.layoutManager = gl
-//            recyclerView.adapter = imagesAdapter
         }
     }
 
@@ -144,22 +126,6 @@ class PhotosFragment : Fragment() {
 
     }
 
-    fun notifyAdapter(filteredData: ArrayList<Any>) {
-        if (imagesAdapter != null) {
-            imagesAdapter?.updateData(filteredData)
-        }
-    }
-
-//    private fun getFormattedDate(dateAdded: Long): String {
-//
-//        val dateAddedInSeconds = dateAdded ?: 0L
-//        val dateAddedInMillis = dateAddedInSeconds * 1000
-//
-//        val localDate =
-//            Instant.ofEpochMilli(dateAddedInMillis).atZone(ZoneId.systemDefault()).toLocalDate()
-//
-//        return DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).format(localDate)
-//    }
 
     private fun getFormattedDate(dateAdded: Long): String {
         val dateAddedInSeconds = dateAdded ?: 0L

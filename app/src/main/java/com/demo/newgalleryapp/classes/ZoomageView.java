@@ -11,11 +11,13 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageView;
 import androidx.core.view.ScaleGestureDetectorCompat;
@@ -861,10 +863,19 @@ public class ZoomageView extends AppCompatImageView implements ScaleGestureDetec
             return false;
         }
 
+        //        SlideShowActivity slideShowActivity;
         @Override
-        public boolean onSingleTapUp(MotionEvent e) {
+        public boolean onSingleTapUp(@NonNull MotionEvent e) {
             singleTapDetected = true;
-//            activity.animation();
+
+            if (activity != null) {
+                activity.animation();
+            } else {
+                // Handle the case where openImageActivity is null
+                Log.e("openImageActivity", "openImageActivity is null");
+                return false;
+            }
+
             return false;
         }
 

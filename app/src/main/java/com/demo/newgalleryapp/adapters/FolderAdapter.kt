@@ -9,9 +9,9 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
@@ -56,6 +56,9 @@ class FolderAdapter(
     }
 
     override fun onBindViewHolder(holder: FolderViewHolder, position: Int) {
+
+        holder.textView.isSelected = true
+
 
         when (from) {
 
@@ -137,6 +140,8 @@ class FolderAdapter(
             popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
         )
 
+        popupWindow?.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+
         popupWindow?.showAtLocation(
             anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
         )
@@ -144,17 +149,6 @@ class FolderAdapter(
         val saveBtn = popupView.findViewById<TextView>(R.id.create_folder_save)
         val cancelBtn = popupView.findViewById<TextView>(R.id.create_folder_chancel)
         val searchEditText = popupView.findViewById<EditText>(R.id.create_folder_searchEditText)
-
-
-//        saveBtn.setOnClickListener {
-//            val newName = searchEditText.text.toString().trim()
-//
-//            val createNewAlbum = File(context.application.getExternalFilesDir(null), newName)
-//            if (!createNewAlbum.exists()) {
-//                createNewAlbum.mkdirs()
-//            }
-//            listener?.onClick(createNewAlbum.name)
-//        }
 
 
         saveBtn.setOnClickListener {
@@ -165,7 +159,10 @@ class FolderAdapter(
                 showToast(context, "Please enter a valid name")
             } else {
 //                val createNewAlbum = File(context.application.getExternalFilesDir(null), newName)
-                val createNewAlbum = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), newName)
+                val createNewAlbum = File(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
+                    newName
+                )
 
                 // Check if a directory with the same name already exists
                 if (createNewAlbum.exists()) {
@@ -197,15 +194,15 @@ class FolderAdapter(
             popupWindow?.dismiss()
         }
 
-        val popupItem = popupView.findViewById<LinearLayout>(R.id.popupItem_create)
-
-        popupItem.setOnClickListener {
-            popupWindow?.dismiss()
-        }
-        // Set dismiss listener to nullify the reference
-        popupWindow?.setOnDismissListener {
-            popupWindow = null
-        }
+//        val popupItem = popupView.findViewById<LinearLayout>(R.id.popupItem_create)
+//
+//        popupItem.setOnClickListener {
+//            popupWindow?.dismiss()
+//        }
+//        // Set dismiss listener to nullify the reference
+//        popupWindow?.setOnDismissListener {
+//            popupWindow = null
+//        }
     }
 
 

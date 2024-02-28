@@ -56,7 +56,8 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
     private lateinit var closeBtnTrash: ImageView
     private var selectedItemList: ArrayList<TrashBinAboveVersion> = ArrayList()
     private lateinit var noData: LinearLayout
-    private lateinit var trashBinTxt: TextView
+
+    //    private lateinit var trashBinTxt: TextView
     private lateinit var howManyItemInTrash: TextView
     private lateinit var itemSelectedTrashBinTxt: TextView
     private lateinit var itemSelectedAllTrashBinTxt: TextView
@@ -73,6 +74,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
     val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
@@ -93,6 +95,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
 
         if (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY && resultCode == Activity.RESULT_OK) {
 
+            updated = true
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             (application as AppClass).mainViewModel.queryTrashedMediaOnDevice()
             photosFragment.imagesAdapter?.notifyDataSetChanged()
@@ -133,7 +136,7 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         closeBtnTrash = findViewById(R.id.close_btn_trash)
         recyclerViewTrash = findViewById(R.id.trashBin_recycler_view)
         noData = findViewById(R.id.no_data)
-        trashBinTxt = findViewById(R.id.trash_txt)
+//        trashBinTxt = findViewById(R.id.trash_txt)
         howManyItemInTrash = findViewById(R.id.howManyItemInTrash)
 
         linearLayoutForMainText = findViewById(R.id.linearLayoutForMainText)
@@ -268,7 +271,8 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         progressBar.visibility = View.GONE
     }
 
-    private fun loadAllTrashData() {3
+    private fun loadAllTrashData() {
+        3
         (application as AppClass).mainViewModel.tempAllTrashData.observe(this) {
             newTrashList.clear()
             newTrashList.addAll(it)
@@ -414,10 +418,10 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
         if (trashList.isEmpty()) {
             noData.visibility = View.VISIBLE
             recyclerViewTrash.visibility = View.GONE
-            trashBinTxt.visibility = View.GONE
+            threeDot.visibility = View.GONE
         } else {
             noData.visibility = View.GONE
-            trashBinTxt.visibility = View.VISIBLE
+            threeDot.visibility = View.VISIBLE
             recyclerViewTrash.visibility = View.VISIBLE
         }
     }

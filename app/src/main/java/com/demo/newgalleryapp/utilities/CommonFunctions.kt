@@ -1,16 +1,20 @@
 package com.demo.newgalleryapp.utilities
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Handler
 import android.provider.Settings
+import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
+import android.view.WindowManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.PopupWindow
@@ -30,12 +34,16 @@ import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.photosFrag
 import com.demo.newgalleryapp.activities.MainScreenActivity.Companion.videosFragment
 import com.demo.newgalleryapp.activities.OpenImageActivity
 import com.demo.newgalleryapp.activities.OpenTrashImageActivity
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.handler
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.imagesSliderAdapterTrash
+import com.demo.newgalleryapp.activities.OpenTrashImageActivity.Companion.updated
 import com.demo.newgalleryapp.activities.TrashBinActivity
 import com.demo.newgalleryapp.activities.TrashBinActivity.Companion.trashBinAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForMainText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
+import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import java.io.File
 import java.io.IOException
@@ -71,13 +79,24 @@ object CommonFunctions {
     const val REQ_CODE_FOR_WRITE_PERMISSION_IN_OPEN_IMAGE_ACTIVITY = 115
     const val REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY = 116
     const val REQ_CODE = 117
-
-    private const val HIDE_DELAY = 1000L // 1 second delay
-    private val hideHandler = Handler()
-
+    var positionForItem = -1
 
     const val ERROR_TAG = "Error"
     var FLAG_FOR_CHANGES_IN_RENAME: Boolean = false
+    var isAutoSlidingEnabled: Boolean = false
+
+
+    fun View.gone() {
+        visibility = View.GONE
+    }
+
+    fun View.visible() {
+        visibility = View.VISIBLE
+    }
+
+    fun View.inVisible() {
+        visibility = View.INVISIBLE
+    }
 
     fun showToast(context: Context, message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -165,14 +184,6 @@ object CommonFunctions {
         }
 
 
-//        slideShowBtn.setOnClickListener {
-//            val intent = Intent(this, SlideShowActivity::class.java)
-//            intent.putExtra("pathsList", ArrayList(paths))
-//            intent.putExtra("slideShowSelectedMainScreenActivity", true)
-//            startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
-//            popupWindow?.dismiss()
-//        }
-
         val popupItem =
             popupWindow_for_main_screen_more.findViewById<LinearLayout>(R.id.popupItem_more_main_screen_activity)
 
@@ -186,7 +197,9 @@ object CommonFunctions {
     }
 
     fun Context.showRenamePopup(
-        anchorView: View, selectedImagePath: String, activity: OpenImageActivity
+        anchorView: View,
+        selectedImagePath: String,
+        activity: OpenImageActivity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -195,6 +208,8 @@ object CommonFunctions {
         popupWindow = PopupWindow(
             popupView, Toolbar.LayoutParams.MATCH_PARENT, Toolbar.LayoutParams.MATCH_PARENT, true
         )
+
+        popupWindow?.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
 
         popupWindow?.showAtLocation(
             anchorView, Gravity.FILL_VERTICAL or Gravity.FILL_HORIZONTAL, 0, 0
@@ -223,6 +238,7 @@ object CommonFunctions {
 
                 try {
                     originalPath.renameTo(destinationPath)
+
                     (activity.application as AppClass).mainViewModel.scanFile(this, destinationPath)
                     (activity.application as AppClass).mainViewModel.scanFile(this, originalPath)
                     FLAG_FOR_CHANGES_IN_RENAME = true
@@ -246,15 +262,15 @@ object CommonFunctions {
             popupWindow?.dismiss()
         }
 
-        val popupItem = popupView.findViewById<LinearLayout>(R.id.popupItem_rename)
-
-        popupItem.setOnClickListener {
-            popupWindow?.dismiss()
-        }
-        // Set dismiss listener to nullify the reference
-        popupWindow?.setOnDismissListener {
-            popupWindow = null
-        }
+//        val popupItem = popupView.findViewById<LinearLayout>(R.id.popupItem_rename)
+//
+//        popupItem.setOnClickListener {
+//            popupWindow?.dismiss()
+//        }
+//        // Set dismiss listener to nullify the reference
+//        popupWindow?.setOnDismissListener {
+//            popupWindow = null
+//        }
     }
 
     // here move multiple files in trash bin,  popup menu will show
@@ -303,6 +319,7 @@ object CommonFunctions {
                     FolderImagesActivity.adapter.notifyDataSetChanged()
                     isUpdatedFolderActivity = true
                     setAllVisibilityFolderImagesActivity()
+                    activity.setHowManyItem()
                     popupWindow_delete?.dismiss()
                 }
 
@@ -355,7 +372,12 @@ object CommonFunctions {
 
     // here move only one file in trash bin,  popup menu will show
     fun Context.showPopupForMoveToTrashBinForOpenActivityOnlyOne(
-        anchorView: View, path: String, currentPosition: Int, isVideoOrNot: Boolean
+        anchorView: View,
+        path: String,
+        currentPosition: Int,
+        isVideoOrNot: Boolean,
+        currentState: Int?,
+        openImageActivity: OpenImageActivity
     ) {
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
         val popupWindowDelete: View = inflater.inflate(R.layout.delete_popup_menu, null)
@@ -383,10 +405,20 @@ object CommonFunctions {
         saveBtn.setOnClickListener {
             // HERE I AM DELETING THE IMAGE WITH CURRENT PATH
             (applicationContext as AppClass).mainViewModel.moveImageInTrashBin(path, isVideoOrNot)
-//            (applicationContext as AppClass).mainViewModel.moveToTrash(Uri.parse(path))
 
-            OpenImageActivity.imagesSliderAdapter.remove(currentPosition)
-            OpenImageActivity.anyChanges = true
+
+            if (currentState == 1) {
+                OpenImageActivity.imagesSliderAdapter.remove(currentPosition, openImageActivity)
+                OpenImageActivity.anyChanges = true
+            } else {
+                //FolderImagesActivity
+                OpenImageActivity.imagesSliderAdapter.remove(currentPosition, openImageActivity)
+                FolderImagesActivity.adapter.remove(currentPosition)
+
+                isUpdatedFolderActivity = true
+            }
+
+
             popupWindow_delete?.dismiss()
             (applicationContext as AppClass).mainViewModel.getMediaFromInternalStorage()
             showToast(this, "Move To Trash bin Successfully!!")
@@ -488,9 +520,21 @@ object CommonFunctions {
         restoreBtn.setOnClickListener {
 
             (applicationContext as AppClass).mainViewModel.restoreImage(paths)
-            openTrashImageActivity.imagesSliderAdapterTrash.remove(currentPosition)
+            openTrashImageActivity.progressDialogFragment.show()
+
+            updated = true
+            imagesSliderAdapterTrash.remove(currentPosition, openTrashImageActivity)
+//            trashBinAdapter.remove(currentPosition)
+
+//            trashBinAdapter.notifyDataSetChanged()
+//            openTrashImageActivity.imagesSliderAdapterTrash.notifyDataSetChanged()
+
+            handler?.postDelayed({
+                openTrashImageActivity.progressDialogFragment.cancel()
+            }, 1000)
             popupWindow_restore?.dismiss()
-            showToast(this, "Image restored successfully!!")
+            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            showToast(this, "Restore Successfully!!")
         }
 
         cancelBtn.setOnClickListener {
@@ -538,7 +582,7 @@ object CommonFunctions {
 
             trashBinActivity.handler?.postDelayed({
                 trashBinActivity.progressDialogFragment.cancel()
-                showToast(this, "Delete Successful!!")
+                showToast(this, "Deleted Successfully!!")
             }, 1000)
             popupForDeletePermanently?.dismiss()
             trashBinActivityAllVisibility()
@@ -586,9 +630,23 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to delete ${1} file Permanently ?"}"
 
         saveBtn.setOnClickListener {
+
             (applicationContext as AppClass).mainViewModel.deleteImage(paths)
-            openTrashImageActivity.imagesSliderAdapterTrash.remove(currentPosition)
+
+            openTrashImageActivity.progressDialogFragment.show()
+
+            imagesSliderAdapterTrash.remove(
+                currentPosition, openTrashImageActivity
+            )
+
             popupForDeletePermanently?.dismiss()
+
+            trashBinAdapter.notifyDataSetChanged()
+            imagesSliderAdapterTrash.notifyDataSetChanged()
+
+            handler?.postDelayed({
+                openTrashImageActivity.progressDialogFragment.cancel()
+            }, 1000)
         }
 
         cancelBtn.setOnClickListener {
@@ -643,18 +701,89 @@ object CommonFunctions {
         intent.data =
             uri  // Set the Uri as data for the Intent. This specifies the details of the app whose settings should be shown.
         startActivity(intent)
-//        finish()
     }
 
     fun setNavigationColor(window: Window, color: Int) {
         window.apply {
             navigationBarColor = color
             statusBarColor = color
-            val decorView = window.decorView
-            decorView.systemUiVisibility =
-                (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
+
+            if (color == Color.BLACK) {
+                decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+            } else {
+                decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+            }
+//            val decorView = window.decorView
+//            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
         }
     }
+
+    fun Context.shareApp(msg: String = "") {
+        try {
+            val shareMessage = if (msg.isEmpty()) {
+                """
+   
+                     Please try this application
+                     
+                     https://play.google.com/store/apps/details?id=${packageName}
+                     """.trimIndent() + "\n"
+            } else {
+                msg + "\n" + """
+        
+                     Please try this application
+                     
+                     https://play.google.com/store/apps/details?id=${packageName}
+                     """.trimIndent() + "\n"
+            }
+
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.type = "text/plain"
+            shareIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name))
+            shareIntent.putExtra(Intent.EXTRA_TEXT, shareMessage)
+            startActivity(Intent.createChooser(shareIntent, "choose one"))
+
+        } catch (ignored: Exception) {
+        }
+    }
+
+    fun Activity.rateUs() {
+        val uri = Uri.parse("market://details?id=$packageName")
+        val goToMarket = Intent(Intent.ACTION_VIEW, uri)
+        goToMarket.addFlags(
+            Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK
+        )
+        try {
+            startActivityForResult(goToMarket, 111)
+        } catch (e: ActivityNotFoundException) {
+            val goToMarket = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse("http://play.google.com/store/apps/details?id=$packageName")
+            )
+            startActivityForResult(goToMarket, 111)
+        }
+    }
+
+    fun Activity.privacyPolicy(privacyPolicyUrl: String = "") {
+        try {
+            val browserIntent: Intent = if (!TextUtils.isEmpty(privacyPolicyUrl)) {
+                Intent(Intent.ACTION_VIEW, Uri.parse(privacyPolicyUrl))
+            } else {
+                Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse("https://visiontecprivacypolicy.blogspot.com/?m=1")
+                )
+            }
+            startActivityForResult(browserIntent, 222)
+        } catch (ignored: java.lang.Exception) {
+        }
+    }
+
+//    private fun launchImageCrop(uri: Uri) {
+//        CropImage.activity(uri).setGuidelines(CropImageView.Guidelines.ON)
+//            .setAspectRatio(10000, 10000).setCropShape(CropImageView.CropShape.RECTANGLE).start(this)
+//    }
+
+    ///////////////////////
 
     /***********************************************/
 }

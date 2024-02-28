@@ -55,7 +55,8 @@
                         android:layout_height="@dimen/_22sdp"
                         android:layout_gravity="center"
                         android:layout_marginEnd="@dimen/_15sdp"
-                        android:src="@drawable/heart_icon_new" />
+                        android:src="@drawable/heart_icon_new"
+                        android:visibility="gone" />
 
                     <ImageView
                         android:id="@+id/three_dot_item"
@@ -63,7 +64,9 @@
                         android:layout_height="@dimen/_22sdp"
                         android:layout_gravity="center"
                         android:layout_marginEnd="@dimen/_12sdp"
-                        android:src="@drawable/three_dot_new" />
+                        android:src="@drawable/three_dot_new"
+                        android:visibility="gone" />
+
                 </LinearLayout>
 
 

@@ -170,11 +170,8 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
 
                 recyclerIsEmptyOrNot(tempFavoriteList)
 
-                recyclerView.layoutManager =
-                    GridLayoutManager(this, gridCount, LinearLayoutManager.VERTICAL, false)
-                favoriteAdapter = FavoriteAdapter(
-                    this@FavoriteImagesActivity, tempFavoriteList, this@FavoriteImagesActivity
-                )
+                recyclerView.layoutManager = GridLayoutManager(this, gridCount, LinearLayoutManager.VERTICAL, false)
+                favoriteAdapter = FavoriteAdapter(this@FavoriteImagesActivity, tempFavoriteList, this@FavoriteImagesActivity)
                 recyclerView.adapter = favoriteAdapter
 //                howManyItemOn.text = favoriteAdapter.itemCount.toString()
                 val items = favoriteAdapter.itemCount.toString()
@@ -186,9 +183,11 @@ class FavoriteImagesActivity : AppCompatActivity(), ImageClickListener {
         if (tempFavoriteList.isEmpty()) {
             noData.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            threeDot.visibility = View.GONE
         } else {
             noData.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
+            threeDot.visibility = View.VISIBLE
         }
 
     }

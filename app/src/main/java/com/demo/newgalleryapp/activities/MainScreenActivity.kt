@@ -67,12 +67,14 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     val progressDialogFragment by lazy {
         val dialog = Dialog(this)
+        dialog.window?.setBackgroundDrawable(getDrawable(R.drawable.rounded_border_shape))
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(false)
         dialogBinding = DialogLoadingBinding.inflate(dialog.layoutInflater)
         dialog.setContentView(dialogBinding.root)
         dialog
     }
+
 
     companion object {
         lateinit var albumsFragment: AlbumsFragment
@@ -98,26 +100,33 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) || (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) || (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
+        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) ||
+            (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) ||
+            (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
 
-            progressDialogFragment.show()
-            (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+            if ((FLAG_FOR_CHANGES_IN_RENAME)) {
+                (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                FLAG_FOR_CHANGES_IN_RENAME = false
+            } else {
 
-            // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
-            if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
-                checkBoxList.map {
-                    it.path
-                }.forEach {
-                    ImagesDatabase.getDatabase(this).favoriteImageDao().deleteFavorites(it)
+                progressDialogFragment.show()
+                (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+                // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
+                if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
+                    checkBoxList.map {
+                        it.path
+                    }.forEach {
+                        ImagesDatabase.getDatabase(this).favoriteImageDao().deleteFavorites(it)
+                    }
                 }
-            }
-            photosFragment.imagesAdapter?.notifyDataSetChanged()
-            videosFragment.imagesAdapter?.notifyDataSetChanged()
-            FLAG_FOR_CHANGES_IN_RENAME = false
+                photosFragment.imagesAdapter?.notifyDataSetChanged()
+                videosFragment.imagesAdapter?.notifyDataSetChanged()
 
-            handler?.postDelayed({
-                progressDialogFragment.cancel()
-            }, 1000)
+                handler?.postDelayed({
+                    progressDialogFragment.cancel()
+                }, 1000)
+            }
+
         } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
             (application as AppClass).mainViewModel.getMediaFromInternalStorage()
             albumsFragment.folderAdapter?.notifyDataSetChanged()
@@ -324,7 +333,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
                 ImagesDatabase.getDatabase(this@MainScreenActivity).favoriteImageDao()
                     .insertFavorite(addFavorite)
             }
-            showToast(this, "Favorites Added")
+//            showToast(this, "Favorites Added")
             resetVisibilityForDeleteItem()
         }
     }
@@ -489,7 +498,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
             Handler(Looper.myLooper()!!).postDelayed({
                 backPressedOnce = false
-            }, 5000) // Reset the flag after 2 seconds
+            }, 3000) // Reset the flag after 3 seconds
         } else {
             loadFragment(mediaFragment)
             bottomNavigationView.selectedItemId = R.id.mediaItem

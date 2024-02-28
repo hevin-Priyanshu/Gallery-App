@@ -37,7 +37,7 @@ class WallpaperActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var selectedImageUri: Uri
     private var popupWindow: PopupWindow? = null
-    lateinit var backBtn: ImageView
+    private lateinit var backBtn: ImageView
     private var scopeJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {

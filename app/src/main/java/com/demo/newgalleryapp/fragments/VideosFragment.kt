@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,6 +16,8 @@ import com.demo.newgalleryapp.adapters.ImagesAd
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.mediaProgressBar
 import com.demo.newgalleryapp.models.MediaModel
+import com.demo.newgalleryapp.viewmodel.MainViewModel
+import com.demo.newgalleryapp.viewmodel.MainViewModelFactory
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate

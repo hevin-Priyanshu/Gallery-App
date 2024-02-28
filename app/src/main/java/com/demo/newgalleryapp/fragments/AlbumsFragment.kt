@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.ImageView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +23,8 @@ import com.demo.newgalleryapp.activities.MainScreenActivity
 import com.demo.newgalleryapp.adapters.FolderAdapter
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.models.Folder
+import com.demo.newgalleryapp.viewmodel.MainViewModel
+import com.demo.newgalleryapp.viewmodel.MainViewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,7 +51,6 @@ class AlbumsFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        tempFolderList = (requireActivity().application as AppClass).mainViewModel.folderList
         val view: View = inflater.inflate(R.layout.fragment_albums, container, false)
 
         recyclerView = view.findViewById(R.id.recycler_view_album)
@@ -56,6 +58,7 @@ class AlbumsFragment : Fragment() {
         searchCloseBtn = view.findViewById(R.id.search_close_btn_album)
         openFavoriteActivity = view.findViewById(R.id.favorites_album)
 
+        observeAllData()
 
         openFavoriteActivity.setOnClickListener {
             val intent = Intent(requireContext(), FavoriteImagesActivity::class.java)
@@ -104,8 +107,6 @@ class AlbumsFragment : Fragment() {
                 }
             }
         })
-
-        observeAllData()
 
         return view
     }

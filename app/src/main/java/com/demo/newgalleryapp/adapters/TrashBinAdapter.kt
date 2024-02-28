@@ -81,8 +81,12 @@ class TrashBinAdapter(
                 val calculateRemainingDays =
                     (TimeUnit.MILLISECONDS.toDays(list[position].date) - TimeUnit.MILLISECONDS.toDays(
                         System.currentTimeMillis()
-                    )).toString()
-                holder.remainingDays.text = "${calculateRemainingDays} Days"
+                    ))
+                if (calculateRemainingDays in 0..30) {
+                    holder.remainingDays.text = "${calculateRemainingDays} Days"
+                } else {
+                    holder.remainingDays.text = "${0} Days"
+                }
 
             } else {
                 val imagesToDelete = ImagesDatabase.getDatabase(context).favoriteImageDao()

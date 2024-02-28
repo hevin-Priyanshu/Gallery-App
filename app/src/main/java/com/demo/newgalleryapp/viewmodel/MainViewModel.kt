@@ -163,6 +163,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (size == null) {
                     continue
                 }
+
+                if (duration == null) {
+                    continue
+                }
                 // Create a MediaModel object and add it to the list
                 val mediaModel =
                     MediaModel(id, displayName, data, mimeType, duration, size, dateAdded, isVideo)
@@ -226,7 +230,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //                    isVideoOrNot
 //                )
 
-                ImagesDatabase.getDatabase(context).favoriteImageDao().deleteImages(trashBinModel)
+                val existingTrashItem = ImagesDatabase.getDatabase(context).favoriteImageDao()
+                    .getTrashBinItemByPath(imagePathToDelete)
+
+                if (existingTrashItem != null) {
+                    ImagesDatabase.getDatabase(context).favoriteImageDao()
+                        .deleteImages(trashBinModel)
+                }
 
                 // Here adding current and destination path in database , for showing item in trash bin
                 ImagesDatabase.getDatabase(context).favoriteImageDao()

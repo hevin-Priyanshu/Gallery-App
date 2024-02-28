@@ -54,32 +54,59 @@
             android:layout_alignParentBottom="true"
             android:padding="@dimen/_6sdp">
 
+            <!--            <LinearLayout-->
+            <!--                android:id="@+id/imageView_video_logo_image"-->
+            <!--                android:layout_width="@dimen/_35sdp"-->
+            <!--                android:layout_height="@dimen/_14sdp"-->
+            <!--                android:background="@drawable/background"-->
+            <!--                android:gravity="center"-->
+            <!--                android:orientation="horizontal"-->
+            <!--                android:weightSum="3">-->
+
+            <!--                <ImageView-->
+            <!--                    android:layout_width="match_parent"-->
+            <!--                    android:layout_height="match_parent"-->
+            <!--                    android:layout_marginStart="@dimen/_3sdp"-->
+            <!--                    android:layout_weight="2"-->
+            <!--                    android:gravity="center"-->
+            <!--                    android:src="@drawable/ic_new_video_icon" />-->
+
+            <!--                <TextView-->
+            <!--                    android:id="@+id/videoTime"-->
+            <!--                    android:layout_width="match_parent"-->
+            <!--                    android:layout_height="match_parent"-->
+            <!--                    android:layout_marginStart="@dimen/_3sdp"-->
+            <!--                    android:layout_marginEnd="@dimen/_3sdp"-->
+            <!--                    android:layout_weight="1"-->
+            <!--                    android:fontFamily="@font/poppins_medium"-->
+            <!--                    android:gravity="center"-->
+            <!--                    android:textColor="@color/white"-->
+            <!--                    android:textSize="@dimen/_6sdp" />-->
+
+            <!--            </LinearLayout>-->
+
+
             <LinearLayout
                 android:id="@+id/imageView_video_logo_image"
-                android:layout_width="@dimen/_35sdp"
-                android:layout_height="@dimen/_14sdp"
-                android:background="@drawable/background"
+                android:layout_width="wrap_content"
+                android:layout_height="14dp"
+                android:layout_alignParentBottom="true"
+                android:background="@drawable/video_background"
                 android:gravity="center"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                android:weightSum="3">
+                android:visibility="gone">
 
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginStart="@dimen/_3sdp"
-                    android:layout_weight="2"
-                    android:gravity="center"
+                <ImageButton
+                    android:layout_width="11dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2.5dp"
                     android:src="@drawable/ic_new_video_icon" />
 
                 <TextView
                     android:id="@+id/videoTime"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="@dimen/_3sdp"
-                    android:layout_marginEnd="@dimen/_3sdp"
-                    android:layout_weight="1"
-                    android:fontFamily="@font/poppins_medium"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginEnd="2.5dp"
                     android:gravity="center"
                     android:textColor="@color/white"
                     android:textSize="@dimen/_6sdp" />

@@ -106,9 +106,9 @@ class ImagesAdapter(
             }
 
             holder.imageVideo.visibility = View.VISIBLE
-            val duration =
-                (context.application as AppClass).mainViewModel.formatDuration(listPos.duration)
+            val duration = (context.application as AppClass).mainViewModel.formatDuration(listPos.duration)
             holder.imageVideoText.text = duration
+
         } else {
             holder.imageVideoThumbnail.visibility = View.GONE
             holder.imageVideo.visibility = View.GONE
