@@ -160,7 +160,7 @@
                         android:layout_marginEnd="@dimen/_10sdp"
                         android:fontFamily="@font/poppins_medium"
                         android:gravity="center"
-                        android:text="DeSelect All"
+                        android:text="Deselect All"
                         android:textColor="@color/color_main"
                         android:textSize="@dimen/_13sdp"
                         android:visibility="gone" />
@@ -232,6 +232,7 @@
         android:layout_alignParentBottom="true"
         android:background="@color/white"
         android:visibility="gone"
+        app:itemBackground="@color/white"
         app:itemIconTint="@color/icon_color"
         app:itemTextColor="@color/icon_color"
         app:menu="@menu/bottom_item_trash" />

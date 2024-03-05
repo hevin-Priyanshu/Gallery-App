@@ -144,9 +144,7 @@ class TrashBinAdapter(
             } else {
                 val intentTrash = Intent(context, OpenTrashImageActivity::class.java)
                 intentTrash.putExtra("trashBinPos", position)
-                context.startActivityForResult(
-                    intentTrash, REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY
-                )
+                context.startActivityForResult(intentTrash, REQ_CODE_FOR_CHANGES_IN_OPEN_TRASH_ACTIVITY)
             }
         }
 

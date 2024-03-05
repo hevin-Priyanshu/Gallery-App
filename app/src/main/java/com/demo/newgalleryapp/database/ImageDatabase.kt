@@ -9,14 +9,15 @@ import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import com.demo.newgalleryapp.models.UriConverter
 
-@Database(entities = [MediaModel::class, TrashBinAboveVersion::class], version = 5, exportSchema = false)
+@Database(entities = [MediaModel::class, TrashBinAboveVersion::class], version = 1, exportSchema = false)
 @TypeConverters(UriConverter::class)
 abstract class ImagesDatabase : RoomDatabase() {
     abstract fun favoriteImageDao(): ImageDao
 
     companion object {
         private var INSTANCE: ImagesDatabase? = null
-        fun getDatabase(context: Context): ImagesDatabase = INSTANCE ?: synchronized(this) {
+        fun getDatabase(context: Context): ImagesDatabase =
+            INSTANCE ?: synchronized(this) {
             INSTANCE ?: Room.databaseBuilder(
                 context.applicationContext, ImagesDatabase::class.java, "image_database"
             ).allowMainThreadQueries().fallbackToDestructiveMigration().build()

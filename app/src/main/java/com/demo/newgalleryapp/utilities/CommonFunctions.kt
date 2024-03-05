@@ -1,12 +1,15 @@
 package com.demo.newgalleryapp.utilities
 
 import android.app.Activity
+import android.app.PendingIntent
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
+import android.provider.MediaStore
 import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
@@ -20,6 +23,7 @@ import android.widget.LinearLayout
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.demo.newgalleryapp.R
@@ -43,7 +47,6 @@ import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForMainText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.linearLayoutForSelectText
 import com.demo.newgalleryapp.fragments.MediaFragment.Companion.viewPager
-import com.demo.newgalleryapp.models.MediaModel
 import com.demo.newgalleryapp.models.TrashBinAboveVersion
 import java.io.File
 import java.io.IOException
@@ -51,6 +54,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
 
 object CommonFunctions {
     private var popupWindow: PopupWindow? = null
@@ -167,7 +171,7 @@ object CommonFunctions {
             intent.putExtra("mainScreenActivity", true)
             startActivityForResult(intent, REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY)
             popupWindowMore?.dismiss()
-            resetVisibilityForDeleteItem()
+//            resetVisibilityForDeleteItem()
         }
 
         moveBtn.setOnClickListener {
@@ -180,7 +184,7 @@ object CommonFunctions {
 //            if (activity is FolderImagesActivity) {
 //                activity.finish()
 //            }
-            resetVisibilityForDeleteItem()
+//            resetVisibilityForDeleteItem()
         }
 
 
@@ -197,9 +201,7 @@ object CommonFunctions {
     }
 
     fun Context.showRenamePopup(
-        anchorView: View,
-        selectedImagePath: String,
-        activity: OpenImageActivity
+        anchorView: View, selectedImagePath: String, activity: OpenImageActivity
     ) {
 
         val inflater = getSystemService(AppCompatActivity.LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -307,11 +309,16 @@ object CommonFunctions {
         howManyItems.text = "${"Are you sure to move ${paths.size} file to the trash bin ?"}"
 
         saveBtn.setOnClickListener {
-            (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(
-                paths, isVideos
-            )
+
+            Executors.newSingleThreadExecutor().execute {
+                (applicationContext as AppClass).mainViewModel.moveMultipleImagesInTrashBin(
+                    paths, isVideos
+                )
+            }
+
 
             when (activity) {
+
                 is FolderImagesActivity -> {
                     activity.progressDialogFragment.show()
                     activity.removeItemsAtPosition(position, pathsToRemove)
@@ -330,7 +337,9 @@ object CommonFunctions {
                 }
 
                 is MainScreenActivity -> {
+
                     activity.progressDialogFragment.show()
+
                     if (viewPager.currentItem == 0) {
                         photosFragment.imagesAdapter?.removeItemsFromAdapter(paths)
                     } else {
@@ -698,8 +707,7 @@ object CommonFunctions {
             "package", packageName, null
         )   // Create a Uri specifying the package details for the current app.
 
-        intent.data =
-            uri  // Set the Uri as data for the Intent. This specifies the details of the app whose settings should be shown.
+        intent.data = uri  // Set the Uri as data for the Intent. This specifies the details of the app whose settings should be shown.
         startActivity(intent)
     }
 
@@ -711,7 +719,8 @@ object CommonFunctions {
             if (color == Color.BLACK) {
                 decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
             } else {
-                decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                decorView.systemUiVisibility =
+                    (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
             }
 //            val decorView = window.decorView
 //            decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LAYOUT_STABLE /*or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/)
@@ -776,6 +785,11 @@ object CommonFunctions {
             startActivityForResult(browserIntent, 222)
         } catch (ignored: java.lang.Exception) {
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    fun createTrashRequestMethod(context: Context, media: List<Uri>, trashOrNot: Boolean): PendingIntent {
+        return MediaStore.createTrashRequest(context.contentResolver, media, trashOrNot)
     }
 
 //    private fun launchImageCrop(uri: Uri) {

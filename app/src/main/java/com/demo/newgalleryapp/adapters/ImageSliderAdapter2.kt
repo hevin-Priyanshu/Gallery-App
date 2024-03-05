@@ -45,10 +45,10 @@ class ImageSliderAdapter2(
     }
 
     override fun onBindViewHolder(holder: ImageSliderViewHolder, position: Int) {
+
         val model = modelList[position]
 
         /**..Ithai OpenImage activity set karat aahe when user image var click karat ahe jeva..**/
-
         if (activity is OpenImageActivity) {
             holder.imageViewForSlider.setActivity(activity)
         } else if (activity is OpenTrashImageActivity) {
@@ -60,7 +60,7 @@ class ImageSliderAdapter2(
             holder.imageVideo.visibility = View.VISIBLE
 
             /**  Ha Check aahe ki ,, jar user ha album chaya kontya folder var click karun aala tar tyat jar video present ashnar tar... **/
-            if (isFolder) {
+            if (isFolder || (activity is OpenTrashImageActivity)) {
 
                 /**  jar present asnar tar tya video cha path send karat ahe intent ni.... **/
                 holder.imageVideo.setOnClickListener {
@@ -70,7 +70,6 @@ class ImageSliderAdapter2(
                     activity.startActivity(intent)
                 }
             } else {
-
                 /**  jar nahi tar only position ....**/
                 holder.imageVideo.setOnClickListener {
                     val intent = Intent(activity, VideoViewActivity::class.java)

@@ -36,6 +36,7 @@
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:visibility="gone"
+            app:itemBackground="@color/white"
             app:labelVisibilityMode="selected"
             app:menu="@menu/new_bottom_item" />
 
@@ -47,6 +48,7 @@
             android:layout_height="wrap_content"
             android:background="@color/white"
             android:visibility="gone"
+            app:itemBackground="@color/white"
             app:itemIconTint="@color/icon_color"
             app:labelVisibilityMode="unlabeled"
             app:menu="@menu/bottom_nav_for_select_items" />

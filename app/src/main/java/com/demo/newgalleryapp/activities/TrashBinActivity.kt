@@ -307,40 +307,45 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                     // Create a copy of the list to avoid ConcurrentModificationException
                     val copiedList = ArrayList(selectedItemList)
 
-                    copiedList.map { trashBin ->
+                    if (copiedList.isNotEmpty()) {
+                        copiedList.map { trashBin ->
 
-                        val imageUri = trashBin.uri
+                            val imageUri = trashBin.uri
 
-                        if (copiedList.isNotEmpty()) {
+                            if (copiedList.isNotEmpty()) {
 
-                            arrayList.add(imageUri)
-                            if (arrayList.size == copiedList.size) {
+                                arrayList.add(imageUri)
+                                if (arrayList.size == copiedList.size) {
 
-                                try {
-                                    val pendingIntent: PendingIntent =
-                                        MediaStore.createTrashRequest(
-                                            contentResolver, arrayList, false
+                                    try {
+                                        val pendingIntent: PendingIntent =
+                                            MediaStore.createTrashRequest(
+                                                contentResolver, arrayList, false
+                                            )
+                                        startIntentSenderForResult(
+                                            pendingIntent.intentSender,
+                                            REQ_CODE_FOR_RESTORE_PERMISSION_IN_TRASH_BIN_ACTIVITY,
+                                            null,
+                                            0,
+                                            0,
+                                            0,
+                                            null
                                         )
-                                    startIntentSenderForResult(
-                                        pendingIntent.intentSender,
-                                        REQ_CODE_FOR_RESTORE_PERMISSION_IN_TRASH_BIN_ACTIVITY,
-                                        null,
-                                        0,
-                                        0,
-                                        0,
-                                        null
-                                    )
-                                } catch (e: Exception) {
-                                    Log.e("TAG", "000AAA: $e")
+                                    } catch (e: Exception) {
+                                        Log.e("TAG", "000AAA: $e")
+                                    }
+                                    ////////////////
                                 }
-                                ////////////////
+                            } else {
+                                showToast(this@TrashBinActivity, "Error: Image not found")
                             }
-                        } else {
-                            showToast(this@TrashBinActivity, "Error: Image not found")
+                            ///////////////
                         }
-                        ///////////////
+
+                        setAllVisibility()
+                    } else {
+                        showToast(this, "No images/videos Selected to restore!!")
                     }
-                    setAllVisibility()
                 }
                 //////////
                 else {
@@ -366,39 +371,45 @@ class TrashBinActivity : AppCompatActivity(), ImageClickListener {
                     // Create a copy of the list to avoid ConcurrentModificationException
                     val copiedList = ArrayList(selectedItemList)
 
-                    copiedList.map { trashBin ->
+                    if (copiedList.isNotEmpty()) {
+                        copiedList.map { trashBin ->
 
-                        val imageUri = trashBin.uri
+                            val imageUri = trashBin.uri
 
-                        if (copiedList.isNotEmpty()) {
+                            if (copiedList.isNotEmpty()) {
+                                arrayList.add(imageUri)
+                                if (arrayList.size == copiedList.size) {
 
-                            arrayList.add(imageUri)
-                            if (arrayList.size == copiedList.size) {
-
-                                try {
-                                    val pendingIntent: PendingIntent =
-                                        MediaStore.createDeleteRequest(contentResolver, arrayList)
-                                    startIntentSenderForResult(
-                                        pendingIntent.intentSender,
-                                        REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY,
-                                        null,
-                                        0,
-                                        0,
-                                        0,
-                                        null
-                                    )
-                                } catch (e: Exception) {
-                                    Log.e("TAG", "000AAA: $e")
+                                    try {
+                                        val pendingIntent: PendingIntent =
+                                            MediaStore.createDeleteRequest(
+                                                contentResolver, arrayList
+                                            )
+                                        startIntentSenderForResult(
+                                            pendingIntent.intentSender,
+                                            REQ_CODE_FOR_DELETE_PERMISSION_IN_TRASH_BIN_ACTIVITY,
+                                            null,
+                                            0,
+                                            0,
+                                            0,
+                                            null
+                                        )
+                                    } catch (e: Exception) {
+                                        Log.e("TAG", "000AAA: $e")
+                                    }
+                                    ////////////////
                                 }
-                                ////////////////
+                            } else {
+                                showToast(this@TrashBinActivity, "Error: Image not found")
                             }
-                        } else {
-                            showToast(this@TrashBinActivity, "Error: Image not found")
+                            ///////////////
                         }
-                        ///////////////
+
+                        setAllVisibility()
+                    } else {
+                        showToast(this, "No images/videos Selected to delete!!")
                     }
                     ///////////////////////////////////////
-                    setAllVisibility()
                 } else {
                     if (selectedItemList.isNotEmpty()) {
                         showPopupForDeletePermanently(

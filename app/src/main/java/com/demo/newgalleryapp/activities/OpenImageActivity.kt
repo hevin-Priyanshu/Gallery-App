@@ -193,7 +193,7 @@ class OpenImageActivity : AppCompatActivity() {
 
             when (currentState) {
                 1 -> {
-                    val sM: MediaModel = intent.extras?.get("selectedModel") as MediaModel
+                    val sM: MediaModel = intent.getSerializableExtra("selectedModel") as MediaModel
 
                     if (!sM.isVideo) {
                         fabCount = (application as AppClass).mainViewModel.tempPhotoList.indexOf(sM)
@@ -384,7 +384,6 @@ class OpenImageActivity : AppCompatActivity() {
                 arrayList.clear()
                 arrayList.add(uri)
                 try {
-
                     val pendingIntent: PendingIntent =
                         MediaStore.createTrashRequest(contentResolver, arrayList, true)
                     startIntentSenderForResult(
@@ -547,6 +546,7 @@ class OpenImageActivity : AppCompatActivity() {
             intent.putExtra("FromSlideShow", true)
             intent.putExtra("SlideImagePosition", currentPosition)
             startActivity(intent)
+            finish()
             popupWindow?.dismiss()
         }
 

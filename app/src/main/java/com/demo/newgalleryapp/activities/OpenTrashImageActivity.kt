@@ -119,7 +119,19 @@ class OpenTrashImageActivity : AppCompatActivity() {
                 tempList.addAll(it)
 
                 val trash =
-                    it.map { MediaModel(0, it.name, it.uri.toString(), " ", 0, 0, 0, false) }
+                    it.map {
+                        MediaModel(
+                            0,
+                            it.uri.toString(),
+                            it.name,
+                            it.uri.toString(),
+                            "",
+                            0,
+                            0,
+                            0,
+                            it.isVideo
+                        )
+                    }
                 models.clear()
                 models.addAll(trash)
                 setViewPagerAdapter(models)
@@ -131,7 +143,19 @@ class OpenTrashImageActivity : AppCompatActivity() {
                     tempList.clear()
                     tempList.addAll(it)
                     val trash =
-                        it.map { MediaModel(0, it.path, it.uri.toString(), " ", 0, 0, 0, false) }
+                        it.map {
+                            MediaModel(
+                                0,
+                                it.uri.toString(),
+                                it.path,
+                                it.uri.toString(),
+                                " ",
+                                0,
+                                0,
+                                0,
+                                it.isVideo
+                            )
+                        }
 
                     models.clear()
                     models.addAll(trash)

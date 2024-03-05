@@ -5,9 +5,9 @@ import androidx.room.PrimaryKey
 import java.io.Serializable
 
 @Entity(tableName = "favorites")
-data class MediaModel (
-    @PrimaryKey(autoGenerate = true)
-    val id: Long,
+data class MediaModel(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    val uri: String,
     var displayName: String,
     val path: String,
     val mimeType: String,
@@ -15,4 +15,4 @@ data class MediaModel (
     val size: Long,
     val date: Long,
     val isVideo: Boolean
-): Serializable
+) : Serializable

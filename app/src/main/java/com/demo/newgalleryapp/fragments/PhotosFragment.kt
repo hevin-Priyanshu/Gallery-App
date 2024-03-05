@@ -57,7 +57,7 @@ class PhotosFragment : Fragment() {
                 count =
                     (requireActivity().application as AppClass).mainViewModel.sharedPreferencesHelper.getGridColumns()
                 lifecycleScope.launch {
-                    Log.e("TAG", "onCreateView: PhotosFragment")
+                    Log.e("from", "onCreateView: PhotosFragment")
                     observeAllData(count, "Photo")
                 }
             }
@@ -68,11 +68,13 @@ class PhotosFragment : Fragment() {
 
     fun observeAllData(spanCount: Int, from: String) {
 
+        Log.e("from", "observeAllData12222:----------------- $from --- ")
+
         (requireActivity().application as AppClass).mainViewModel.photosData.observe(
             viewLifecycleOwner
         ) { photosList ->
 
-            Log.e("TAG", "observeAllData:----------------- $from --- ")
+            Log.e("from", "observeAllData:----------------- $from --- ")
             commonList.clear()
             (requireActivity().application as AppClass).mainViewModel.tempPhotoList.clear()
 

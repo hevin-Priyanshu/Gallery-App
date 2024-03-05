@@ -8,13 +8,11 @@ import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
 import android.view.Window
 import android.widget.Toast
@@ -23,6 +21,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.demo.newgalleryapp.R
 import com.demo.newgalleryapp.classes.AppClass
 import com.demo.newgalleryapp.database.ImagesDatabase
@@ -43,6 +42,7 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_PERMISSION
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.createTrashRequestMethod
 import com.demo.newgalleryapp.utilities.CommonFunctions.resetVisibilityForDeleteItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showAppSettings
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
@@ -50,6 +50,8 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashB
 import com.demo.newgalleryapp.utilities.CommonFunctions.showToast
 import com.demo.newgalleryapp.viewmodel.MainViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickListener {
@@ -92,7 +94,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 loadMediaData()
             } else {
-                Toast.makeText(this, "Permission Required!!!", Toast.LENGTH_SHORT).show()
+//                Toast.makeText(this, "Permission Required!!!", Toast.LENGTH_SHORT).show()
                 showRationaleOrOpenSettings()
             }
         }
@@ -100,8 +102,40 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if ((requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) ||
-            (requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) ||
+
+
+        if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY) {
+            if (resultCode == Activity.RESULT_OK) {
+                // User has allowed the permission
+
+                // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
+                lifecycleScope.launch(Dispatchers.IO) {
+                    checkBoxList.map {
+                        it.path
+                    }.forEach {
+                        ImagesDatabase.getDatabase(this@MainScreenActivity).favoriteImageDao()
+                            .deleteFavorites(it)
+                    }
+                }
+                progressDialogFragment.show()
+                (application as AppClass).mainViewModel.getMediaFromInternalStorage()
+
+                photosFragment.imagesAdapter?.notifyDataSetChanged()
+                videosFragment.imagesAdapter?.notifyDataSetChanged()
+
+                handler?.postDelayed({
+                    progressDialogFragment.cancel()
+                    resetVisibilityForDeleteItem()
+                }, 2000)
+
+
+            } else {
+                // User has denied the permission
+                Log.d("Deny", "onActivityResult: Deny User")
+            }
+        }
+
+        if ((requestCode == REQ_CODE_FOR_CHANGES_IN_OPEN_IMAGE_ACTIVITY && resultCode == Activity.RESULT_OK) ||
             (FLAG_FOR_CHANGES_IN_RENAME) || (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK)) {
 
             if ((FLAG_FOR_CHANGES_IN_RENAME)) {
@@ -111,20 +145,14 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 
                 progressDialogFragment.show()
                 (application as AppClass).mainViewModel.getMediaFromInternalStorage()
-                // here deleting favorite items from trash bin, because we preforming (move to trash bin ) function
-                if (requestCode == REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
-                    checkBoxList.map {
-                        it.path
-                    }.forEach {
-                        ImagesDatabase.getDatabase(this).favoriteImageDao().deleteFavorites(it)
-                    }
-                }
+
                 photosFragment.imagesAdapter?.notifyDataSetChanged()
                 videosFragment.imagesAdapter?.notifyDataSetChanged()
 
                 handler?.postDelayed({
                     progressDialogFragment.cancel()
-                }, 1000)
+                    resetVisibilityForDeleteItem()
+                }, 2000)
             }
 
         } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY && resultCode == Activity.RESULT_OK) {
@@ -229,8 +257,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         val existingFragment = supportFragmentManager.findFragmentByTag(fragmentTag)
 
         if (existingFragment == null) {
-            supportFragmentManager.beginTransaction()
-                .add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
+            supportFragmentManager.beginTransaction().add(R.id.frameLayoutView, mediaFragment, fragmentTag).commit()
         }
         currentFragment = mediaFragment
 
@@ -277,30 +304,35 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (paths.isNotEmpty()) {
                 val arrayList: ArrayList<Uri> = ArrayList()
-                MediaScannerConnection.scanFile(
-                    this, paths.toTypedArray(), null
-                ) { _, uri ->
-                    arrayList.add(uri)
-                    try {
-                        if (arrayList.size == paths.size) {
-                            val pendingIntent: PendingIntent =
-                                MediaStore.createTrashRequest(contentResolver, arrayList, true)
-                            startIntentSenderForResult(
-                                pendingIntent.intentSender,
-                                REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY,
-                                null,
-                                0,
-                                0,
-                                0
-                            )
-                        }
-                    } catch (e: Exception) {
-                        Log.e("TAG", "000AAA: $e")
-                    }
+
+                val uris = checkBoxList.map {
+                    Uri.parse(it.uri)
                 }
-                resetVisibilityForDeleteItem()
+//                MediaScannerConnection.scanFile(
+//                    this, paths.toTypedArray(), null
+//                ) { _, uri ->
+                arrayList.addAll(uris)
+                try {
+                    if (arrayList.size == paths.size) {
+//                        val pendingIntent: PendingIntent = MediaStore.createTrashRequest(contentResolver, arrayList, true)
+                        val pendingIntent: PendingIntent =
+                            createTrashRequestMethod(this@MainScreenActivity, arrayList, true)
+                        startIntentSenderForResult(
+                            pendingIntent.intentSender,
+                            REQ_CODE_FOR_TRASH_PERMISSION_IN_MAIN_SCREEN_ACTIVITY,
+                            null,
+                            0,
+                            0,
+                            0
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("TAG", "000AAA: $e")
+                }
+//                }
+
             } else {
-                showToast(this, "No images Selected to delete")
+                showToast(this, "No images/videos Selected to delete!!")
             }
         } else {
             if (paths.isNotEmpty()) {
@@ -446,7 +478,7 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
         val transaction = supportFragmentManager.beginTransaction()
 
         // Check if the currentFragment is not null and added
-        if (currentFragment != null && currentFragment?.isAdded == true) {
+        if (currentFragment != null && currentFragment!!.isAdded) {
             transaction.hide(currentFragment!!)
         }
 
@@ -487,6 +519,9 @@ class MainScreenActivity : AppCompatActivity(), ImageClickListener, FolderClickL
 //    }
     @SuppressLint("MissingSuperCall")
     override fun onBackPressed() {
+
+        mediaFragment.handleDeselectAllMedia()
+        mediaFragment.closeSearchBtn()
         if (currentFragment == mediaFragment) {
             if (backPressedOnce) {
                 finish()

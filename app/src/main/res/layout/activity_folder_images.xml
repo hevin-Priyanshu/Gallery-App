@@ -183,7 +183,7 @@
                         android:layout_height="match_parent"
                         android:layout_marginEnd="@dimen/_10sdp"
                         android:fontFamily="@font/poppins_medium"
-                        android:text="DeSelect All"
+                        android:text="Deselect All"
                         android:textColor="@color/color_main"
                         android:textSize="@dimen/_13sdp"
                         android:visibility="gone" />

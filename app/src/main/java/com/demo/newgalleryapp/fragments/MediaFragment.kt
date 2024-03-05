@@ -102,9 +102,7 @@ class MediaFragment : Fragment(), ImageClickListener {
         }
 
         searchCloseBtn.setOnClickListener {
-            searchEvent.text.clear()
-            threeDotItem.visibility = View.VISIBLE
-            hideKeyboard()
+            closeSearchBtn()
         }
 
         searchEvent.isCursorVisible = false
@@ -209,13 +207,19 @@ class MediaFragment : Fragment(), ImageClickListener {
         return view
     }
 
+    fun closeSearchBtn() {
+        searchEvent.text.clear()
+        threeDotItem.visibility = View.VISIBLE
+        hideKeyboard()
+    }
+
     private fun hideKeyboard() {
         val imm =
             requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(searchEvent.windowToken, 0)
     }
 
-    private fun handleDeselectAllMedia() {
+    fun handleDeselectAllMedia() {
         if (viewPager.currentItem == 0) {
             photosFragment.imagesAdapter?.isSelected = false
             photosFragment.imagesAdapter?.updateSelectionState(false)

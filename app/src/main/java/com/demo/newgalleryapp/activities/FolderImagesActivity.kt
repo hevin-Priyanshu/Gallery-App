@@ -4,13 +4,12 @@ import android.app.Activity
 import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Intent
-import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -42,6 +41,7 @@ import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_FOLDER_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY
 import com.demo.newgalleryapp.utilities.CommonFunctions.REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY
+import com.demo.newgalleryapp.utilities.CommonFunctions.createTrashRequestMethod
 import com.demo.newgalleryapp.utilities.CommonFunctions.positionForItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMainScreenMoreItem
 import com.demo.newgalleryapp.utilities.CommonFunctions.showPopupForMoveToTrashBin
@@ -124,7 +124,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
             setAllVisibility()
             handler?.postDelayed({
                 progressDialogFragment.cancel()
-            }, 1000)
+            }, 2000)
         } else if (requestCode == REQ_CODE_FOR_CHANGES_IN_MAIN_SCREEN_ACTIVITY && resultCode == Activity.RESULT_OK) {
 
             isUpdatedFolderActivity = true
@@ -293,24 +293,37 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
 
         val paths = checkBoxList.map { it.path }
         val isVideos = checkBoxList.map { it.isVideo }
+        val uris = checkBoxList.map { Uri.parse(it.uri) }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
             val arrayList: ArrayList<Uri> = ArrayList()
-            MediaScannerConnection.scanFile(this, paths.toTypedArray(), null) { _, uri ->
-                arrayList.add(uri)
+            arrayList.addAll(uris)
+
+            if (paths.isNotEmpty()) {
                 if (arrayList.size == paths.size) {
-                    val pendingIntent: PendingIntent =
-                        MediaStore.createTrashRequest(contentResolver, arrayList, true)
-                    startIntentSenderForResult(
-                        pendingIntent.intentSender,
-                        REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY,
-                        null,
-                        0,
-                        0,
-                        0
-                    )
+
+                    try {
+//                    val pendingIntent: PendingIntent = MediaStore.createTrashRequest(contentResolver, arrayList, true)
+                        val pendingIntent: PendingIntent =
+                            createTrashRequestMethod(this@FolderImagesActivity, arrayList, true)
+                        startIntentSenderForResult(
+                            pendingIntent.intentSender,
+                            REQ_CODE_FOR_TRASH_PERMISSION_IN_FOLDER_ACTIVITY,
+                            null,
+                            0,
+                            0,
+                            0
+                        )
+                    } catch (e: Exception) {
+                        Log.e("TAG", "000AAA: $e")
+                    }
+
                 }
+            } else {
+                showToast(this, "No images/videos Selected to delete!!")
             }
+
             setAllVisibility()
         } else {
             if (paths.isNotEmpty()) {
@@ -327,7 +340,7 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
                 Handler().postDelayed(Runnable {
                     progressDialogFragment.cancel()
                     showToast(this, "Deleted Successfully!!")
-                }, 1000)
+                }, 2000)
 
 
             } else {
@@ -401,7 +414,6 @@ class FolderImagesActivity : AppCompatActivity(), ImageClickListener {
         }
         itemSelected.text = "Item Selected $select"
     }
-
 
     fun setHowManyItem() {
         val items = adapter.itemCount.toString()

@@ -159,6 +159,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val dateAdded =
                     c.getLong(c.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED))
 
+                val uri = ContentUris.withAppendedId(contentUri, id)
+
                 // Discard invalid images that might exist on the device
                 if (size == null) {
                     continue
@@ -168,8 +170,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     continue
                 }
                 // Create a MediaModel object and add it to the list
-                val mediaModel =
-                    MediaModel(id, displayName, data, mimeType, duration, size, dateAdded, isVideo)
+                val mediaModel = MediaModel(
+                    id, uri.toString(), displayName, data, mimeType, duration, size, dateAdded, isVideo
+                )
                 mediaList.add(mediaModel)
             }
         }
@@ -216,7 +219,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     destinationImage.toUri(), // URI of the trashed image
                     imagePath.absolutePath, // Path of the trashed image
                     destinationFileName, // Name of the trashed image
-                    "", // You might want to add additional information such as description or metadata
+                    0, // You might want to add additional information such as description or metadata
                     deletionTimestamp, isVideoOrNot
                 )
 
@@ -287,8 +290,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-//        val pairOfLists = listOf(imagePathsToDelete, isVideos)
-
         viewModelScope.launch {
 
             val context: Context = getApplication()
@@ -314,8 +315,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     imagePath.copyTo(destinationImage)
 
-//                    val deletionTimestamp = System.currentTimeMillis() // current time in millisec
-
                     val deletionTimestamp = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30)
 
 //                    val thirtyDaysInMillis = (30 * 24 * 60 * 60 * 1000) // 30 days in milliseconds
@@ -327,7 +326,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         destinationImage.toUri(), // URI of the trashed image
                         imagePath.absolutePath, // Path of the trashed image
                         destinationFileName, // Name of the trashed image
-                        "", // You might want to add additional information such as description or metadata
+                        0, // You might want to add additional information such as description or metadata
                         deletionTimestamp, pair.second
                     )
 
@@ -341,22 +340,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ImagesDatabase.getDatabase(context).favoriteImageDao()
                         .deleteFavorites(pair.first)
 
-
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
                         imagePath.delete()
                         context.sendBroadcast(
-                            Intent(
-                                Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(imagePath)
-                            )
+                            Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(imagePath))
                         )
                     } else {
                         imagePath.deleteRecursively()
                     }
+
                     scanFile(context, imagePath)
                     // Remove the deleted image from the list
                     updatedList?.removeAll { it.path == pair.first }
-//                Toast.makeText(getApplication(), "Move To Trash bin Successfully!!", Toast.LENGTH_SHORT)
-//                    .show()
                 } else {
                     // Handle the case where the file doesn't exist
                     Log.e(
@@ -365,74 +360,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-
-//            for (imagePathToDelete in imagePathsToDelete) {
-//                val imagePath = File(imagePathToDelete)
-//
-//                if (imagePath.exists()) {
-//
-//                    val destinationFileName = "${imagePath.name}.trash"
-//                    val destinationImage = File(trashDirectory, destinationFileName)
-////                    val destinationImage = File(trashDirectory, imagePath.name)
-//
-//                    if (destinationImage.exists()) {
-//                        destinationImage.deleteRecursively()
-//                    }
-//
-//                    imagePath.copyTo(destinationImage)
-//
-////                    val deletionTimestamp = System.currentTimeMillis() // current time in millisec
-//
-//                    val deletionTimestamp = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30)
-//
-////                    val thirtyDaysInMillis = (30 * 24 * 60 * 60 * 1000) // 30 days in milliseconds
-////                    val deletionTimestampWithThirtyDays = deletionTimestamp + thirtyDaysInMillis
-//
-//
-//                    val trashBinModel = TrashBinAboveVersion(
-//                        0, // Assuming the ID is auto-generated
-//                        destinationImage.toUri(), // URI of the trashed image
-//                        imagePath.absolutePath, // Path of the trashed image
-//                        destinationFileName, // Name of the trashed image
-//                        "", // You might want to add additional information such as description or metadata
-//                        deletionTimestamp, false
-//                    )
-//
-//                    ImagesDatabase.getDatabase(context).favoriteImageDao()
-//                        .deleteImages(trashBinModel)
-//
-//                    ImagesDatabase.getDatabase(context).favoriteImageDao()
-//                        .insertDeleteImage(trashBinModel)
-//
-//                    // Here Deleting favorite items that was present in favorite activity , because we removing files from trash...
-//                    ImagesDatabase.getDatabase(context).favoriteImageDao()
-//                        .deleteFavorites(imagePathToDelete)
-//
-//
-//                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1) {
-//                        imagePath.delete()
-//                        context.sendBroadcast(
-//                            Intent(
-//                                Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(imagePath)
-//                            )
-//                        )
-//                    } else {
-//                        imagePath.deleteRecursively()
-//                    }
-//                    scanFile(context, imagePath)
-//                    // Remove the deleted image from the list
-//                    updatedList?.removeAll { it.path == imagePathToDelete }
-////                Toast.makeText(getApplication(), "Move To Trash bin Successfully!!", Toast.LENGTH_SHORT)
-////                    .show()
-//                } else {
-//                    // Handle the case where the file doesn't exist
-//                    Log.e(
-//                        "error",
-//                        "moveMultipleImagesInTrashBin: Error deleting file: $imagePathToDelete"
-//                    )
-//                }
-//            }
-            // Notify observers about the deletions
             _allData.postValue(updatedList)
         }
     }
@@ -481,13 +408,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 // Get the deleted image information from the database
-
                 val deletedImage = File(trashBinModel.uri.path ?: "")
                 val originalImagePath = File(trashBinModel.path)
-
-
-//                val deletedImage = File(trashBinModel.uri.path!!)
-//                val originalImagePath = File(trashBinModel.path)
 
                 if (deletedImage.exists()) {
                     deletedImage.copyTo(originalImagePath, overwrite = true)
@@ -504,12 +426,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         MediaModel(
                             0,
                             originalImagePath.toString(),
+                            originalImagePath.toString(),
                             deletedImage.toString(),
                             "",
                             0,
-                            0,
-                            0,
-                            false
+                            trashBinModel.size,
+                            trashBinModel.date,
+                            trashBinModel.isVideo
                         )
                     )
                     // Add the restored image to the list
@@ -548,12 +471,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         MediaModel(
                             0,
                             originalImagePath.toString(),
+                            originalImagePath.toString(),
                             deletedImagePath.toString(),
                             "",
                             0,
-                            0,
-                            0,
-                            false
+                            trashBin.size,
+                            trashBin.date,
+                            trashBin.isVideo
                         )
                     ) // Add the restored image to the list
                     _allData.postValue(updatedList)
@@ -584,7 +508,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             String.format("%02d:%02d", minutes, remainingSeconds)
         }
     }
-
 
     fun copyImage(sourcePath: File, destinationPath: File) {
         val context: Context = getApplication()
@@ -768,7 +691,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val name =
                     cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME))
                 val size =
-                    cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE))
+                    cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE))
                 val date =
                     cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_EXPIRES))
 

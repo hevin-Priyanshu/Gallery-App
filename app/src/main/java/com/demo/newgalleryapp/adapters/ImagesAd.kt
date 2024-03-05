@@ -53,7 +53,6 @@ class ImagesAd(
         notifyDataSetChanged()
     }
 
-
     fun remove(position: Int) {
         if (position >= 0 && position < dataList.size) {
             dataList.removeAt(position)
@@ -99,7 +98,6 @@ class ImagesAd(
         return dataList.size
     }
 
-
     fun updateData(filteredData: ArrayList<Any>) {
         this.dataList = filteredData
         notifyDataSetChanged()
@@ -115,6 +113,12 @@ class ImagesAd(
 
             val imageModel = dataList[position] as MediaModel
 
+            if (checkSelectedList.map { it.path }.contains(imageModel.path)) {
+                holder.isSelectedCheckbox.setImageResource(R.drawable.right_tick_item)
+            } else {
+                holder.isSelectedCheckbox.setImageResource(R.drawable.empty_select_item_blur)
+            }
+
             if (imageModel.isVideo) {
 
                 holder.imageVideoThumbnail.visibility = View.VISIBLE
@@ -125,11 +129,6 @@ class ImagesAd(
                 holder.imageVideoThumbnail.visibility = View.GONE
             }
 
-            if (checkSelectedList.map { it.path }.contains(imageModel.path)) {
-                holder.isSelectedCheckbox.setImageResource(R.drawable.right_tick_item)
-            } else {
-                holder.isSelectedCheckbox.setImageResource(R.drawable.empty_select_item_blur)
-            }
 
 //            holder.isSelectedCheckbox = checkSelectedList.map { it.path }.contains(list[position].path)
             // Handle click events on inner items
@@ -148,6 +147,7 @@ class ImagesAd(
                     }
                     // Notify listener about the change in selection count
                     (context as MainScreenActivity).mediaFragment.counter(checkSelectedList.size)
+
                 } else {
 
                     // If not in selection mode, start OpenImageActivity
@@ -236,9 +236,8 @@ class ImagesAd(
     class InnerImageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var imageView: ImageView = itemView.findViewById(R.id.image_view_new)
         var imageVideoTextView: TextView = itemView.findViewById(R.id.videoTime_inner_item)
-        var imageVideoThumbnail: LinearLayout =
-            itemView.findViewById(R.id.imageView_video_logo_inner_item)
-        var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox)
+        var imageVideoThumbnail: LinearLayout = itemView.findViewById(R.id.imageView_video_logo_inner_item)
+        var isSelectedCheckbox: ImageView = itemView.findViewById(R.id.isSelectedCheckbox_inner)
 
         init {
             isSelectedCheckbox.visibility = View.GONE // or View.INVISIBLE

@@ -120,8 +120,7 @@
                 android:layout_height="@dimen/_15sdp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerInParent="true"
-                android:src="@drawable/empty_select_item_blur"
-                android:visibility="gone" />
+                android:src="@drawable/empty_select_item_blur" />
 
         </RelativeLayout>
 

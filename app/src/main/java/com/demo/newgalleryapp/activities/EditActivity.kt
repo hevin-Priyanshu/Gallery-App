@@ -358,7 +358,6 @@ class EditActivity : AppCompatActivity() {
         return null
     }
 
-
     override fun onDestroy() {
         handler?.removeCallbacksAndMessages(null)
         super.onDestroy()
